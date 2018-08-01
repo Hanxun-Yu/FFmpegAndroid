@@ -86,7 +86,7 @@ public class Camera2Helper {
     private int mState = STATE_PREVIEW;//{#see mCaptureCallback}The current state of camera state for taking pictures.
     private static CameraManager manager;
     private AfterDoListener listener;
-    private boolean isNeedHideProgressbar=true;
+    private boolean isNeedHideProgressbar = true;
 
     //从屏幕旋转转换为JPEG方向
     static {
@@ -109,19 +109,19 @@ public class Camera2Helper {
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture texture, int width, int height) {
             //3.在TextureView可用的时候尝试打开摄像头
-            Log.d(TAG,"onSurfaceTextureAvailable");
+            Log.d(TAG, "onSurfaceTextureAvailable");
             openCamera(width, height);
         }
 
         @Override
         public void onSurfaceTextureSizeChanged(SurfaceTexture texture, int width, int height) {
-            Log.d(TAG,"onSurfaceTextureSizeChanged");
+            Log.d(TAG, "onSurfaceTextureSizeChanged");
             configureTransform(width, height);
         }
 
         @Override
         public boolean onSurfaceTextureDestroyed(SurfaceTexture texture) {
-            Log.d(TAG,"onSurfaceTextureDestroyed");
+            Log.d(TAG, "onSurfaceTextureDestroyed");
 
             return true;
         }
@@ -164,9 +164,9 @@ public class Camera2Helper {
         private void process(CaptureResult result) {
             switch (mState) {
                 case STATE_PREVIEW: {
-                    if(isNeedHideProgressbar) {
+                    if (isNeedHideProgressbar) {
                         listener.onAfterPreviewBack();
-                        isNeedHideProgressbar=false;
+                        isNeedHideProgressbar = false;
                     }
                     // We have nothing to do when the camera preview is working normally.
                     break;
@@ -220,7 +220,7 @@ public class Camera2Helper {
                                         @NonNull CaptureRequest request,
                                         @NonNull CaptureResult partialResult) {
             process(partialResult);
-            Log.d("_xunxun","onCaptureProgressed");
+            Log.d("_xunxun", "onCaptureProgressed");
         }
 
         @Override
@@ -262,24 +262,24 @@ public class Camera2Helper {
      * 开启相机预览界面
      */
     public void startCameraPreView() {
-        Log.d(TAG,"startCameraPreView");
+        Log.d(TAG, "startCameraPreView");
         startBackgroundThread();
         //1、如果TextureView 可用则直接打开相机
 //        new Handler().postDelayed(new Runnable() {
 //            @Override
 //            public void run() {
-                if (textureView != null) {
-                    if (textureView.isAvailable()) {
-                        Log.d(TAG,"textureView.isAvailable()");
+        if (textureView != null) {
+            if (textureView.isAvailable()) {
+                Log.d(TAG, "textureView.isAvailable()");
 
-                        openCamera(textureView.getWidth(), textureView.getHeight());
-                    } else {
-                        Log.d(TAG,"setSurfaceTextureListener");
-                        textureView.setSurfaceTextureListener(mSurfaceTextureListener);//设置TextureView 的回调后，当满足之后自动回调到
-                    }
-                } else {
-                    Log.d(TAG,"textureView null");
-                }
+                openCamera(textureView.getWidth(), textureView.getHeight());
+            } else {
+                Log.d(TAG, "setSurfaceTextureListener");
+                textureView.setSurfaceTextureListener(mSurfaceTextureListener);//设置TextureView 的回调后，当满足之后自动回调到
+            }
+        } else {
+            Log.d(TAG, "textureView null");
+        }
 //            }
 //        },300);//建议加上尤其是你需要在多个界面都要开启预览界面时候
     }
@@ -341,7 +341,7 @@ public class Camera2Helper {
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
                     unlockFocus();
                     listener.onAfterTakePicture();
-                    Log.d(TAG,"onCaptureCompleted" + "保存照片成功");
+                    Log.d(TAG, "onCaptureCompleted" + "保存照片成功");
                 }
             };
             mCaptureSession.stopRepeating();
@@ -354,7 +354,7 @@ public class Camera2Helper {
     CameraCaptureSession recordCaptureSession;
 
     public void stopCallbackFrame() {
-        if(recordCaptureSession !=null) {
+        if (recordCaptureSession != null) {
             try {
                 recordCaptureSession.stopRepeating();
             } catch (CameraAccessException e) {
@@ -362,6 +362,7 @@ public class Camera2Helper {
             }
         }
     }
+
     public void startCallbackFrame() {
 //        try {
 //            if (null == mCameraDevice) {
@@ -476,7 +477,7 @@ public class Camera2Helper {
     }
 
     private void createCameraPreviewSession() {
-        Log.d(TAG,"createCameraPreviewSession");
+        Log.d(TAG, "createCameraPreviewSession");
         try {
             SurfaceTexture texture = textureView.getSurfaceTexture();
             assert texture != null;
@@ -523,7 +524,7 @@ public class Camera2Helper {
         }
     }
 
-    public void setRealTimeFrameSize(int realTimeFrameWidth,int realTimeFrameHeight) {
+    public void setRealTimeFrameSize(int realTimeFrameWidth, int realTimeFrameHeight) {
         this.realTimeFrameWidth = realTimeFrameWidth;
         this.realTimeFrameHeight = realTimeFrameHeight;
 
@@ -554,14 +555,15 @@ public class Camera2Helper {
 
                 // For still image captures, we use the largest available size.
                 Size largest = Collections.max(Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)), new Camera2Helper.CompareSizesByArea());
-                mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(), ImageFormat.JPEG, /*maxImages*/2);//初始化ImageReader
-                mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);//设置ImageReader监听
+//                mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(), ImageFormat.JPEG, /*maxImages*/2);//初始化ImageReader
+//                mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);//设置ImageReader监听
 
-                mRealTimeFrameReader = ImageReader.newInstance(realTimeFrameWidth,realTimeFrameHeight,ImageFormat.YUV_420_888,2);
+                mRealTimeFrameReader = ImageReader.newInstance(realTimeFrameWidth, realTimeFrameHeight, ImageFormat.YUV_420_888, 1);
                 mRealTimeFrameReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
-                    Gson gson = new Gson();
+
                     @Override
                     public void onImageAvailable(ImageReader imageReader) {
+                        long start = System.currentTimeMillis();
                         Image image = null;
                         try {
                             image = imageReader.acquireLatestImage();
@@ -569,7 +571,7 @@ public class Camera2Helper {
                             if (image == null) {
                                 return;
                             }
-                            if(onRealFrameListener != null)
+                            if (onRealFrameListener != null)
                                 onRealFrameListener.onRealFrame(image);
 //                            Log.d(TAG,"getPlanes len:"+image.getPlanes().length);
 //
@@ -586,10 +588,12 @@ public class Camera2Helper {
                                 image.close();
                             }
                         }
+                        Log.d(TAG,"onImageAvailable t:"+(System.currentTimeMillis()-start));
 //                        ByteBuffer buffer = imageReader.acquireNextImage().getPlanes()[0].getBuffer();
 //                        byte[] bytes = new byte[buffer.remaining()];
                     }
-                },mBackgroundHandler);
+
+                }, mBackgroundHandler);
 
                 //处理图片方向相关
                 int displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
@@ -637,6 +641,7 @@ public class Camera2Helper {
                 // garbage capture data.
                 mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
                         maxPreviewHeight, largest);
+                Log.d(TAG, "mPreviewSize:" + mPreviewSize.getWidth() + "x" + mPreviewSize.getHeight());
 
                 // We fit the aspect ratio of TextureView to the size of preview we picked.
                 int orientation = activity.getResources().getConfiguration().orientation;
@@ -651,15 +656,12 @@ public class Camera2Helper {
                 mFlashSupported = available == null ? false : available;
                 mCameraId = cameraId;
 
-
-
-                for(int i=0;i<map.getOutputFormats().length;i++) {
+                for (int i = 0; i < map.getOutputFormats().length; i++) {
                     Log.d(TAG, "getOutputFormats:" + map.getOutputFormats()[i]);
+                    for (Size size : map.getOutputSizes(map.getOutputFormats()[i])) {
+                        Log.d(TAG,"   size:"+size.getWidth()+"*"+size.getHeight());
+                    }
                 }
-
-                Log.d(TAG, "getOutputSizes:" + map.getOutputSizes(ImageFormat.YUV_420_888)[0]);
-                Log.d(TAG, "getOutputSizes:" + map.getOutputSizes(ImageFormat.YUV_420_888)[1]);
-
                 return;
             }
         } catch (CameraAccessException e) {
@@ -673,9 +675,11 @@ public class Camera2Helper {
     }
 
     OnRealFrameListener onRealFrameListener;
+
     interface OnRealFrameListener {
         void onRealFrame(Image image);
     }
+
     /**
      * 为了避免太大的预览大小会超过相机总线的带宽限
      */
@@ -794,7 +798,7 @@ public class Camera2Helper {
         closeCamera();
         activity = null;
         textureView = null;
-        listener=null;
+        listener = null;
     }
 
     private static class CompareSizesByArea implements Comparator<Size> {
@@ -845,8 +849,8 @@ public class Camera2Helper {
         }
     }
 
-    public void setAfterDoListener(AfterDoListener listener){
-        this.listener=listener;
+    public void setAfterDoListener(AfterDoListener listener) {
+        this.listener = listener;
     }
 
     public interface AfterDoListener {

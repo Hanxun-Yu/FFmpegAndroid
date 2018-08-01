@@ -117,8 +117,8 @@ void scaleI420(jbyte *src_i420_data, jint width, jint height, jbyte *dst_i420_da
 
 
 JNINativeMethod nativeMethod[] = {
-        {"play", "([BII[BIIIIZ)I", (void *) compressYUV},
-        {"play", "([BII[BIIII)I",  (void *) cropYUV}
+        {"compressYUV", "([BII[BIIIIZ)I", (void *) compressYUV},
+        {"cropYUV", "([BII[BIIII)I",  (void *) cropYUV}
 };
 
 

@@ -5,6 +5,10 @@ import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraManager;
 import android.media.Image;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -38,7 +42,7 @@ public class MainActivity extends AppCompatActivity implements
     public static final String PHOTO_PATH = Environment.getExternalStorageDirectory().getPath();
     public static final String PHOTO_NAME = "camera2";
 
-    MediaEncoder mediaEncoder = new MediaEncoder();
+    MediaEncoder mediaEncoder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void init() {
+        mediaEncoder = new MediaEncoder();
         textureView = findViewById(R.id.textureview);
 //        imageView= (ImageView) findViewById(R.id.imv_photo);
         recordBtn = findViewById(R.id.recordBtn);
@@ -86,15 +91,40 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
         camera2Helper = Camera2Helper.getInstance(MainActivity.this, textureView, file);
-        camera2Helper.setRealTimeFrameSize(1280,720);
+        camera2Helper.setRealTimeFrameSize(widthIN, heightIN);
         camera2Helper.setOnRealFrameListener(this);
         camera2Helper.startCameraPreView();
         camera2Helper.setAfterDoListener(this);
 
         //写死了，应该与widthin and heightin应该与camera内yuv一致
-        mediaEncoder.setMediaSize(1280, 720, 1280, 720,1024);
+        mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, 1024);
         mediaEncoder.setsMediaEncoderCallback(this);
         mediaEncoder.startVideoEncode();
+
+
+        initEncoderThread();
+    }
+
+    HandlerThread handlerThread;
+    Handler putEncoderHandler;
+
+    int widthIN = 1280;
+    int heightIN = 720;
+    int widthOUT = 1280;
+    int heightOUT = 720;
+    private void initEncoderThread() {
+        handlerThread = new HandlerThread("putEncoderThread");
+        handlerThread.start();
+        putEncoderHandler = new Handler(handlerThread.getLooper()) {
+            VideoData420 vd420Temp;
+
+            @Override
+            public void handleMessage(Message msg) {
+                super.handleMessage(msg);
+                vd420Temp = new VideoData420((byte[]) msg.obj, 1280, 720);
+                mediaEncoder.putVideoData(vd420Temp);
+            }
+        };
     }
 
     @Override
@@ -162,7 +192,8 @@ public class MainActivity extends AppCompatActivity implements
             case REQUEST_CODE: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    init();
+                    if (checkPermission())
+                        init();
                     // 权限同意了，做相应处理
                 } else {
                     if (ActivityCompat.shouldShowRequestPermissionRationale(this,
@@ -179,20 +210,37 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onRealFrame(Image image) {
-        if (recording) {
-            vd420Temp = new VideoData420(getByte(image.getPlanes()[0].getBuffer(),
-                    image.getPlanes()[1].getBuffer(),
-                    image.getPlanes()[2].getBuffer()), 1280, 720);
+        Log.d(TAG, "onRealFrame image w:"+image.getWidth()+" h:"+image.getHeight()+" time:"+image.getTimestamp());
 
-            mediaEncoder.putVideoData(vd420Temp);
+        if (recording) {
+
+//            getByte(image.getPlanes()[0].getBuffer(),
+//                    image.getPlanes()[1].getBuffer(),
+//                    image.getPlanes()[2].getBuffer());
+            long start = System.currentTimeMillis();
+//            Log.d(TAG, "onRealFrame: isMainThread:" + (Looper.myLooper() == Looper.getMainLooper()));
+
+            notifyEncoder(getByte(image.getPlanes()[0].getBuffer(),
+                    image.getPlanes()[1].getBuffer(),
+                    image.getPlanes()[2].getBuffer()));
             putYUVCount++;
+            Log.d(TAG, "recording time:" + (System.currentTimeMillis() - start));
+
         }
+    }
+
+
+    private void notifyEncoder(byte[] bytes) {
+        Message msg = putEncoderHandler.obtainMessage();
+        msg.obj = bytes;
+        msg.sendToTarget();
     }
 
     boolean recording = false;
 
 
     private byte[] getByte(ByteBuffer yb, ByteBuffer ub, ByteBuffer vb) {
+//        long start = System.currentTimeMillis();
         byte[] ret = new byte[yb.remaining() + ub.remaining() + vb.remaining()];
         int position = 0;
         while (yb.hasRemaining()) {
@@ -218,6 +266,7 @@ public class MainActivity extends AppCompatActivity implements
             System.arraycopy(t, 0, ret, position, t.length);
             position += t.length;
         }
+//        Log.d(TAG, "getByte time:" + (System.currentTimeMillis() - start));
         return ret;
     }
 
