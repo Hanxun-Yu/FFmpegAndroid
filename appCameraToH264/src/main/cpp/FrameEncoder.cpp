@@ -169,7 +169,9 @@ void FrameEncoder::setParams() {
     params.i_height = getOutHeight();
 
     //并行编码多帧
-    params.i_threads = X264_SYNC_LOOKAHEAD_AUTO;
+//    params.i_threads = X264_SYNC_LOOKAHEAD_AUTO;
+    params.i_threads = X264_THREADS_AUTO;
+
     params.i_fps_num = 25;//getFps();
     params.i_fps_den = 1;
 
@@ -187,7 +189,7 @@ void FrameEncoder::setParams() {
 
     //参数i_rc_method表示码率控制，CQP(恒定质量)，CRF(恒定码率)，ABR(平均码率)
     //恒定码率，会尽量控制在固定码率
-    params.rc.i_rc_method = X264_RC_CRF;
+    params.rc.i_rc_method = X264_RC_ABR;
     //图像质量控制,rc.f_rf_constant是实际质量，越大图像越花，越小越清晰
     //param.rc.f_rf_constant_max ，图像质量的最大值
     params.rc.f_rf_constant = 25;
@@ -211,7 +213,7 @@ void FrameEncoder::setParams() {
     //说明：限制输出文件的profile。这个参数将覆盖其它所有值，此选项能保证输出profile兼容的视频流。如果使用了这个选项，将不能进行无损压缩（qp 0 or crf 0）。
     //可选：baseline，main，high
     //建议：不设置。除非解码环境只支持main或者baseline profile的解码。
-    x264_param_apply_profile(&params, "baseline");
+    x264_param_apply_profile(&params, "main");
 }
 
 

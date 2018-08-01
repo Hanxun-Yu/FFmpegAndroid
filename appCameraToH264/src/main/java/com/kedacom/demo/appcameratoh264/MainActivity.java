@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements
         camera2Helper.setAfterDoListener(this);
 
         //写死了，应该与widthin and heightin应该与camera内yuv一致
-        mediaEncoder.setMediaSize(1280, 720, 1280, 720,512);
+        mediaEncoder.setMediaSize(1280, 720, 1280, 720,1024);
         mediaEncoder.setsMediaEncoderCallback(this);
         mediaEncoder.startVideoEncode();
     }

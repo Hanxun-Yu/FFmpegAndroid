@@ -128,7 +128,7 @@ public class MediaEncoder {
                         fps++;
 //                        byte[] outbuffer = new byte[videoData.width * videoData.height];
                         outbuffer = new byte[videoData.videoData.length];
-                        buffLength = new int[10];
+                        buffLength = new int[20];
                         //对YUV420P进行h264编码，返回一个数据大小，里面是编码出来的h264数据
                         numNals = ffmpegjni.encoderVideoEncode(videoData.videoData, videoData.videoData.length, fps, outbuffer, buffLength);
                         //Log.e("RiemannLee", "data.length " +  videoData.videoData.length + " h264 encode length " + buffLength[0]);
