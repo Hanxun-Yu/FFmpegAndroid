@@ -13,6 +13,10 @@ import android.util.Log;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
+
+import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder;
+import com.kedacom.demo.appcameratoh264.media.video.VideoData420;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -20,16 +24,21 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class MainActivity extends AppCompatActivity implements Camera2Helper.AfterDoListener, Camera2Helper.OnRealFrameListener {
+public class MainActivity extends AppCompatActivity implements
+        Camera2Helper.AfterDoListener, Camera2Helper.OnRealFrameListener,
+        MediaEncoder.MediaEncoderCallback {
     private AutoFitTextureView textureView;
     private Button recordBtn;
     private Button stopBtn;
+    private TextView infoText;
 
     final String TAG = "MainActivity_xunxun";
     private Camera2Helper camera2Helper;
     private File file;
     public static final String PHOTO_PATH = Environment.getExternalStorageDirectory().getPath();
     public static final String PHOTO_NAME = "camera2";
+
+    MediaEncoder mediaEncoder = new MediaEncoder();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements Camera2Helper.Aft
 //        imageView= (ImageView) findViewById(R.id.imv_photo);
         recordBtn = findViewById(R.id.recordBtn);
         stopBtn = findViewById(R.id.stopBtn);
+        infoText = findViewById(R.id.infoText);
 
 //        progressBar= (ProgressBar) findViewById(R.id.progressbar_loading);
         file = new File(PHOTO_PATH, PHOTO_NAME + ".jpg");
@@ -63,25 +73,34 @@ public class MainActivity extends AppCompatActivity implements Camera2Helper.Aft
             @Override
             public void onClick(View view) {
 //                camera2Helper.takePicture();
-                camera2Helper.startCallbackFrame();
+//                camera2Helper.startCallbackFrame();
+                recording = true;
             }
         });
 
         stopBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                camera2Helper.stopCallbackFrame();
+                recording = false;
+//                camera2Helper.stopCallbackFrame();
             }
         });
         camera2Helper = Camera2Helper.getInstance(MainActivity.this, textureView, file);
+        camera2Helper.setRealTimeFrameSize(1280,720);
         camera2Helper.setOnRealFrameListener(this);
         camera2Helper.startCameraPreView();
         camera2Helper.setAfterDoListener(this);
+
+        //写死了，应该与widthin and heightin应该与camera内yuv一致
+        mediaEncoder.setMediaSize(1280, 720, 1280, 720,512);
+        mediaEncoder.setsMediaEncoderCallback(this);
+        mediaEncoder.startVideoEncode();
     }
 
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        mediaEncoder.stop();
         System.exit(0);
     }
 
@@ -116,18 +135,19 @@ public class MainActivity extends AppCompatActivity implements Camera2Helper.Aft
     }
 
     final int REQUEST_CODE = 99;
+    String[] permissions = {Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
     private boolean checkPermission() {
         //如果返回true表示已经授权了
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED) {
+        if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
             return true;
         } else {
             // 类似 startActivityForResult()中的REQUEST_CODE
             // 权限列表,将要申请的权限以数组的形式提交。
             // 系统会依次进行弹窗提示。
             // 注意：如果AndroidManifest.xml中没有进行权限声明，这里配置了也是无效的，不会有弹窗提示。
-            String[] permissions = {Manifest.permission.CAMERA};
+
             ActivityCompat.requestPermissions(this,
                     permissions,
                     REQUEST_CODE);
@@ -140,58 +160,135 @@ public class MainActivity extends AppCompatActivity implements Camera2Helper.Aft
                                            String permissions[], int[] grantResults) {
         switch (requestCode) {
             case REQUEST_CODE: {
-                // grantResults是一个数组，和申请的数组一一对应。
-                // 如果请求被取消，则结果数组为空。
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     init();
                     // 权限同意了，做相应处理
                 } else {
-                    // 权限被拒绝了
-
-
-                    //权限再次申请
-                    //当用户拒绝了某个权限时，我们可以再次去申请这个权限。但是这个时候，你应该告诉用户，你为什么要申请这个权限。
-                    //判断一个权限是否被用户拒绝了,true表示拒绝了
                     if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                             Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                         // 用户拒绝过这个权限了，应该提示用户，为什么需要这个权限。
                     }
-//说明用户勾选了不再提醒
                 }
             }
             return;
         }
     }
 
-    ByteArrayOutputStream bao = new ByteArrayOutputStream();
+    VideoData420 vd420Temp;
 
     @Override
     public void onRealFrame(Image image) {
-        Log.d(TAG, "onRealFrame----------ssssss-------");
-//        Log.d(TAG, "getPlanes y:" + image.getPlanes()[0].getBuffer().remaining());
-//        Log.d(TAG, "getPlanes u:" + image.getPlanes()[1].getBuffer().remaining());
-//        Log.d(TAG, "getPlanes v:" + image.getPlanes()[2].getBuffer().remaining());
-        bao.reset();
-        getByte(bao,image.getPlanes()[0].getBuffer());
-        getByte(bao,image.getPlanes()[1].getBuffer());
-        getByte(bao,image.getPlanes()[2].getBuffer());
-        Log.d(TAG, "onRealFrame-----------eeeeeee--------");
-        Log.d(TAG, "toByteArray len:"+bao.toByteArray().length);
+        if (recording) {
+            vd420Temp = new VideoData420(getByte(image.getPlanes()[0].getBuffer(),
+                    image.getPlanes()[1].getBuffer(),
+                    image.getPlanes()[2].getBuffer()), 1280, 720);
 
-    }
-
-    private void getByte(ByteArrayOutputStream bao, ByteBuffer bb) {
-        while (bb.hasRemaining()) {
-            Log.d(TAG, "bb.remaining():" + bb.remaining());
-            byte[] t = new byte[bb.remaining()];
-            bb.get(t);
-            try {
-                bao.write(t);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            mediaEncoder.putVideoData(vd420Temp);
+            putYUVCount++;
         }
     }
 
+    boolean recording = false;
+
+
+    private byte[] getByte(ByteBuffer yb, ByteBuffer ub, ByteBuffer vb) {
+        byte[] ret = new byte[yb.remaining() + ub.remaining() + vb.remaining()];
+        int position = 0;
+        while (yb.hasRemaining()) {
+//            Log.d(TAG, "bb.remaining():" + bb.remaining());
+            byte[] t = new byte[yb.remaining()];
+            yb.get(t);
+            System.arraycopy(t, 0, ret, position, t.length);
+            position += t.length;
+        }
+
+        while (ub.hasRemaining()) {
+//            Log.d(TAG, "bb.remaining():" + bb.remaining());
+            byte[] t = new byte[ub.remaining()];
+            ub.get(t);
+            System.arraycopy(t, 0, ret, position, t.length);
+            position += t.length;
+        }
+
+        while (vb.hasRemaining()) {
+//            Log.d(TAG, "bb.remaining():" + bb.remaining());
+            byte[] t = new byte[vb.remaining()];
+            vb.get(t);
+            System.arraycopy(t, 0, ret, position, t.length);
+            position += t.length;
+        }
+        return ret;
+    }
+
+
+    long h264TotalSize = 0l;
+    int putYUVCount = 0;
+    int recvH264Count = 0;
+
+    long lastFPSCheckTime = 0;
+    int checkFPSYUVStart = 0;
+    int checkFPSH264Start = 0;
+    int yuvFPS = 0;
+    int h264FPS = 0;
+
+    @Override
+    public void receiveEncoderVideoData(byte[] videoData, int totalLength, int[] segment) {
+        Log.d(TAG, "recv h264 len:" + totalLength + " nalCount:" + segment.length);
+        recvH264Count++;
+        h264TotalSize += totalLength;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                infoText.setText("size:" + getSize(h264TotalSize) + "\n"
+                        + "putYUV:" + putYUVCount + "\n"
+                        + "recvH264:" + recvH264Count + "\n"
+                        + getFPS());
+            }
+        });
+    }
+
+    private String getFPS() {
+        if (lastFPSCheckTime == 0) {
+            lastFPSCheckTime = System.currentTimeMillis();
+        } else {
+            if (System.currentTimeMillis() - lastFPSCheckTime < 1000) {
+                if (checkFPSYUVStart == 0)
+                    checkFPSYUVStart = putYUVCount;
+                if (checkFPSH264Start == 0)
+                    checkFPSH264Start = recvH264Count;
+            } else {
+                lastFPSCheckTime = System.currentTimeMillis();
+                yuvFPS = putYUVCount - checkFPSYUVStart;
+                h264FPS = recvH264Count - checkFPSH264Start;
+                checkFPSYUVStart = 0;
+                checkFPSH264Start = 0;
+            }
+        }
+
+        return "yuvfps:" + yuvFPS + "\n"
+                + "h264fps:" + h264FPS;
+    }
+
+
+    private String getSize(long sizel) {
+        String ret = null;
+        String unit = null;
+        if (sizel < 1024) {
+            unit = "B";
+        } else if (sizel < 1024 * 1024) {
+            unit = "KB";
+            sizel = sizel / 1024;
+        } else if (sizel < 1024 * 1024 * 1024) {
+            unit = "MB";
+            sizel = sizel / 1024 / 1024;
+        }
+
+        return sizel + unit;
+    }
+
+    @Override
+    public void receiveEncoderAudioData(byte[] audioData, int size) {
+
+    }
 }

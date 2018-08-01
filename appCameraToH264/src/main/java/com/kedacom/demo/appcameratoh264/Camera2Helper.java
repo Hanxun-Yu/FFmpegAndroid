@@ -523,6 +523,15 @@ public class Camera2Helper {
         }
     }
 
+    public void setRealTimeFrameSize(int realTimeFrameWidth,int realTimeFrameHeight) {
+        this.realTimeFrameWidth = realTimeFrameWidth;
+        this.realTimeFrameHeight = realTimeFrameHeight;
+
+    }
+
+    int realTimeFrameWidth = 0;
+    int realTimeFrameHeight = 0;
+
     private void setUpCameraOutputs(int width, int height) {
 
         try {
@@ -548,7 +557,7 @@ public class Camera2Helper {
                 mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(), ImageFormat.JPEG, /*maxImages*/2);//初始化ImageReader
                 mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);//设置ImageReader监听
 
-                mRealTimeFrameReader = ImageReader.newInstance(1920,1080,ImageFormat.YUV_420_888,10);
+                mRealTimeFrameReader = ImageReader.newInstance(realTimeFrameWidth,realTimeFrameHeight,ImageFormat.YUV_420_888,2);
                 mRealTimeFrameReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
                     Gson gson = new Gson();
                     @Override
@@ -556,7 +565,7 @@ public class Camera2Helper {
                         Image image = null;
                         try {
                             image = imageReader.acquireLatestImage();
-                            Log.d("PreviewListener", "GetPreviewImage");
+//                            Log.d("PreviewListener", "GetPreviewImage");
                             if (image == null) {
                                 return;
                             }

@@ -122,7 +122,7 @@ JNINativeMethod nativeMethod[] = {
 };
 
 
-std::string myClassName = "com/example/ffmpeg/FFmpegNative";
+std::string myClassName = "com/kedacom/demo/appcameratoh264/jni/YuvUtil";
 
 JNIEXPORT jint
 JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {

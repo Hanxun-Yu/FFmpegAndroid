@@ -6,6 +6,9 @@ package com.kedacom.demo.appcameratoh264.jni;
  * description:
  */
 public class YuvUtil {
+    static{
+        System.loadLibrary("yuvutiljni");
+    }
     /**
      * NV21转化为YUV420P数据
      * @param src         原始数据
