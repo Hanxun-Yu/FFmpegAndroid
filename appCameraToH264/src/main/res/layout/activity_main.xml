@@ -10,6 +10,11 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <SurfaceView
+        android:id="@+id/surfaceview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <Button
         android:id="@+id/recordBtn"
         android:layout_width="wrap_content"
@@ -26,8 +31,11 @@
     <TextView
         android:layout_below="@id/recordBtn"
         android:id="@+id/infoText"
+        android:background="@android:color/background_dark"
         android:textColor="@android:color/holo_green_light"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
+
+
 
 </RelativeLayout>

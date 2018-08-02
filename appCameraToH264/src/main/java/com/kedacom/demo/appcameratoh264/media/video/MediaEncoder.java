@@ -78,6 +78,7 @@ public class MediaEncoder {
 
     //摄像头的YUV420P数据，put到队列中，生产者模型
     public void putVideoData(VideoData420 videoData) {
+        putYUVCount++;
         try {
             videoQueue.put(videoData);
         } catch (InterruptedException e) {
@@ -143,6 +144,8 @@ public class MediaEncoder {
                             //编码后的h264数据
                             encodeData = new byte[totalLength];
                             System.arraycopy(outbuffer, 0, encodeData, 0, encodeData.length);
+                            h264TotalSize+=encodeData.length;
+                            recvH264Count++;
                             if (sMediaEncoderCallback != null) {
                                 sMediaEncoderCallback.receiveEncoderVideoData(encodeData, encodeData.length, segment);
                             }
@@ -156,6 +159,7 @@ public class MediaEncoder {
                         e.printStackTrace();
                         break;
                     }
+                    refreshFPS();
                 }
 
             }
@@ -224,4 +228,74 @@ public class MediaEncoder {
             audioFileManager.closeFile();
         }
     }
+
+    private long h264TotalSize = 0L;
+
+    public int getPutYUVCount() {
+        return putYUVCount;
+    }
+
+    public int getRecvH264Count() {
+        return recvH264Count;
+    }
+
+    private int putYUVCount = 0;
+    private int recvH264Count = 0;
+
+    private long lastFPSCheckTime = 0;
+    private int checkFPSYUVStart = 0;
+    private int checkFPSH264Start = 0;
+
+
+    private int yuvFPS = 0;
+    private int h264FPS = 0;
+
+    private void refreshFPS() {
+        if (lastFPSCheckTime == 0) {
+            lastFPSCheckTime = System.currentTimeMillis();
+        } else {
+            long now = System.currentTimeMillis();
+            double interval = now - lastFPSCheckTime;
+            if (interval < 1000) {
+                if (checkFPSYUVStart == 0)
+                    checkFPSYUVStart = putYUVCount;
+                if (checkFPSH264Start == 0)
+                    checkFPSH264Start = recvH264Count;
+            } else {
+                lastFPSCheckTime = now;
+                yuvFPS = (int) ((putYUVCount - checkFPSYUVStart) * 1000f / interval);
+                h264FPS = (int) ((recvH264Count - checkFPSH264Start) * 1000f / interval);
+                checkFPSYUVStart = 0;
+                checkFPSH264Start = 0;
+            }
+        }
+    }
+
+    public String getEncodedSize() {
+        return getSize(h264TotalSize);
+    }
+
+    private String getSize(long sizel) {
+        String ret = null;
+        String unit = null;
+        if (sizel < 1024) {
+            unit = "B";
+        } else if (sizel < 1024 * 1024) {
+            unit = "KB";
+            sizel = sizel / 1024;
+        } else if (sizel < 1024 * 1024 * 1024) {
+            unit = "MB";
+            sizel = sizel / 1024 / 1024;
+        }
+        return sizel + unit;
+    }
+
+    public int getYuvFPS() {
+        return yuvFPS;
+    }
+
+    public int getH264FPS() {
+        return h264FPS;
+    }
+
 }
