@@ -1,5 +1,7 @@
 package com.kedacom.demo.appcameratoh264;
 
+import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.graphics.SurfaceTexture;
 import android.media.Image;
 import android.os.Bundle;
@@ -22,6 +24,7 @@ import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.video.VideoData420;
 
 import java.nio.ByteBuffer;
+import java.text.DecimalFormat;
 
 public class MainActivity extends AppCompatActivity implements
         Camera2Helper.AfterDoListener, MediaEncoder.MediaEncoderCallback {
@@ -163,7 +166,7 @@ public class MainActivity extends AppCompatActivity implements
             camera2Helper.setOnRealFrameListener(new Camera2Helper.OnRealFrameListener() {
                 @Override
                 public void onRealFrame(Image image) {
-                    Log.d(TAG, "onRealFrame image w:" + image.getWidth() + " h:" + image.getHeight() + " time:" + image.getTimestamp());
+//                    Log.d(TAG, "onRealFrame image w:" + image.getWidth() + " h:" + image.getHeight() + " time:" + image.getTimestamp());
 
                     if (recording) {
                         long start = System.currentTimeMillis();
@@ -172,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements
                         notifyEncoder(getByte(image.getPlanes()[0].getBuffer(),
                                 image.getPlanes()[1].getBuffer(),
                                 image.getPlanes()[2].getBuffer()));
-                        Log.d(TAG, "recording time:" + (System.currentTimeMillis() - start));
+//                        Log.d(TAG, "recording time:" + (System.currentTimeMillis() - start));
 
                     }
                 }
@@ -258,10 +261,14 @@ public class MainActivity extends AppCompatActivity implements
         });
     }
 
+    byte[] cpy;
+    Message msg;
 
     private void notifyEncoder(byte[] bytes) {
-        Message msg = putEncoderHandler.obtainMessage();
-        msg.obj = bytes;
+        cpy = new byte[bytes.length];
+        System.arraycopy(bytes, 0, cpy, 0, bytes.length);
+        msg = putEncoderHandler.obtainMessage();
+        msg.obj = cpy;
         msg.sendToTarget();
     }
 
@@ -302,10 +309,19 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void receiveEncoderVideoData(byte[] videoData, int totalLength, int[] segment) {
-        Log.d(TAG, "recv h264 len:" + totalLength + " nalCount:" + segment.length);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
+//        Log.d(TAG, "recv h264 len:" + totalLength + " nalCount:" + segment.length);
+        runOnUiThread(runnable);
+    }
+
+    int count = 0;
+    int frequence = 8;
+    Runnable runnable = new Runnable() {
+        @SuppressLint("SetTextI18n")
+        @Override
+        public void run() {
+            if (count % frequence == 0) {
+                float[] memory = getMemory();
+                DecimalFormat fnum = new DecimalFormat("##0.00");
                 infoText.setText(
                         (useCameraOne ? "Camera" : "Camera2") + "\n"
                                 + (useSurfaceview ? "SurfaceView" : "TextureView") + "\n"
@@ -313,14 +329,45 @@ public class MainActivity extends AppCompatActivity implements
                                 + "putYUV:" + mediaEncoder.getPutYUVCount() + "\n"
                                 + "recvH264:" + mediaEncoder.getRecvH264Count() + "\n"
                                 + "yuvFPS:" + mediaEncoder.getYuvFPS() + "\n"
-                                + "h264FPS:" + mediaEncoder.getH264FPS());
+                                + "h264FPS:" + mediaEncoder.getH264FPS() + "\n"
+                                + "---------memory---------\n"
+                                + "max:" + fnum.format(memory[0]) + "\n"
+                                + "maxHeap:" + fnum.format(memory[3]) + "\n"
+
+                                + "malloc:" + fnum.format(memory[1]) + "\n"
+                                + "free:" + fnum.format(memory[2]));
+                if (count == frequence)
+                    count = 0;
             }
-        });
-    }
+            count++;
+        }
+    };
 
 
     @Override
     public void receiveEncoderAudioData(byte[] audioData, int size) {
 
+    }
+
+    private float[] getMemory() {
+        float ret[] = new float[4];
+        ActivityManager activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        //最大分配内存
+        int memory = activityManager.getMemoryClass();
+        System.out.println("memory: " + memory);
+        //最大分配内存获取方法2
+        float maxMemory = (float) (Runtime.getRuntime().maxMemory() * 1.0 / (1024 * 1024));
+        //当前分配的总内存
+        float totalMemory = (float) (Runtime.getRuntime().totalMemory() * 1.0 / (1024 * 1024));
+        //剩余内存
+        float freeMemory = (float) (Runtime.getRuntime().freeMemory() * 1.0 / (1024 * 1024));
+        ret[0] = maxMemory;
+        ret[1] = totalMemory;
+        ret[2] = freeMemory;
+        ret[3] = memory;
+//        System.out.println("maxMemory: "+maxMemory);
+//        System.out.println("totalMemory: "+totalMemory);
+//        System.out.println("freeMemory: "+freeMemory);
+        return ret;
     }
 }

@@ -16,7 +16,7 @@ import java.io.IOException;
  * 2018/8/2
  * description:
  */
-public class Camera1Helper implements Camera.PreviewCallback{
+public class Camera1Helper implements Camera.PreviewCallback {
     private Camera mCamera;
     private Camera.Parameters mParams;
     private int IMAGE_FORMAT = ImageFormat.NV21;
@@ -24,24 +24,28 @@ public class Camera1Helper implements Camera.PreviewCallback{
     private Context context;
     private int previewW;
     private int previewH;
-    public Camera1Helper(Context context,int previewW, int previewH) {
+
+    public Camera1Helper(Context context, int previewW, int previewH) {
         this.context = context;
         this.previewW = previewW;
         this.previewH = previewH;
     }
+
     public void openCamera(Object holder) {
         releaseCamera(); // release Camera, if not release camera before call camera, it will be locked
         mCamera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
         mParams = mCamera.getParameters();
         setCameraDisplayOrientation((Activity) context, Camera.CameraInfo.CAMERA_FACING_BACK, mCamera);
         mParams.setPreviewSize(previewW, previewH);
+//        mParams.setPreviewFpsRange();
         mParams.setPreviewFormat(IMAGE_FORMAT); // setting preview format：YV12
         mParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
         mCamera.setParameters(mParams); // setting camera parameters
+        mCamera.addCallbackBuffer(new byte[previewW * previewH * 3 >> 1]);
         try {
-            if(holder instanceof SurfaceHolder)
+            if (holder instanceof SurfaceHolder)
                 mCamera.setPreviewDisplay((SurfaceHolder) holder);
-            else if(holder instanceof SurfaceTexture)
+            else if (holder instanceof SurfaceTexture)
                 mCamera.setPreviewTexture((SurfaceTexture) holder);
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -49,6 +53,7 @@ public class Camera1Helper implements Camera.PreviewCallback{
         mCamera.setPreviewCallback(this);
         mCamera.startPreview();
     }
+
     public synchronized void releaseCamera() {
         if (mCamera != null) {
             try {
@@ -109,7 +114,7 @@ public class Camera1Helper implements Camera.PreviewCallback{
     public void onPreviewFrame(byte[] bytes, Camera camera) {
         if(onRealFrameListener != null)
             onRealFrameListener.onRealFrame(bytes);
-        camera.addCallbackBuffer(new byte[bytes.length]);
+        camera.addCallbackBuffer(bytes);
     }
 
     public void setOnRealFrameListener(OnRealFrameListener onRealFrameListener) {
@@ -117,6 +122,7 @@ public class Camera1Helper implements Camera.PreviewCallback{
     }
 
     OnRealFrameListener onRealFrameListener;
+
     public interface OnRealFrameListener {
         void onRealFrame(byte[] bytes);
     }

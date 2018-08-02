@@ -172,6 +172,7 @@ void FrameEncoder::setParams() {
 //    params.i_threads = X264_SYNC_LOOKAHEAD_AUTO;
     params.i_threads = X264_THREADS_AUTO;
 
+
     params.i_fps_num = 25;//getFps();
     params.i_fps_den = 1;
 
@@ -181,6 +182,13 @@ void FrameEncoder::setParams() {
     params.b_vfr_input = 0;
     params.i_timebase_num = params.i_fps_den;
     params.i_timebase_den = params.i_fps_num;
+
+//    params.rc.i_lookahead = 0;
+//    params.i_sync_lookahead = 0;
+//    params.i_bframe = 0;
+//    params.b_sliced_threads = 1;
+//    params.b_vfr_input = 0;
+//    params.rc.b_mb_tree = 0;
 
     // Intra refres:
     params.i_keyint_max = 25;
@@ -214,6 +222,7 @@ void FrameEncoder::setParams() {
     //可选：baseline，main，high
     //建议：不设置。除非解码环境只支持main或者baseline profile的解码。
     x264_param_apply_profile(&params, "baseline");
+
 }
 
 

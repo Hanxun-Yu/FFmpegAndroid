@@ -24,8 +24,8 @@ JNIEXPORT jint JNICALL compressYUV
 //    jbyteArray temp_i420_array = env->NewByteArray(env->GetArrayLength(src));
 //    jbyte *temp_i420_data = env->GetByteArrayElements(temp_i420_array, NULL);
 
-    jbyte *temp_i420_data = static_cast<jbyte *>(malloc(env->GetArrayLength(src)));
-    jbyte *temp_i420_data_scale = static_cast<jbyte *>(malloc(env->GetArrayLength(src)));
+//    jbyte *temp_i420_data = static_cast<jbyte *>(malloc(env->GetArrayLength(src)));
+//    jbyte *temp_i420_data_scale = static_cast<jbyte *>(malloc(env->GetArrayLength(src)));
 
 
     //nv21转化为i420(标准YUV420P数据) 这个temp_i420_data大小是和Src_data是一样的
