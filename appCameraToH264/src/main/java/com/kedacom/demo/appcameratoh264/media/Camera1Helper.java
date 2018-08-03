@@ -63,6 +63,7 @@ public class Camera1Helper implements Camera.PreviewCallback {
     }
 
     public synchronized void releaseCamera() {
+        Log.e(TAG,"releaseCamera");
         if (mCamera != null) {
             try {
                 mCamera.setPreviewCallback(null);

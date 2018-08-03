@@ -62,10 +62,39 @@
 
     </RadioGroup>
 
+    <RadioGroup
+        android:id="@+id/group3"
+        android:checkedButton="@id/portrait"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/group2"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="方向：" />
+        <RadioButton
+            android:id="@+id/portrait"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:text="竖屏" />
+
+        <RadioButton
+            android:id="@+id/landscape"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="横屏" />
+
+
+
+    </RadioGroup>
+
     <Button
         android:id="@+id/goBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/group2"
+        android:layout_below="@id/group3"
         android:text="go" />
 </RelativeLayout>

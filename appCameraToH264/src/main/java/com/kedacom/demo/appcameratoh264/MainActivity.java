@@ -2,6 +2,7 @@ package com.kedacom.demo.appcameratoh264;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
+import android.content.pm.ActivityInfo;
 import android.graphics.SurfaceTexture;
 import android.media.Image;
 import android.os.Bundle;
@@ -42,6 +43,7 @@ public class MainActivity extends AppCompatActivity implements
 
     boolean useCameraOne = false;
     boolean useSurfaceview = false;
+    boolean usePortrait = false;
     int widthIN = 1280;
     int heightIN = 720;
     int widthOUT = 1280;
@@ -57,9 +59,15 @@ public class MainActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_main);
         int camera = getIntent().getIntExtra("camera", 0);
         int render = getIntent().getIntExtra("render", 0);
-
+        int orientation = getIntent().getIntExtra("orientation", 0);
         useCameraOne = camera == 0;
         useSurfaceview = render == 0;
+        usePortrait = orientation == 0;
+
+        if(!usePortrait)
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
+
 
         init();
         initCamera();
@@ -69,7 +77,9 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if(camera2Helper != null)
         camera2Helper.onDestroyHelper();
+        mediaEncoder.stop();
     }
 
     private void init() {
@@ -194,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private void initEncoder() {
         //写死了，应该与widthin and heightin应该与camera内yuv一致
-        if(useCameraOne) {
+        if (useCameraOne) {
             if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
                 mediaEncoder.setMediaSize(heightIN, widthIN, heightOUT, widthOUT, 2048);
             } else {
@@ -217,6 +227,7 @@ public class MainActivity extends AppCompatActivity implements
         handlerThread.start();
         putEncoderHandler = new Handler(handlerThread.getLooper()) {
             VideoData420 vd420Temp;
+
             @Override
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
@@ -241,7 +252,6 @@ public class MainActivity extends AppCompatActivity implements
     public void onBackPressed() {
         super.onBackPressed();
         mediaEncoder.stop();
-        System.exit(0);
     }
 
     @Override

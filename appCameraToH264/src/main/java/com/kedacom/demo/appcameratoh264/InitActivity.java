@@ -27,6 +27,7 @@ public class InitActivity extends AppCompatActivity {
 
     int camera = 0;
     int render = 0;
+    int orientation = 0;
     private void init() {
         setContentView(R.layout.activity_init);
         ((RadioGroup)findViewById(R.id.group1)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
@@ -57,6 +58,21 @@ public class InitActivity extends AppCompatActivity {
                 }
             }
         });
+
+        ((RadioGroup)findViewById(R.id.group3)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup radioGroup, int i) {
+                Log.d("_xunxun","group3:"+i);
+                switch (i) {
+                    case R.id.portrait:
+                        orientation = 0;
+                        break;
+                    case R.id.landscape:
+                        orientation = 1;
+                        break;
+                }
+            }
+        });
         findViewById(R.id.goBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -71,9 +87,8 @@ public class InitActivity extends AppCompatActivity {
         Intent intent = new Intent(this,MainActivity.class);
         intent.putExtra("camera",camera);
         intent.putExtra("render",render);
-
+        intent.putExtra("orientation",orientation);
         startActivity(intent);
-        finish();
     }
 
     final int REQUEST_CODE = 99;

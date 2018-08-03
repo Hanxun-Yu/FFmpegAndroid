@@ -5,17 +5,24 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <com.kedacom.demo.appcameratoh264.AutoFitTextureView
-        android:id="@+id/textureview"
-        android:layout_centerInParent="true"
-        android:layout_width="180dp"
-        android:layout_height="320dp" />
+    <RelativeLayout
+        android:layout_height="480dp"
+        android:layout_width="270dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true">
 
-    <SurfaceView
-        android:id="@+id/surfaceview"
-        android:layout_centerInParent="true"
-        android:layout_width="180dp"
-        android:layout_height="320dp" />
+        <com.kedacom.demo.appcameratoh264.AutoFitTextureView
+            android:id="@+id/textureview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+             />
+
+        <SurfaceView
+            android:id="@+id/surfaceview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            />
+    </RelativeLayout>
 
     <Button
         android:id="@+id/recordBtn"
@@ -31,13 +38,12 @@
         android:text="stop" />
 
     <TextView
-        android:layout_below="@id/recordBtn"
         android:id="@+id/infoText"
-        android:background="@android:color/background_dark"
-        android:textColor="@android:color/holo_green_light"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
+        android:layout_height="wrap_content"
+        android:layout_below="@id/recordBtn"
+        android:background="@android:color/background_dark"
+        android:textColor="@android:color/holo_green_light" />
 
 
 </RelativeLayout>
