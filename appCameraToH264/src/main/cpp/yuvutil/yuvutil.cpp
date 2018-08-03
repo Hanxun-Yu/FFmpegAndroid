@@ -13,6 +13,7 @@ void nv21ToI420(jbyte *src_nv21_data, jint width, jint height, jbyte *src_i420_d
 
 void scaleI420(jbyte *src_i420_data, jint width, jint height, jbyte *dst_i420_data, jint dst_width,
                jint dst_height, jint mode);
+void rotateI420(jbyte *src_i420_data, jint width, jint height, jbyte *dst_i420_data, jint degree);
 
 JNIEXPORT jint JNICALL compressYUV
         (JNIEnv *env, jclass clazz, jbyteArray src, jint width, jint height,
@@ -42,7 +43,18 @@ JNIEXPORT jint JNICALL compressYUV
 //        //进行旋转的操作
 //        rotateI420(temp_i420_data_scale, dst_width, dst_height, Dst_data, degree);
 //    }
-    nv21ToI420(Src_data, width, height, Dst_data);
+
+    jbyte *temp_i420_data = (jbyte *) malloc(sizeof(jbyte) * dst_width * dst_height * 3 / 2);
+
+
+    if(degree != 0) {
+        nv21ToI420(Src_data, width, height, temp_i420_data);
+        rotateI420(temp_i420_data, dst_width, dst_height, Dst_data, degree);
+    } else {
+        nv21ToI420(Src_data, width, height, Dst_data);
+    }
+
+    free(temp_i420_data);
     env->ReleaseByteArrayElements(dst, Dst_data, 0);
     env->ReleaseByteArrayElements(src, Src_data, 0);
     return 0;
@@ -113,6 +125,31 @@ void scaleI420(jbyte *src_i420_data, jint width, jint height, jbyte *dst_i420_da
                       (uint8 *) dst_i420_v_data, dst_width >> 1,
                       dst_width, dst_height,
                       (libyuv::FilterMode) mode);
+}
+
+void rotateI420(jbyte *src_i420_data, jint width, jint height, jbyte *dst_i420_data, jint degree) {
+    jint src_i420_y_size = width * height;
+    jint src_i420_u_size = (width >> 1) * (height >> 1);
+
+    jbyte *src_i420_y_data = src_i420_data;
+    jbyte *src_i420_u_data = src_i420_data + src_i420_y_size;
+    jbyte *src_i420_v_data = src_i420_data + src_i420_y_size + src_i420_u_size;
+
+    jbyte *dst_i420_y_data = dst_i420_data;
+    jbyte *dst_i420_u_data = dst_i420_data + src_i420_y_size;
+    jbyte *dst_i420_v_data = dst_i420_data + src_i420_y_size + src_i420_u_size;
+
+    //要注意这里的width和height在旋转之后是相反的
+    if (degree == libyuv::kRotate90 || degree == libyuv::kRotate270) {
+        libyuv::I420Rotate((const uint8 *) src_i420_y_data, width,
+                           (const uint8 *) src_i420_u_data, width >> 1,
+                           (const uint8 *) src_i420_v_data, width >> 1,
+                           (uint8 *) dst_i420_y_data, height,
+                           (uint8 *) dst_i420_u_data, height >> 1,
+                           (uint8 *) dst_i420_v_data, height >> 1,
+                           width, height,
+                           (libyuv::RotationMode) degree);
+    }
 }
 
 

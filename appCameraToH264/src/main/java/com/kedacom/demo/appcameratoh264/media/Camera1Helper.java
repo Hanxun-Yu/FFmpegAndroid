@@ -6,6 +6,7 @@ import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.media.Image;
+import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
@@ -24,24 +25,31 @@ public class Camera1Helper implements Camera.PreviewCallback {
     private Context context;
     private int previewW;
     private int previewH;
+    private int yuvOutW;
+    private int yuvOutH;
 
-    public Camera1Helper(Context context, int previewW, int previewH) {
+    String TAG = "Camera1Helper_xunxun";
+    public Camera1Helper(Context context, int previewW,int previewH) {
         this.context = context;
         this.previewW = previewW;
         this.previewH = previewH;
+        this.yuvOutW = previewW;
+        this.yuvOutH = previewH;
+
     }
 
     public void openCamera(Object holder) {
         releaseCamera(); // release Camera, if not release camera before call camera, it will be locked
         mCamera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
         mParams = mCamera.getParameters();
+
         setCameraDisplayOrientation((Activity) context, Camera.CameraInfo.CAMERA_FACING_BACK, mCamera);
         mParams.setPreviewSize(previewW, previewH);
 //        mParams.setPreviewFpsRange();
         mParams.setPreviewFormat(IMAGE_FORMAT); // setting preview format：YV12
         mParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
         mCamera.setParameters(mParams); // setting camera parameters
-        mCamera.addCallbackBuffer(new byte[previewW * previewH * 3 >> 1]);
+        mCamera.addCallbackBuffer(new byte[yuvOutW * yuvOutH * 3 >> 1]);
         try {
             if (holder instanceof SurfaceHolder)
                 mCamera.setPreviewDisplay((SurfaceHolder) holder);
@@ -100,6 +108,7 @@ public class Camera1Helper implements Camera.PreviewCallback {
                 degrees = 270;
                 break;
         }
+        Log.d(TAG,"degree:"+degrees);
         int displayDegree;
         if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
             displayDegree = (info.orientation + degrees) % 360;
@@ -107,7 +116,13 @@ public class Camera1Helper implements Camera.PreviewCallback {
         } else {
             displayDegree = (info.orientation - degrees + 360) % 360;
         }
+        Log.d(TAG,"displayDegree:"+displayDegree);
+        this.displayDegree = displayDegree;
         camera.setDisplayOrientation(displayDegree);
+    }
+    int displayDegree;
+    public int getDisplayOrientation() {
+        return displayDegree;
     }
 
     @Override

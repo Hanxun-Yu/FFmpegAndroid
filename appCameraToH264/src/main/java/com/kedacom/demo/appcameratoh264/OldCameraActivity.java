@@ -82,7 +82,7 @@ public class OldCameraActivity extends Activity implements SurfaceHolder.Callbac
                         yuv420p, 1280, 720, 0, 0, false);
 
 
-                vd420Temp = new VideoData420(yuv420p, 1280, 720);
+                vd420Temp = new VideoData420(yuv420p, 1280, 720,System.currentTimeMillis());
                 mediaEncoder.putVideoData(vd420Temp);
             }
         };

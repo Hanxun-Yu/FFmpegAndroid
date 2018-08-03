@@ -46,6 +46,10 @@ public class MainActivity extends AppCompatActivity implements
     int heightIN = 720;
     int widthOUT = 1280;
     int heightOUT = 720;
+//    int widthIN = 720;
+//    int heightIN = 1280;
+//    int widthOUT = 720;
+//    int heightOUT = 1280;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +63,6 @@ public class MainActivity extends AppCompatActivity implements
 
         init();
         initCamera();
-        initEncoder();
     }
 
 
@@ -120,7 +123,7 @@ public class MainActivity extends AppCompatActivity implements
                     @Override
                     public void surfaceCreated(SurfaceHolder surfaceHolder) {
                         camera1Helper.openCamera(surfaceHolder);
-
+                        initEncoder();
                     }
 
                     @Override
@@ -138,6 +141,7 @@ public class MainActivity extends AppCompatActivity implements
                     @Override
                     public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
                         camera1Helper.openCamera(surfaceTexture);
+                        initEncoder();
                     }
 
                     @Override
@@ -183,12 +187,22 @@ public class MainActivity extends AppCompatActivity implements
             camera2Helper.setRealTimeFrameSize(widthIN, heightIN);
             camera2Helper.startCameraPreView();
             camera2Helper.setAfterDoListener(this);
+            initEncoder();
+
         }
     }
 
     private void initEncoder() {
         //写死了，应该与widthin and heightin应该与camera内yuv一致
-        mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, 2048);
+        if(useCameraOne) {
+            if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
+                mediaEncoder.setMediaSize(heightIN, widthIN, heightOUT, widthOUT, 2048);
+            } else {
+                mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, 2048);
+            }
+        } else {
+            mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, 2048);
+        }
         mediaEncoder.setsMediaEncoderCallback(this);
         mediaEncoder.startVideoEncode();
         initEncoderThread();
@@ -203,7 +217,6 @@ public class MainActivity extends AppCompatActivity implements
         handlerThread.start();
         putEncoderHandler = new Handler(handlerThread.getLooper()) {
             VideoData420 vd420Temp;
-
             @Override
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
@@ -211,13 +224,13 @@ public class MainActivity extends AppCompatActivity implements
                     //收到NV21
                     byte[] yuv420sp = (byte[]) msg.obj;
                     byte[] yuv420p = new byte[yuv420sp.length];
-                    YuvUtil.compressYUV(yuv420sp, 1280, 720,
-                            yuv420p, 1280, 720, 0, 0, false);
-                    vd420Temp = new VideoData420(yuv420p, 1280, 720);
+                    YuvUtil.compressYUV(yuv420sp, widthIN, heightIN,
+                            yuv420p, widthOUT, heightOUT, 0, camera1Helper.getDisplayOrientation(), false);
+                    vd420Temp = new VideoData420(yuv420p, widthOUT, heightOUT, System.currentTimeMillis());
                     mediaEncoder.putVideoData(vd420Temp);
                 } else {
                     //收到420p
-                    vd420Temp = new VideoData420((byte[]) msg.obj, 1280, 720);
+                    vd420Temp = new VideoData420((byte[]) msg.obj, widthOUT, heightOUT, System.currentTimeMillis());
                     mediaEncoder.putVideoData(vd420Temp);
                 }
             }

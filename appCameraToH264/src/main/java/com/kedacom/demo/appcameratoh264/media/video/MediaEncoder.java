@@ -1,6 +1,8 @@
 package com.kedacom.demo.appcameratoh264.media.video;
 
 
+import android.util.Log;
+
 import com.kedacom.demo.appcameratoh264.jni.FFmpegjni;
 import com.kedacom.demo.appcameratoh264.media.FileManager;
 import com.kedacom.demo.appcameratoh264.media.audio.AudioData;
@@ -11,7 +13,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * 编码类MediaEncoder，主要是把视频流YUV420P格式编码为h264格式,把PCM裸音频转化为AAC格式
  */
 public class MediaEncoder {
-    private static final String TAG = "MediaEncoder";
+    private static final String TAG = "MediaEncoder_xunxun";
 
     private Thread videoEncoderThread, audioEncoderThread;
     private boolean videoEncoderLoop, audioEncoderLoop;
@@ -76,14 +78,68 @@ public class MediaEncoder {
         saveFileForTest();
     }
 
+    private long firstInputTime = 0;
+
     //摄像头的YUV420P数据，put到队列中，生产者模型
+    VideoData420 lastPuttedVideoData;
+
     public void putVideoData(VideoData420 videoData) {
+        if (firstInputTime == 0)
+            firstInputTime = System.currentTimeMillis();
         putYUVCount++;
+
+        if(checkInsertVideo(videoData))
+            doPutVideoData(videoData);
+    }
+
+    private void doPutVideoData(VideoData420 videoData) {
         try {
             videoQueue.put(videoData);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        lastPuttedVideoData = videoData;
+    }
+
+    int fpsOffset;//累计帧间隔偏差
+    int normalInterval = 1000 / 25;//根据帧率算出正常帧间隔
+
+    /**
+     * 因为编码器固定帧率为25帧，采集帧率慢，导致播放速度过快，采集快则反之
+     * 根据采集速度来判断，是需要补帧，还是需要丢帧
+     * @param videoData
+     * @return
+     */
+    private boolean checkInsertVideo(VideoData420 videoData) {
+        if(lastPuttedVideoData == null)
+            return true;
+        //当前帧与上一帧间隔
+        int interval = (int) (videoData.timestamp - lastPuttedVideoData.timestamp);
+        //间隔与正常间隔差
+        int diff = interval - normalInterval;
+        fpsOffset += diff;
+
+
+        boolean ret = true;
+        if (fpsOffset > 0) {
+            //采集慢,可能需要插帧
+            while (Math.abs(fpsOffset) >= normalInterval) {
+                //间隔差累计到一帧间隔，插帧
+                VideoData420 insertVideo = new VideoData420(lastPuttedVideoData.videoData,
+                        lastPuttedVideoData.width, lastPuttedVideoData.height, lastPuttedVideoData.timestamp + normalInterval);
+                doPutVideoData(insertVideo);
+                fpsOffset -= normalInterval;
+            }
+        } else {
+            //采集快,需要丢帧
+            if (Math.abs(fpsOffset) >= normalInterval) {
+                //间隔差累计到一帧间隔，丢
+                fpsOffset += normalInterval;
+                ret = false;
+            }
+        }
+
+        return ret;
     }
 
     //麦克风PCM音频数据，put到队列中，生产者模型
@@ -119,6 +175,9 @@ public class MediaEncoder {
             int totalLength;
             int numNals;
             VideoData420 videoData;
+
+            long lastFrameTimestamp = 0;
+
             @Override
             public void run() {
                 //视频消费者模型，不断从队列中取出视频流来进行h264编码
@@ -126,10 +185,24 @@ public class MediaEncoder {
                     try {
                         //队列中取视频数据
                         videoData = videoQueue.take();
-                        fps++;
 //                        byte[] outbuffer = new byte[videoData.width * videoData.height];
                         outbuffer = new byte[videoData.videoData.length];
                         buffLength = new int[20];
+
+                        //计算pts
+//                        if (lastFrameTimestamp == 0) {
+//                            fps++;
+//                        } else {
+//                            long interval = videoData.timestamp - lastFrameTimestamp;
+////                            int fps_unit = (int) ((interval / 1000d) * 25);
+//                            int fps_unit = (int) interval;
+//                            fps += fps_unit;
+//                            Log.d(TAG, "interval:" + interval + " fps_increment:" + fps_unit + " pts:" + fps);
+//                        }
+//                        lastFrameTimestamp = videoData.timestamp;
+
+                        fps++;
+
                         //对YUV420P进行h264编码，返回一个数据大小，里面是编码出来的h264数据
                         numNals = ffmpegjni.encoderVideoEncode(videoData.videoData, videoData.videoData.length, fps, outbuffer, buffLength);
                         //Log.e("RiemannLee", "data.length " +  videoData.videoData.length + " h264 encode length " + buffLength[0]);
@@ -144,7 +217,7 @@ public class MediaEncoder {
                             //编码后的h264数据
                             encodeData = new byte[totalLength];
                             System.arraycopy(outbuffer, 0, encodeData, 0, encodeData.length);
-                            h264TotalSize+=encodeData.length;
+                            h264TotalSize += encodeData.length;
                             recvH264Count++;
                             if (sMediaEncoderCallback != null) {
                                 sMediaEncoderCallback.receiveEncoderVideoData(encodeData, encodeData.length, segment);
@@ -154,7 +227,6 @@ public class MediaEncoder {
                                 videoFileManager.saveFileData(encodeData);
                             }
                         }
-                        System.gc();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                         break;

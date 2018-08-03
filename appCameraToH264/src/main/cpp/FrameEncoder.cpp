@@ -173,15 +173,19 @@ void FrameEncoder::setParams() {
     params.i_threads = X264_THREADS_AUTO;
 
 
-    params.i_fps_num = 25;//getFps();
-    params.i_fps_den = 1;
+
 
     // B frames 两个相关图像间B帧的数目 */
     params.i_bframe = 5;//getBFrameFrq();
     params.b_sliced_threads = true;
     params.b_vfr_input = 0;
+
+    params.i_fps_num = 25;//getFps();
+    params.i_fps_den = 1;
     params.i_timebase_num = params.i_fps_den;
     params.i_timebase_den = params.i_fps_num;
+//    params.i_timebase_num = 1;
+//    params.i_timebase_den = 1000;
 
 //    params.rc.i_lookahead = 0;
 //    params.i_sync_lookahead = 0;
