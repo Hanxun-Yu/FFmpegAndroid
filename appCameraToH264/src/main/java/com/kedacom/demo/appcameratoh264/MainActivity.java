@@ -24,6 +24,8 @@ import com.kedacom.demo.appcameratoh264.media.Camera1Helper;
 import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.video.VideoData420;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 
@@ -52,6 +54,8 @@ public class MainActivity extends AppCompatActivity implements
 //    int heightIN = 1280;
 //    int widthOUT = 720;
 //    int heightOUT = 1280;
+
+    int videoBitrate = 2048;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,7 +108,11 @@ public class MainActivity extends AppCompatActivity implements
             public void onClick(View view) {
 //                camera2Helper.takePicture();
 //                camera2Helper.startCallbackFrame();
-                recording = true;
+                if (mediaEncoder.start()) {
+                    recording = true;
+                } else {
+                    Toast.makeText(MainActivity.this,"MediaEncoder launch failer!",Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -112,6 +120,7 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onClick(View view) {
                 recording = false;
+                mediaEncoder.stop();
 //                camera2Helper.stopCallbackFrame();
             }
         });
@@ -206,15 +215,14 @@ public class MainActivity extends AppCompatActivity implements
         //写死了，应该与widthin and heightin应该与camera内yuv一致
         if (useCameraOne) {
             if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
-                mediaEncoder.setMediaSize(heightIN, widthIN, heightOUT, widthOUT, 2048);
+                mediaEncoder.setMediaSize(heightIN, widthIN, heightOUT, widthOUT, videoBitrate);
             } else {
-                mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, 2048);
+                mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, videoBitrate);
             }
         } else {
-            mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, 2048);
+            mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, videoBitrate);
         }
         mediaEncoder.setsMediaEncoderCallback(this);
-        mediaEncoder.startVideoEncode();
         initEncoderThread();
     }
 
@@ -287,11 +295,18 @@ public class MainActivity extends AppCompatActivity implements
     byte[] cpy;
     Message msg;
 
+    ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
     private void notifyEncoder(byte[] bytes) {
-        cpy = new byte[bytes.length];
-        System.arraycopy(bytes, 0, cpy, 0, bytes.length);
+        byteOut.reset();
+        try {
+            byteOut.write(bytes);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+//        cpy = new byte[bytes.length];
+//        System.arraycopy(bytes, 0, cpy, 0, bytes.length);
         msg = putEncoderHandler.obtainMessage();
-        msg.obj = cpy;
+        msg.obj = byteOut.toByteArray();
         msg.sendToTarget();
     }
 
@@ -334,6 +349,7 @@ public class MainActivity extends AppCompatActivity implements
     public void receiveEncoderVideoData(byte[] videoData, int totalLength, int[] segment) {
 //        Log.d(TAG, "recv h264 len:" + totalLength + " nalCount:" + segment.length);
         runOnUiThread(runnable);
+        System.gc();
     }
 
     int count = 0;
@@ -353,6 +369,7 @@ public class MainActivity extends AppCompatActivity implements
                                 + "recvH264:" + mediaEncoder.getRecvH264Count() + "\n"
                                 + "yuvFPS:" + mediaEncoder.getYuvFPS() + "\n"
                                 + "h264FPS:" + mediaEncoder.getH264FPS() + "\n"
+                                + "encoderQueue:"+mediaEncoder.getWaitEncodedQueueSize()+"\n"
                                 + "---------memory---------\n"
                                 + "max:" + fnum.format(memory[0]) + "\n"
                                 + "maxHeap:" + fnum.format(memory[3]) + "\n"

@@ -161,7 +161,7 @@ void VideoEncoder::setParams() {
     //可选：film, animation, grain, stillimage, psnr, ssim, fastdecode, zerolatency and touhou.
     //建议：根据输入选择。如果没有合适的就不要指定。
     //后来发现设置x264_param_default_preset(&param, "fast" , "zerolatency" );后就能即时编码了
-    x264_param_default_preset(&params, "veryfast", "zerolatency");
+    x264_param_default_preset(&params, "ultrafast", "zerolatency");
 
     //I帧间隔
     params.i_csp = X264_CSP_I420;
@@ -177,6 +177,7 @@ void VideoEncoder::setParams() {
 
     // B frames 两个相关图像间B帧的数目 */
     params.i_bframe = 5;//getBFrameFrq();
+//    params.i_bframe = 0;//尝试降低cpu计算
     params.b_sliced_threads = true;
     params.b_vfr_input = 0;
 
@@ -201,7 +202,13 @@ void VideoEncoder::setParams() {
 
     //参数i_rc_method表示码率控制，CQP(恒定质量)，CRF(恒定码率)，ABR(平均码率)
     //恒定码率，会尽量控制在固定码率
-    params.rc.i_rc_method = X264_RC_CRF;
+//    params.rc.i_rc_method = X264_RC_CRF;
+
+    //平均码率--------------------------
+    params.rc.i_rc_method = X264_RC_ABR;
+    params.rc.i_vbv_buffer_size = static_cast<int>(getBitrate() * 1.5);
+    //平均码率--------------------------
+
     //图像质量控制,rc.f_rf_constant是实际质量，越大图像越花，越小越清晰
     //param.rc.f_rf_constant_max ，图像质量的最大值
     params.rc.f_rf_constant = 25;
@@ -209,9 +216,10 @@ void VideoEncoder::setParams() {
 
     // For streaming:
     //* 码率(比特率,单位Kbps)x264使用的bitrate需要/1000
-    params.rc.i_bitrate = getBitrate() / 1000;
+    params.rc.i_bitrate = getBitrate();
+    LOGD("params.rc.i_bitrate:%d",params.rc.i_bitrate);
     //瞬时最大码率,平均码率模式下，最大瞬时码率，默认0(与-B设置相同)
-    params.rc.i_vbv_max_bitrate = getBitrate() / 1000 * 1.2;
+    params.rc.i_vbv_max_bitrate = getBitrate() * 1.2;
     params.b_annexb = 1;
     //是否把SPS和PPS放入每一个关键帧
     //SPS Sequence Parameter Set 序列参数集，PPS Picture Parameter Set 图像参数集

@@ -1,8 +1,11 @@
 package com.kedacom.demo.appcameratoh264.media.video;
 
 
+import android.renderscript.RenderScript;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.kedacom.demo.appcameratoh264.MainActivity;
 import com.kedacom.demo.appcameratoh264.jni.FFmpegjni;
 import com.kedacom.demo.appcameratoh264.media.FileManager;
 import com.kedacom.demo.appcameratoh264.media.audio.AudioData;
@@ -31,7 +34,7 @@ public class MediaEncoder {
 
     private MediaEncoderCallback sMediaEncoderCallback;
 
-    FFmpegjni ffmpegjni = new FFmpegjni();
+    FFmpegjni ffmpegjni;
 
     public interface MediaEncoderCallback {
         /**
@@ -62,20 +65,46 @@ public class MediaEncoder {
 
     int bitrate_kbps = 0;
 
+    int widthIn;
+    int heightIn;
+    int widthOut;
+    int heightOut;
     public void setMediaSize(int widthIn, int heightIn, int widthOut, int heightOut, int bitrate_kbps) {
-        ffmpegjni.encoderVideoinit(widthIn, heightIn, widthOut, heightOut, bitrate_kbps);
         this.bitrate_kbps = bitrate_kbps;
+        this.widthIn = widthIn;
+        this.heightIn = heightIn;
+        this.widthOut = widthOut;
+        this.heightOut =heightOut;
     }
 
-    public void start() {
+    public synchronized boolean start() {
 //        startAudioEncode();
+        if (ffmpegjni != null) {
+            return false;
+        }
+        ffmpegjni = new FFmpegjni();
+        ffmpegjni.encoderVideoinit(widthIn, heightIn, widthOut, heightOut, bitrate_kbps);
+
+        if (SAVE_FILE_FOR_TEST) {
+            videoFileManager.openFile();
+        }
         startVideoEncode();
+        isStop = false;
+        return true;
     }
 
-    public void stop() {
+    boolean isStop = true;
+    public synchronized void stop() {
+        isStop = true;
+        lastFPSCheckTime = 0;
+        lastPuttedVideoData = null;
         stopAudioEncode();
         stopVideoEncode();
         saveFileForTest();
+    }
+
+    public void release() {
+
     }
 
     private long firstInputTime = 0;
@@ -83,22 +112,27 @@ public class MediaEncoder {
     //摄像头的YUV420P数据，put到队列中，生产者模型
     VideoData420 lastPuttedVideoData;
 
-    public void putVideoData(VideoData420 videoData) {
+    public synchronized void putVideoData(VideoData420 videoData) {
+        if(isStop)
+            return;
+
         if (firstInputTime == 0)
             firstInputTime = System.currentTimeMillis();
-        putYUVCount++;
 
-        if(checkInsertVideo(videoData))
+        if (checkInsertVideo(videoData))
             doPutVideoData(videoData);
     }
 
     private void doPutVideoData(VideoData420 videoData) {
+//        Log.d(TAG,"videoQueue.size():"+videoQueue.size());
+        Log.d(TAG, "doPutVideoData videoQueue size:"+videoQueue.size());
         try {
+            putYUVCount++;
             videoQueue.put(videoData);
+            lastPuttedVideoData = videoData;
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        lastPuttedVideoData = videoData;
     }
 
     int fpsOffset;//累计帧间隔偏差
@@ -107,19 +141,19 @@ public class MediaEncoder {
     /**
      * 因为编码器固定帧率为25帧，采集帧率慢，导致播放速度过快，采集快则反之
      * 根据采集速度来判断，是需要补帧，还是需要丢帧
+     *
      * @param videoData
      * @return
      */
     private boolean checkInsertVideo(VideoData420 videoData) {
-        if(lastPuttedVideoData == null)
+        if (lastPuttedVideoData == null)
             return true;
         //当前帧与上一帧间隔
         int interval = (int) (videoData.timestamp - lastPuttedVideoData.timestamp);
         //间隔与正常间隔差
-        int diff = interval - normalInterval;
-        fpsOffset += diff;
+        fpsOffset += interval - normalInterval;
 
-
+//        Log.d(TAG,"fpsOffset:"+fpsOffset);
         boolean ret = true;
         if (fpsOffset > 0) {
             //采集慢,可能需要插帧
@@ -129,6 +163,7 @@ public class MediaEncoder {
                         lastPuttedVideoData.width, lastPuttedVideoData.height, lastPuttedVideoData.timestamp + normalInterval);
                 doPutVideoData(insertVideo);
                 fpsOffset -= normalInterval;
+                Log.d(TAG, "++insert_video_fpsOffset:" + fpsOffset);
             }
         } else {
             //采集快,需要丢帧
@@ -136,9 +171,9 @@ public class MediaEncoder {
                 //间隔差累计到一帧间隔，丢
                 fpsOffset += normalInterval;
                 ret = false;
+                Log.d(TAG, "--skip_video fpsOffset:" + fpsOffset);
             }
         }
-
         return ret;
     }
 
@@ -176,13 +211,14 @@ public class MediaEncoder {
             int numNals;
             VideoData420 videoData;
 
-            long lastFrameTimestamp = 0;
-
             @Override
             public void run() {
+                long start = 0;
+                long end = 0;
                 //视频消费者模型，不断从队列中取出视频流来进行h264编码
                 while (videoEncoderLoop && !Thread.interrupted()) {
                     try {
+                        start = System.currentTimeMillis();
                         //队列中取视频数据
                         videoData = videoQueue.take();
 //                        byte[] outbuffer = new byte[videoData.width * videoData.height];
@@ -227,15 +263,24 @@ public class MediaEncoder {
                                 videoFileManager.saveFileData(encodeData);
                             }
                         }
+
+                        end = System.currentTimeMillis();
+//                        Log.d(TAG, "encodeTime:" + (end - start));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                         break;
                     }
                     refreshFPS();
+                    System.gc();
+                }
+                if (ffmpegjni != null) {
+                    ffmpegjni.release();
+                    ffmpegjni = null;
                 }
 
             }
         };
+        videoEncoderThread.setPriority(10);
         videoEncoderLoop = true;
         videoEncoderThread.start();
     }
@@ -297,7 +342,7 @@ public class MediaEncoder {
     private void saveFileForTest() {
         if (SAVE_FILE_FOR_TEST) {
             videoFileManager.closeFile();
-            audioFileManager.closeFile();
+//            audioFileManager.closeFile();
         }
     }
 
@@ -341,6 +386,10 @@ public class MediaEncoder {
                 checkFPSH264Start = 0;
             }
         }
+    }
+
+    public int getWaitEncodedQueueSize() {
+        return videoQueue.size();
     }
 
     public String getEncodedSize() {
