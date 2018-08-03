@@ -3,9 +3,9 @@
 #include <string>
 #include <include/Jnicom.h>
 #include <malloc.h>
-#include "FrameEncoder.h"
+#include "VideoEncoder.h"
 
-FrameEncoder* frameEncoder;
+VideoEncoder* frameEncoder;
 extern "C" {
 
 }
@@ -31,7 +31,7 @@ JNIEXPORT jint JNICALL release
 
 JNIEXPORT jint JNICALL encoderVideoinit
         (JNIEnv *env, jclass clazz, jint in_width, jint in_height, jint out_width, jint out_height,jint bitrate) {
-    frameEncoder = new FrameEncoder();
+    frameEncoder = new VideoEncoder();
     frameEncoder->setInWidth(in_width);
     frameEncoder->setInHeight(in_height);
     frameEncoder->setOutWidth(out_width);
