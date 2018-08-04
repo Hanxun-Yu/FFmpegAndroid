@@ -5,24 +5,36 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <RelativeLayout
-        android:layout_height="240dp"
-        android:layout_width="135dp"
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true">
+        android:orientation="horizontal">
 
-        <com.kedacom.demo.appcameratoh264.AutoFitTextureView
-            android:id="@+id/textureview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-             />
-
-        <SurfaceView
-            android:id="@+id/surfaceview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+        <com.maxproj.simplewaveform.SimpleWaveform
+            android:id="@+id/simplewaveform"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="240dp"
             />
-    </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="135dp"
+            android:layout_height="240dp">
+
+            <com.kedacom.demo.appcameratoh264.AutoFitTextureView
+                android:id="@+id/textureview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <SurfaceView
+                android:id="@+id/surfaceview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </RelativeLayout>
+
+
+    </LinearLayout>
 
     <Button
         android:id="@+id/recordBtn"

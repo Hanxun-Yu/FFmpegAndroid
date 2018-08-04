@@ -3,6 +3,10 @@ package com.kedacom.demo.appcameratoh264;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.pm.ActivityInfo;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
 import android.graphics.SurfaceTexture;
 import android.media.Image;
 import android.os.Bundle;
@@ -11,6 +15,7 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
@@ -25,11 +30,14 @@ import com.kedacom.demo.appcameratoh264.media.audio.AudioData;
 import com.kedacom.demo.appcameratoh264.media.audio.AudioRecoderManager;
 import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.video.VideoData420;
+import com.maxproj.simplewaveform.SimpleWaveform;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
+import java.util.LinkedList;
+import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements
         MediaEncoder.MediaEncoderCallback {
@@ -60,6 +68,7 @@ public class MainActivity extends AppCompatActivity implements
     int videoBitrate = 2048;
     private AudioRecoderManager audioGathererManager;
 
+    private SimpleWaveform simpleWaveform;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,6 +87,7 @@ public class MainActivity extends AppCompatActivity implements
         init();
         initCamera();
         initMicroPhone();
+        initSimpleWaveform();
     }
 
 
@@ -85,7 +95,7 @@ public class MainActivity extends AppCompatActivity implements
         mediaEncoder = new MediaEncoder();
         textureView = findViewById(R.id.textureview);
         surfaceView = findViewById(R.id.surfaceview);
-
+        simpleWaveform = findViewById(R.id.simplewaveform);
         if (useSurfaceview) {
             textureView.setVisibility(View.GONE);
         } else {
@@ -409,6 +419,7 @@ public class MainActivity extends AppCompatActivity implements
                 Log.d(TAG, "audio_right 1:" + Integer.toHexString(u_right1)
                         + " 2:" + Integer.toHexString(u_right2)
                         + " 1&2:" + Integer.toHexString(right) + " dex:" + right);
+                notigyWaveView(left);
             }
 //            Log.d(TAG, "audioData:" + size);
         }
@@ -490,4 +501,100 @@ public class MainActivity extends AppCompatActivity implements
         audioGathererManager.stopAudioIn();
     }
 
+    LinkedList<Integer> ampList = new LinkedList<>();
+
+    private void notigyWaveView(final short val) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ampList.add((int) val);
+                simpleWaveform.refresh();
+            }
+        });
+
+    }
+    private void initSimpleWaveform() {
+        //restore default setting, you can omit all following setting and goto the final refresh() show
+        simpleWaveform.init();
+
+        //generate random data
+        Random ra =new Random();
+//        for (int i = 0; i < 80; i++) {
+//            ampList.add(ra.nextInt( 50));
+//        }
+        simpleWaveform.setDataList(ampList);//input data to show
+
+        //define bar gap
+        simpleWaveform.barGap = 30;
+
+        //define x-axis direction
+        simpleWaveform.modeDirection = SimpleWaveform.MODE_DIRECTION_LEFT_RIGHT;
+
+        //define if draw opposite pole when show bars
+        simpleWaveform.modeAmp = SimpleWaveform.MODE_AMP_ABSOLUTE;
+        //define if the unit is px or percent of the view's height
+        simpleWaveform.modeHeight = SimpleWaveform.MODE_HEIGHT_PERCENT;
+        //define where is the x-axis in y-axis
+        simpleWaveform.modeZero = SimpleWaveform.MODE_ZERO_CENTER;
+        //if show bars?
+        simpleWaveform.showBar = true;
+
+        //define how to show peaks outline
+        simpleWaveform.modePeak = SimpleWaveform.MODE_PEAK_PARALLEL;
+        //if show peaks outline?
+        simpleWaveform.showPeak = true;
+
+        //show x-axis
+        simpleWaveform.showXAxis = true;
+        Paint xAxisPencil = new Paint();
+        xAxisPencil.setStrokeWidth(1);
+        xAxisPencil.setColor(0x88ffffff);//the first 0x88 is transparency, the next 0xffffff is color
+        simpleWaveform.xAxisPencil = xAxisPencil;
+
+
+        Paint barPencilFirst = new Paint();
+        //define pencil to draw bar
+        barPencilFirst.setStrokeWidth(15);
+        barPencilFirst.setColor(0xff1dcf0f);
+        simpleWaveform.barPencilFirst = barPencilFirst;
+
+
+        Paint barPencilSecond = new Paint();
+        barPencilSecond.setStrokeWidth(15);
+        barPencilSecond.setColor(0xff1dcfcf);
+        simpleWaveform.barPencilSecond = barPencilSecond;
+
+        //define pencil to draw peaks outline
+        Paint peakPencilFirst = new Paint();
+        peakPencilFirst.setStrokeWidth(5);
+        peakPencilFirst.setColor(0xfffe2f3f);
+        simpleWaveform.peakPencilFirst = peakPencilFirst;
+
+        Paint peakPencilSecond = new Paint();
+        peakPencilSecond.setStrokeWidth(5);
+        peakPencilSecond.setColor(0xfffeef3f);
+        simpleWaveform.peakPencilSecond = peakPencilSecond;
+
+        //the first part will be draw by PencilFirst
+        simpleWaveform.firstPartNum = 20;//first 20 bars will be draw by first pencil
+
+        //define how to clear screen
+        simpleWaveform.clearScreenListener = new SimpleWaveform.ClearScreenListener() {
+            @Override
+            public void clearScreen(Canvas canvas) {
+                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+            }
+        };
+        // set touch listener
+        simpleWaveform.progressTouch = new SimpleWaveform.ProgressTouch() {
+            @Override
+            public void progressTouch(int progress, MotionEvent event) {
+                Log.d("", "you touch at: " + progress);
+                simpleWaveform.firstPartNum = progress;//set touch position back to its progress
+                simpleWaveform.refresh();
+            }
+        };
+        //show...
+//        simpleWaveform.refresh();
+    }
 }
