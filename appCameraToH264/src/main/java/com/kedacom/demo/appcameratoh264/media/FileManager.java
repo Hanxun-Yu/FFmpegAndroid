@@ -41,7 +41,7 @@ public class FileManager {
         internalOpenFile(this.fileName);
     }
 
-//    public void saveFileData(byte[] data, int offset, int length) {
+//    public void writeFileData(byte[] data, int offset, int length) {
 //        try {
 //            fileOutputStream.write(data, offset, length);
 //        } catch (Exception e) {
@@ -49,7 +49,7 @@ public class FileManager {
 //        }
 //    }
     boolean isClosed = false;
-    public synchronized void saveFileData(byte[] data) {
+    public synchronized void writeFileData(byte[] data) {
         if(!isClosed) {
             try {
                 fileOutputStream.write(data);

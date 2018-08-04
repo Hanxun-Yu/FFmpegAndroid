@@ -21,6 +21,8 @@ import android.widget.Toast;
 
 import com.kedacom.demo.appcameratoh264.jni.YuvUtil;
 import com.kedacom.demo.appcameratoh264.media.Camera1Helper;
+import com.kedacom.demo.appcameratoh264.media.audio.AudioData;
+import com.kedacom.demo.appcameratoh264.media.audio.AudioRecoderManager;
 import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.video.VideoData420;
 
@@ -30,7 +32,7 @@ import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 
 public class MainActivity extends AppCompatActivity implements
-        Camera2Helper.AfterDoListener, MediaEncoder.MediaEncoderCallback {
+        MediaEncoder.MediaEncoderCallback {
     private AutoFitTextureView textureView;
     private SurfaceView surfaceView;
     private Button recordBtn;
@@ -56,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements
 //    int heightOUT = 1280;
 
     int videoBitrate = 2048;
+    private AudioRecoderManager audioGathererManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,23 +71,15 @@ public class MainActivity extends AppCompatActivity implements
         useSurfaceview = render == 0;
         usePortrait = orientation == 0;
 
-        if(!usePortrait)
+        if (!usePortrait)
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-
 
 
         init();
         initCamera();
+        initMicroPhone();
     }
 
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if(camera2Helper != null)
-        camera2Helper.onDestroyHelper();
-        mediaEncoder.stop();
-    }
 
     private void init() {
         mediaEncoder = new MediaEncoder();
@@ -111,7 +106,7 @@ public class MainActivity extends AppCompatActivity implements
                 if (mediaEncoder.start()) {
                     recording = true;
                 } else {
-                    Toast.makeText(MainActivity.this,"MediaEncoder launch failer!",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "MediaEncoder launch failer!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -121,10 +116,26 @@ public class MainActivity extends AppCompatActivity implements
             public void onClick(View view) {
                 recording = false;
                 mediaEncoder.stop();
+                mediaEncoder.mux(MediaEncoder.MuxType.MP4);
 //                camera2Helper.stopCallbackFrame();
             }
         });
     }
+
+    private void initMicroPhone() {
+        audioGathererManager = new AudioRecoderManager();
+        audioGathererManager.setAudioDataListener(new AudioRecoderManager.AudioDataListener() {
+            @Override
+            public void audioData(byte[] data) {
+//                Log.d(TAG,"audioData data size:"+data.length);
+                if (recording) {
+                    notifyEncoderAudio(data);
+                }
+            }
+        });
+        audioGathererManager.startAudioIn();
+    }
+
 
     private void initCamera() {
         if (useCameraOne) {
@@ -133,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements
                 @Override
                 public void onRealFrame(byte[] bytes) {
                     if (recording) {
-                        notifyEncoder(bytes);
+                        notifyEncoderVideo(bytes);
                     }
                 }
             });
@@ -152,7 +163,6 @@ public class MainActivity extends AppCompatActivity implements
 
                     @Override
                     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-                        camera1Helper.releaseCamera();
                     }
                 });
             } else {
@@ -170,7 +180,6 @@ public class MainActivity extends AppCompatActivity implements
 
                     @Override
                     public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
-                        camera1Helper.releaseCamera();
                         return false;
                     }
 
@@ -195,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements
                         long start = System.currentTimeMillis();
 //            Log.d(TAG, "onRealFrame: isMainThread:" + (Looper.myLooper() == Looper.getMainLooper()));
 
-                        notifyEncoder(getByte(image.getPlanes()[0].getBuffer(),
+                        notifyEncoderVideo(getByte(image.getPlanes()[0].getBuffer(),
                                 image.getPlanes()[1].getBuffer(),
                                 image.getPlanes()[2].getBuffer()));
 //                        Log.d(TAG, "recording time:" + (System.currentTimeMillis() - start));
@@ -205,7 +214,6 @@ public class MainActivity extends AppCompatActivity implements
             });
             camera2Helper.setRealTimeFrameSize(widthIN, heightIN);
             camera2Helper.startCameraPreView();
-            camera2Helper.setAfterDoListener(this);
             initEncoder();
 
         }
@@ -223,12 +231,38 @@ public class MainActivity extends AppCompatActivity implements
             mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, videoBitrate);
         }
         mediaEncoder.setsMediaEncoderCallback(this);
+        mediaEncoder.setOnMuxerListener(new MediaEncoder.OnMuxerListener() {
+            @Override
+            public void onSuccess(MediaEncoder.MuxType type, final String path) {
+                Log.d(TAG, "onSuccess type:" + type + " path:" + path);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, "mux OK:" + path, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(final String error) {
+                Log.d(TAG, "onError error:" + error);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, "mux Error:" + error, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
         initEncoderThread();
     }
 
     HandlerThread handlerThread;
     Handler putEncoderHandler;
 
+
+    final int HANDLE_VIDEO_MSG = 0;
+    final int HANDLE_AUDIO_MSG = 1;
 
     private void initEncoderThread() {
         handlerThread = new HandlerThread("putEncoderThread");
@@ -239,74 +273,61 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
-                if (useCameraOne) {
-                    //收到NV21
-                    byte[] yuv420sp = (byte[]) msg.obj;
-                    byte[] yuv420p = new byte[yuv420sp.length];
-                    YuvUtil.compressYUV(yuv420sp, widthIN, heightIN,
-                            yuv420p, widthOUT, heightOUT, 0, camera1Helper.getDisplayOrientation(), false);
-                    vd420Temp = new VideoData420(yuv420p, widthOUT, heightOUT, System.currentTimeMillis());
-                    mediaEncoder.putVideoData(vd420Temp);
-                } else {
-                    //收到420p
-                    vd420Temp = new VideoData420((byte[]) msg.obj, widthOUT, heightOUT, System.currentTimeMillis());
-                    mediaEncoder.putVideoData(vd420Temp);
+                switch (msg.what) {
+                    case HANDLE_VIDEO_MSG:
+                        if (useCameraOne) {
+                            //收到NV21
+                            byte[] yuv420sp = (byte[]) msg.obj;
+                            byte[] yuv420p = new byte[yuv420sp.length];
+                            YuvUtil.compressYUV(yuv420sp, widthIN, heightIN,
+                                    yuv420p, widthOUT, heightOUT, 0, camera1Helper.getDisplayOrientation(), false);
+                            vd420Temp = new VideoData420(yuv420p, widthOUT, heightOUT, System.currentTimeMillis());
+                            mediaEncoder.putVideoData(vd420Temp);
+                        } else {
+                            //收到420p
+                            vd420Temp = new VideoData420((byte[]) msg.obj, widthOUT, heightOUT, System.currentTimeMillis());
+                            mediaEncoder.putVideoData(vd420Temp);
+                        }
+                        break;
+
+                    case HANDLE_AUDIO_MSG:
+                        byte[] pcm = (byte[]) msg.obj;
+                        AudioData audioData = new AudioData(pcm);
+                        mediaEncoder.putAudioData(audioData);
+                        break;
                 }
             }
         };
     }
 
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        mediaEncoder.stop();
-    }
+    ByteArrayOutputStream videoTmpByteOut = new ByteArrayOutputStream();
+    ByteArrayOutputStream audioTmpByteOut = new ByteArrayOutputStream();
 
-    @Override
-    public void onAfterPreviewBack() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-//                progressBar.setVisibility(View.GONE);
-            }
-        });
-    }
-
-    @Override
-    public void onAfterTakePicture() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-//                InputStream input = null;
-//                try {
-//                    input = new FileInputStream(file);
-//                    byte[] byt = new byte[input.available()];
-//                    input.read(byt);
-//                    imageView.setImageBitmap(BitmapUtil.bytes2Bitmap(byt));
-//                } catch (FileNotFoundException e) {
-//                    e.printStackTrace();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-            }
-        });
-    }
-
-    byte[] cpy;
-    Message msg;
-
-    ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-    private void notifyEncoder(byte[] bytes) {
-        byteOut.reset();
+    private void notifyEncoderVideo(byte[] bytes) {
+        videoTmpByteOut.reset();
         try {
-            byteOut.write(bytes);
+            videoTmpByteOut.write(bytes);
         } catch (IOException e) {
             e.printStackTrace();
         }
 //        cpy = new byte[bytes.length];
 //        System.arraycopy(bytes, 0, cpy, 0, bytes.length);
-        msg = putEncoderHandler.obtainMessage();
-        msg.obj = byteOut.toByteArray();
+        Message msg = putEncoderHandler.obtainMessage(HANDLE_VIDEO_MSG);
+        msg.obj = videoTmpByteOut.toByteArray();
+        msg.sendToTarget();
+    }
+
+    private void notifyEncoderAudio(byte[] bytes) {
+        audioTmpByteOut.reset();
+        try {
+            audioTmpByteOut.write(bytes);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+//        cpy = new byte[bytes.length];
+//        System.arraycopy(bytes, 0, cpy, 0, bytes.length);
+        Message msg = putEncoderHandler.obtainMessage(HANDLE_AUDIO_MSG);
+        msg.obj = audioTmpByteOut.toByteArray();
         msg.sendToTarget();
     }
 
@@ -344,50 +365,82 @@ public class MainActivity extends AppCompatActivity implements
         return ret;
     }
 
+    int count = 0;
+    int frequence = 8;
 
     @Override
     public void receiveEncoderVideoData(byte[] videoData, int totalLength, int[] segment) {
 //        Log.d(TAG, "recv h264 len:" + totalLength + " nalCount:" + segment.length);
-        runOnUiThread(runnable);
-        System.gc();
+        if (count % frequence == 0) {
+            runOnUiThread(runnable);
+            if (count == frequence)
+                count = 0;
+        }
+        count++;
     }
 
-    int count = 0;
-    int frequence = 8;
+    @Override
+    public void receiveEncoderAudioData(byte[] audioData, int size) {
+        Log.d(TAG, "receiveEncoderAudioData size:" + size);
+        if (count % frequence == 0) {
+            for (int i = 0; i < size; i += 4) {
+                //PCM16,采样一次4个字节，左右各2个字节,PCM16
+                if (i > size - 4) {
+                    break;
+                }
+                byte left1 = audioData[i];
+                byte left2 = audioData[i + 1];
+                byte right1 = audioData[i + 2];
+                byte right2 = audioData[i + 3];
+
+                short u_left1 = (short) (left1 & 0xff);
+                short u_left2 = (short) (left2 & 0xff);
+                short u_right1 = (short) (right1 & 0xff);
+                short u_right2 = (short) (right2 & 0xff);
+
+
+                short left = (short) ((u_left1 << 8) | u_left2);
+                short right = (short) ((u_right1 << 8) | u_right2);
+
+
+                Log.d(TAG, "audio_left 1:" + Integer.toHexString(u_left1)
+                        + " 2:" + Integer.toHexString(u_left2)
+                        + " 1&2:" + Integer.toHexString(left) + " dex:" + left);
+                Log.d(TAG, "audio_right 1:" + Integer.toHexString(u_right1)
+                        + " 2:" + Integer.toHexString(u_right2)
+                        + " 1&2:" + Integer.toHexString(right) + " dex:" + right);
+            }
+//            Log.d(TAG, "audioData:" + size);
+        }
+    }
+
+
     Runnable runnable = new Runnable() {
         @SuppressLint("SetTextI18n")
         @Override
         public void run() {
-            if (count % frequence == 0) {
-                float[] memory = getMemory();
-                DecimalFormat fnum = new DecimalFormat("##0.00");
-                infoText.setText(
-                        (useCameraOne ? "Camera" : "Camera2") + "\n"
-                                + (useSurfaceview ? "SurfaceView" : "TextureView") + "\n"
-                                + "size:" + mediaEncoder.getEncodedSize() + "\n"
-                                + "putYUV:" + mediaEncoder.getPutYUVCount() + "\n"
-                                + "recvH264:" + mediaEncoder.getRecvH264Count() + "\n"
-                                + "yuvFPS:" + mediaEncoder.getYuvFPS() + "\n"
-                                + "h264FPS:" + mediaEncoder.getH264FPS() + "\n"
-                                + "encoderQueue:"+mediaEncoder.getWaitEncodedQueueSize()+"\n"
-                                + "---------memory---------\n"
-                                + "max:" + fnum.format(memory[0]) + "\n"
-                                + "maxHeap:" + fnum.format(memory[3]) + "\n"
+            float[] memory = getMemory();
+            DecimalFormat fnum = new DecimalFormat("##0.00");
+            infoText.setText(
+                    (useCameraOne ? "Camera" : "Camera2") + "\n"
+                            + (useSurfaceview ? "SurfaceView" : "TextureView") + "\n"
+                            + "size:" + mediaEncoder.getEncodedSize() + "\n"
+                            + "putPCM:" + mediaEncoder.getPutPCMCount() + "\n"
+                            + "putYUV:" + mediaEncoder.getPutYUVCount() + "\n"
+                            + "recvH264:" + mediaEncoder.getRecvH264Count() + "\n"
+                            + "yuvFPS:" + mediaEncoder.getYuvFPS() + "\n"
+                            + "h264FPS:" + mediaEncoder.getH264FPS() + "\n"
+                            + "encoderQueue:" + mediaEncoder.getWaitEncodedQueueSize() + "\n"
+                            + "---------memory---------\n"
+                            + "max:" + fnum.format(memory[0]) + "\n"
+                            + "maxHeap:" + fnum.format(memory[3]) + "\n"
 
-                                + "malloc:" + fnum.format(memory[1]) + "\n"
-                                + "free:" + fnum.format(memory[2]));
-                if (count == frequence)
-                    count = 0;
-            }
-            count++;
+                            + "malloc:" + fnum.format(memory[1]) + "\n"
+                            + "free:" + fnum.format(memory[2]));
         }
+
     };
 
-
-    @Override
-    public void receiveEncoderAudioData(byte[] audioData, int size) {
-
-    }
 
     private float[] getMemory() {
         float ret[] = new float[4];
@@ -410,4 +463,31 @@ public class MainActivity extends AppCompatActivity implements
 //        System.out.println("freeMemory: "+freeMemory);
         return ret;
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        releaseCamera();
+        releaseMediaEncoder();
+        releaseMicroPhone();
+    }
+
+    private void releaseMediaEncoder() {
+        if (!mediaEncoder.isStop())
+            mediaEncoder.stop();
+    }
+
+    private void releaseCamera() {
+        if (useCameraOne) {
+            camera1Helper.releaseCamera();
+        } else {
+            if (camera2Helper != null)
+                camera2Helper.onDestroyHelper();
+        }
+    }
+
+    private void releaseMicroPhone() {
+        audioGathererManager.stopAudioIn();
+    }
+
 }

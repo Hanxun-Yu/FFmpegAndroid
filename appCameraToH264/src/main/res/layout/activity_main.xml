@@ -6,8 +6,8 @@
     tools:context=".MainActivity">
 
     <RelativeLayout
-        android:layout_height="480dp"
-        android:layout_width="270dp"
+        android:layout_height="240dp"
+        android:layout_width="135dp"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true">
 

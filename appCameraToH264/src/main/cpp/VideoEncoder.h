@@ -7,9 +7,11 @@
 
 extern "C" {
 #include <stdio.h>
-#include "include/libx264/x264.h"
-#include "include/logcat.h"
+#include "libx264/x264.h"
+#include "logcat.h"
 #include <string.h>
+#include <jni.h>
+#include <malloc.h>
 }
 
 class VideoEncoder {

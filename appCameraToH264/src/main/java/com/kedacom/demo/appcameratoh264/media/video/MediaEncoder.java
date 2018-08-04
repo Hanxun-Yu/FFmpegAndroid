@@ -1,14 +1,12 @@
 package com.kedacom.demo.appcameratoh264.media.video;
 
 
-import android.renderscript.RenderScript;
 import android.util.Log;
-import android.widget.Toast;
 
-import com.kedacom.demo.appcameratoh264.MainActivity;
 import com.kedacom.demo.appcameratoh264.jni.FFmpegjni;
 import com.kedacom.demo.appcameratoh264.media.FileManager;
 import com.kedacom.demo.appcameratoh264.media.audio.AudioData;
+import com.kedacom.demo.appcameratoh264.media.audio.Contacts;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -58,9 +56,7 @@ public class MediaEncoder {
         }
         videoQueue = new LinkedBlockingQueue<>();
         audioQueue = new LinkedBlockingQueue<>();
-        //这里我们初始化音频数据，为什么要初始化音频数据呢？音频数据里面我们做了什么事情？
-//        audioEncodeBuffer = StreamProcessManager.encoderAudioInit(Contacts.SAMPLE_RATE,
-//                Contacts.CHANNELS, Contacts.BIT_RATE);
+
     }
 
     int bitrate_kbps = 0;
@@ -69,31 +65,43 @@ public class MediaEncoder {
     int heightIn;
     int widthOut;
     int heightOut;
+
     public void setMediaSize(int widthIn, int heightIn, int widthOut, int heightOut, int bitrate_kbps) {
         this.bitrate_kbps = bitrate_kbps;
         this.widthIn = widthIn;
         this.heightIn = heightIn;
         this.widthOut = widthOut;
-        this.heightOut =heightOut;
+        this.heightOut = heightOut;
     }
 
     public synchronized boolean start() {
 //        startAudioEncode();
         if (ffmpegjni != null) {
-            return false;
+            ffmpegjni.release();
         }
         ffmpegjni = new FFmpegjni();
         ffmpegjni.encoderVideoinit(widthIn, heightIn, widthOut, heightOut, bitrate_kbps);
 
+        //这里我们初始化音频数据，为什么要初始化音频数据呢？音频数据里面我们做了什么事情？
+        audioEncodeBuffer = ffmpegjni.encoderAudioInit(Contacts.SAMPLE_RATE,
+                Contacts.CHANNELS, Contacts.BIT_RATE);
+
         if (SAVE_FILE_FOR_TEST) {
             videoFileManager.openFile();
+            audioFileManager.openFile();
         }
         startVideoEncode();
+        startAudioEncode();
         isStop = false;
         return true;
     }
 
+    public boolean isStop() {
+        return isStop;
+    }
+
     boolean isStop = true;
+
     public synchronized void stop() {
         isStop = true;
         lastFPSCheckTime = 0;
@@ -102,6 +110,7 @@ public class MediaEncoder {
         stopVideoEncode();
         saveFileForTest();
     }
+
 
     public void release() {
 
@@ -113,7 +122,7 @@ public class MediaEncoder {
     VideoData420 lastPuttedVideoData;
 
     public synchronized void putVideoData(VideoData420 videoData) {
-        if(isStop)
+        if (isStop)
             return;
 
         if (firstInputTime == 0)
@@ -125,7 +134,7 @@ public class MediaEncoder {
 
     private void doPutVideoData(VideoData420 videoData) {
 //        Log.d(TAG,"videoQueue.size():"+videoQueue.size());
-        Log.d(TAG, "doPutVideoData videoQueue size:"+videoQueue.size());
+//        Log.d(TAG, "doPutVideoData videoQueue size:"+videoQueue.size());
         try {
             putYUVCount++;
             videoQueue.put(videoData);
@@ -179,6 +188,7 @@ public class MediaEncoder {
 
     //麦克风PCM音频数据，put到队列中，生产者模型
     public void putAudioData(AudioData audioData) {
+        putPCMCount++;
         try {
             audioQueue.put(audioData);
         } catch (InterruptedException e) {
@@ -188,7 +198,8 @@ public class MediaEncoder {
 
     public void stopVideoEncode() {
         videoEncoderLoop = false;
-        videoEncoderThread.interrupt();
+        if (videoEncoderThread != null)
+            videoEncoderThread.interrupt();
     }
 
     public void stopAudioEncode() {
@@ -260,7 +271,7 @@ public class MediaEncoder {
                             }
                             //我们可以把数据在java层保存到文件中，看看我们编码的h264数据是否能播放，h264裸数据可以在VLC播放器中播放
                             if (SAVE_FILE_FOR_TEST) {
-                                videoFileManager.saveFileData(encodeData);
+                                videoFileManager.writeFileData(encodeData);
                             }
                         }
 
@@ -273,77 +284,117 @@ public class MediaEncoder {
                     refreshFPS();
                     System.gc();
                 }
-                if (ffmpegjni != null) {
-                    ffmpegjni.release();
-                    ffmpegjni = null;
-                }
-
             }
         };
-        videoEncoderThread.setPriority(10);
         videoEncoderLoop = true;
         videoEncoderThread.start();
     }
 
-//    public void startAudioEncode() {
-//        if (audioEncoderLoop) {
-//            throw new RuntimeException("必须先停止");
-//        }
-//        audioEncoderThread = new Thread() {
-//            @Override
-//            public void run() {
-//                byte[] outbuffer = new byte[1024];
-//                int haveCopyLength = 0;
-//                byte[] inbuffer = new byte[audioEncodeBuffer];
-//                while (audioEncoderLoop && !Thread.interrupted()) {
-//                    try {
-//                        AudioData audio = audioQueue.take();
-//                        //我们通过fdk-aac接口获取到了audioEncodeBuffer的数据，即每次编码多少数据为最优
-//                        //这里我这边的手机每次都是返回的4096即4K的数据，其实为了简单点，我们每次可以让
-//                        //MIC录取4K大小的数据，然后把录取的数据传递到AudioEncoder.cpp中取编码
-//                        //Log.e("RiemannLee", " audio.audioData.length " + audio.audioData.length + " audioEncodeBuffer " + audioEncodeBuffer);
-//                        final int audioGetLength = audio.audioData.length;
-//                        if (haveCopyLength < audioEncodeBuffer) {
-//                            System.arraycopy(audio.audioData, 0, inbuffer, haveCopyLength, audioGetLength);
-//                            haveCopyLength += audioGetLength;
-//                            int remain = audioEncodeBuffer - haveCopyLength;
-//                            if (remain == 0) {
-//                                //fdk-aac编码PCM裸音频数据，返回可用长度的有效字段
-//                                int validLength = StreamProcessManager.encoderAudioEncode(inbuffer, audioEncodeBuffer, outbuffer, outbuffer.length);
-//                                //Log.e("lihuzi", " validLength " + validLength);
-//                                final int VALID_LENGTH = validLength;
-//                                if (VALID_LENGTH > 0) {
-//                                    byte[] encodeData = new byte[VALID_LENGTH];
-//                                    System.arraycopy(outbuffer, 0, encodeData, 0, VALID_LENGTH);
-//                                    if (sMediaEncoderCallback != null) {
-//                                        //编码后，把数据抛给rtmp去推流
-//                                        sMediaEncoderCallback.receiveEncoderAudioData(encodeData, VALID_LENGTH);
-//                                    }
-//                                    //我们可以把Fdk-aac编码后的数据保存到文件中，然后用播放器听一下，音频文件是否编码正确
-//                                    if (SAVE_FILE_FOR_TEST) {
-//                                        audioFileManager.saveFileData(encodeData);
-//                                    }
-//                                }
-//                                haveCopyLength = 0;
-//                            }
-//                        }
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                        break;
-//                    }
-//                }
-//
-//            }
-//        };
-//        audioEncoderLoop = true;
-//        audioEncoderThread.start();
-//    }
+    public void startAudioEncode() {
+        if (audioEncoderLoop) {
+            throw new RuntimeException("必须先停止");
+        }
+        audioEncoderThread = new Thread() {
+            @Override
+            public void run() {
+                byte[] outbuffer = new byte[1024];
+                int haveCopyLength = 0;
+                byte[] inbuffer = new byte[audioEncodeBuffer];
+                Log.e(TAG, "startAudioEncode taking audio");
+
+                while (audioEncoderLoop && !Thread.interrupted()) {
+                    try {
+                        AudioData audio = audioQueue.take();
+                        //我们通过fdk-aac接口获取到了audioEncodeBuffer的数据，即每次编码多少数据为最优
+                        //这里我这边的手机每次都是返回的4096即4K的数据，其实为了简单点，我们每次可以让
+                        //MIC录取4K大小的数据，然后把录取的数据传递到AudioEncoder.cpp中取编码
+//                        Log.e(TAG, " audio.audioData.length " + audio.audioData.length + " audioEncodeBuffer " + audioEncodeBuffer);
+                        final int audioGetLength = audio.audioData.length;
+                        if (haveCopyLength < audioEncodeBuffer) {
+                            System.arraycopy(audio.audioData, 0, inbuffer, haveCopyLength, audioGetLength);
+                            haveCopyLength += audioGetLength;
+                            int remain = audioEncodeBuffer - haveCopyLength;
+                            if (remain == 0) {
+                                //fdk-aac编码PCM裸音频数据，返回可用长度的有效字段
+                                int validLength = ffmpegjni.encoderAudioEncode(inbuffer, audioEncodeBuffer, outbuffer, outbuffer.length);
+                                //Log.e("lihuzi", " validLength " + validLength);
+                                final int VALID_LENGTH = validLength;
+                                if (VALID_LENGTH > 0) {
+                                    byte[] encodeData = new byte[VALID_LENGTH];
+                                    System.arraycopy(outbuffer, 0, encodeData, 0, VALID_LENGTH);
+                                    if (sMediaEncoderCallback != null) {
+                                        //编码后，把数据抛给rtmp去推流
+                                        sMediaEncoderCallback.receiveEncoderAudioData(encodeData, VALID_LENGTH);
+                                    }
+                                    //我们可以把Fdk-aac编码后的数据保存到文件中，然后用播放器听一下，音频文件是否编码正确
+                                    if (SAVE_FILE_FOR_TEST) {
+                                        audioFileManager.writeFileData(encodeData);
+                                    }
+                                }
+                                haveCopyLength = 0;
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        break;
+                    }
+                }
+
+            }
+        };
+        audioEncoderLoop = true;
+        audioEncoderThread.start();
+    }
 
     private void saveFileForTest() {
         if (SAVE_FILE_FOR_TEST) {
             videoFileManager.closeFile();
-//            audioFileManager.closeFile();
+            audioFileManager.closeFile();
         }
+    }
+
+    public enum MuxType {
+        MP4
+    }
+
+    OnMuxerListener onMuxerListener;
+
+    public void setOnMuxerListener(OnMuxerListener onMuxerListener) {
+        this.onMuxerListener = onMuxerListener;
+    }
+
+    public interface OnMuxerListener {
+        void onSuccess(MuxType type, String path);
+
+        void onError(String error);
+    }
+
+    public void mux(final MuxType type) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int ret = 0;
+                String outputPath;
+                if (type == MuxType.MP4) {
+                    outputPath = "/sdcard/264/123.mp4";
+                    ret = ffmpegjni.muxMp4(FileManager.TEST_H264_FILE,
+                            FileManager.TEST_AAC_FILE, outputPath);
+                } else {
+                    if (onMuxerListener != null)
+                        onMuxerListener.onError("not support mux type");
+                    return;
+                }
+                if (ret < 0) {
+                    if (onMuxerListener != null)
+                        onMuxerListener.onError("ret:" + ret);
+                } else {
+                    if (onMuxerListener != null)
+                        onMuxerListener.onSuccess(type, outputPath);
+                }
+
+
+            }
+        }).start();
     }
 
     private long h264TotalSize = 0L;
@@ -352,11 +403,17 @@ public class MediaEncoder {
         return putYUVCount;
     }
 
+    public int getPutPCMCount() {
+        return putPCMCount;
+    }
+
     public int getRecvH264Count() {
         return recvH264Count;
     }
 
     private int putYUVCount = 0;
+    private int putPCMCount = 0;
+
     private int recvH264Count = 0;
 
     private long lastFPSCheckTime = 0;
