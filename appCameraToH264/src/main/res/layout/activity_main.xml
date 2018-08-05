@@ -11,8 +11,8 @@
         android:layout_alignParentBottom="true"
         android:orientation="horizontal">
 
-        <com.maxproj.simplewaveform.SimpleWaveform
-            android:id="@+id/simplewaveform"
+        <com.kedacom.demo.appcameratoh264.widget.AudioWaveView
+            android:id="@+id/audioWaveView"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="240dp"

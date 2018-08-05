@@ -30,6 +30,7 @@ import com.kedacom.demo.appcameratoh264.media.audio.AudioData;
 import com.kedacom.demo.appcameratoh264.media.audio.AudioRecoderManager;
 import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.video.VideoData420;
+import com.kedacom.demo.appcameratoh264.widget.AudioWaveView;
 import com.maxproj.simplewaveform.SimpleWaveform;
 
 import java.io.ByteArrayOutputStream;
@@ -52,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements
     private Camera1Helper camera1Helper;
     MediaEncoder mediaEncoder;
 
-
+    private AudioWaveView audioWaveView;
     boolean useCameraOne = false;
     boolean useSurfaceview = false;
     boolean usePortrait = false;
@@ -87,7 +88,7 @@ public class MainActivity extends AppCompatActivity implements
         init();
         initCamera();
         initMicroPhone();
-        initSimpleWaveform();
+//        initSimpleWaveform();
     }
 
 
@@ -95,7 +96,8 @@ public class MainActivity extends AppCompatActivity implements
         mediaEncoder = new MediaEncoder();
         textureView = findViewById(R.id.textureview);
         surfaceView = findViewById(R.id.surfaceview);
-        simpleWaveform = findViewById(R.id.simplewaveform);
+        audioWaveView = findViewById(R.id.audioWaveView);
+//        simpleWaveform = findViewById(R.id.simplewaveform);
         if (useSurfaceview) {
             textureView.setVisibility(View.GONE);
         } else {
@@ -126,7 +128,6 @@ public class MainActivity extends AppCompatActivity implements
             public void onClick(View view) {
                 recording = false;
                 mediaEncoder.stop();
-                mediaEncoder.mux(MediaEncoder.MuxType.MP4);
 //                camera2Helper.stopCallbackFrame();
             }
         });
@@ -140,6 +141,7 @@ public class MainActivity extends AppCompatActivity implements
 //                Log.d(TAG,"audioData data size:"+data.length);
                 if (recording) {
                     notifyEncoderAudio(data);
+                    notifyWave(data);
                 }
             }
         });
@@ -264,6 +266,18 @@ public class MainActivity extends AppCompatActivity implements
                 });
             }
         });
+
+        mediaEncoder.setOnEncoderChangedListener(new MediaEncoder.OnEncoderChangedListener() {
+            @Override
+            public void onChanged(MediaEncoder.EncoderState state) {
+                Log.d(TAG,"Encoder state V:"+state.getVideoEncoderState()+" A:"+state.getAudioEncoderState()+
+                " Mux:"+state.getMuxEncoderState());
+                if(state.getAudioEncoderState() == MediaEncoder.State.IDLE
+                        && state.getVideoEncoderState() == MediaEncoder.State.IDLE) {
+                    mediaEncoder.mux(MediaEncoder.MuxType.MP4);
+                }
+            }
+        });
         initEncoderThread();
     }
 
@@ -325,6 +339,41 @@ public class MainActivity extends AppCompatActivity implements
         Message msg = putEncoderHandler.obtainMessage(HANDLE_VIDEO_MSG);
         msg.obj = videoTmpByteOut.toByteArray();
         msg.sendToTarget();
+    }
+
+    private void notifyWave(byte[] audioData) {
+//        if (count % frequence == 0) {
+            for (int i = 0; i < audioData.length; i += 4) {
+                //PCM16,采样一次4个字节，左右各2个字节,PCM16
+                if (i > audioData.length - 4) {
+                    break;
+                }
+                byte left1 = audioData[i];
+                byte left2 = audioData[i + 1];
+                byte right1 = audioData[i + 2];
+                byte right2 = audioData[i + 3];
+
+                short u_left1 = (short) (left1 & 0xff);
+                short u_left2 = (short) (left2 & 0xff);
+                short u_right1 = (short) (right1 & 0xff);
+                short u_right2 = (short) (right2 & 0xff);
+
+
+                short left = (short) ((u_left1 ) | (u_left2<< 8));
+//                short right = (short) ((u_right1 << 8) | u_right2);
+
+
+//                Log.d(TAG, "audio_left 1:" + Integer.toHexString(u_left1)
+//                        + " 2:" + Integer.toHexString(u_left2)
+//                        + " 1&2:" + Integer.toHexString(left) + " dex:" + left);
+//                Log.d(TAG," dex:" + left);
+//                Log.d(TAG, "audio_right 1:" + Integer.toHexString(u_right1)
+//                        + " 2:" + Integer.toHexString(u_right2)
+//                        + " 1&2:" + Integer.toHexString(right) + " dex:" + right);
+                notigyWaveView(left);
+            }
+//            Log.d(TAG, "audioData:" + size);
+//        }
     }
 
     private void notifyEncoderAudio(byte[] bytes) {
@@ -391,38 +440,8 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void receiveEncoderAudioData(byte[] audioData, int size) {
-        Log.d(TAG, "receiveEncoderAudioData size:" + size);
-        if (count % frequence == 0) {
-            for (int i = 0; i < size; i += 4) {
-                //PCM16,采样一次4个字节，左右各2个字节,PCM16
-                if (i > size - 4) {
-                    break;
-                }
-                byte left1 = audioData[i];
-                byte left2 = audioData[i + 1];
-                byte right1 = audioData[i + 2];
-                byte right2 = audioData[i + 3];
+//        Log.d(TAG, "receiveEncoderAudioData size:" + size);
 
-                short u_left1 = (short) (left1 & 0xff);
-                short u_left2 = (short) (left2 & 0xff);
-                short u_right1 = (short) (right1 & 0xff);
-                short u_right2 = (short) (right2 & 0xff);
-
-
-                short left = (short) ((u_left1 << 8) | u_left2);
-                short right = (short) ((u_right1 << 8) | u_right2);
-
-
-                Log.d(TAG, "audio_left 1:" + Integer.toHexString(u_left1)
-                        + " 2:" + Integer.toHexString(u_left2)
-                        + " 1&2:" + Integer.toHexString(left) + " dex:" + left);
-                Log.d(TAG, "audio_right 1:" + Integer.toHexString(u_right1)
-                        + " 2:" + Integer.toHexString(u_right2)
-                        + " 1&2:" + Integer.toHexString(right) + " dex:" + right);
-                notigyWaveView(left);
-            }
-//            Log.d(TAG, "audioData:" + size);
-        }
     }
 
 
@@ -504,13 +523,15 @@ public class MainActivity extends AppCompatActivity implements
     LinkedList<Integer> ampList = new LinkedList<>();
 
     private void notigyWaveView(final short val) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ampList.add((int) val);
-                simpleWaveform.refresh();
-            }
-        });
+//        Log.d(TAG,"notigyWaveView:"+val);
+        audioWaveView.putData(val);
+//        runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//                ampList.add((int) val);
+//                simpleWaveform.refresh();
+//            }
+//        });
 
     }
     private void initSimpleWaveform() {

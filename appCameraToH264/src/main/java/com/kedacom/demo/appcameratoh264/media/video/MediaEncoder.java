@@ -17,7 +17,14 @@ public class MediaEncoder {
     private static final String TAG = "MediaEncoder_xunxun";
 
     private Thread videoEncoderThread, audioEncoderThread;
+
+    //编码线程是否已经停止
+    private boolean isVideoEncoderThreadStop = true;
+    private boolean isAudioEncoderThreadStop = true;
+    //是否允许编码线程循环
     private boolean videoEncoderLoop, audioEncoderLoop;
+
+    private boolean isMuxing = false;
 
     //视频流队列
     private LinkedBlockingQueue<VideoData420> videoQueue;
@@ -33,6 +40,7 @@ public class MediaEncoder {
     private MediaEncoderCallback sMediaEncoderCallback;
 
     FFmpegjni ffmpegjni;
+
 
     public interface MediaEncoderCallback {
         /**
@@ -57,6 +65,16 @@ public class MediaEncoder {
         videoQueue = new LinkedBlockingQueue<>();
         audioQueue = new LinkedBlockingQueue<>();
 
+        refreshState();
+
+//        new Thread() {
+//            @Override
+//            public void run() {
+//                while(true) {
+//                    Log.d(TAG, "loop--------------------");
+//                }
+//            }
+//        }.start();
     }
 
     int bitrate_kbps = 0;
@@ -93,6 +111,7 @@ public class MediaEncoder {
         startVideoEncode();
         startAudioEncode();
         isStop = false;
+        refreshState();
         return true;
     }
 
@@ -104,16 +123,13 @@ public class MediaEncoder {
 
     public synchronized void stop() {
         isStop = true;
-        lastFPSCheckTime = 0;
-        lastPuttedVideoData = null;
         stopAudioEncode();
         stopVideoEncode();
-        saveFileForTest();
+        refreshState();
     }
 
 
     public void release() {
-
     }
 
     private long firstInputTime = 0;
@@ -122,9 +138,6 @@ public class MediaEncoder {
     VideoData420 lastPuttedVideoData;
 
     public synchronized void putVideoData(VideoData420 videoData) {
-        if (isStop)
-            return;
-
         if (firstInputTime == 0)
             firstInputTime = System.currentTimeMillis();
 
@@ -172,7 +185,7 @@ public class MediaEncoder {
                         lastPuttedVideoData.width, lastPuttedVideoData.height, lastPuttedVideoData.timestamp + normalInterval);
                 doPutVideoData(insertVideo);
                 fpsOffset -= normalInterval;
-                Log.d(TAG, "++insert_video_fpsOffset:" + fpsOffset);
+//                Log.d(TAG, "++insert_video_fpsOffset:" + fpsOffset);
             }
         } else {
             //采集快,需要丢帧
@@ -180,7 +193,7 @@ public class MediaEncoder {
                 //间隔差累计到一帧间隔，丢
                 fpsOffset += normalInterval;
                 ret = false;
-                Log.d(TAG, "--skip_video fpsOffset:" + fpsOffset);
+//                Log.d(TAG, "--skip_video fpsOffset:" + fpsOffset);
             }
         }
         return ret;
@@ -212,7 +225,6 @@ public class MediaEncoder {
         if (videoEncoderLoop) {
             throw new RuntimeException("必须先停止");
         }
-
         videoEncoderThread = new Thread() {
             byte[] outbuffer;
             int[] buffLength;
@@ -224,11 +236,17 @@ public class MediaEncoder {
 
             @Override
             public void run() {
+                isVideoEncoderThreadStop = false;
+                refreshState();
                 long start = 0;
                 long end = 0;
+//                Log.d(TAG,"taking video videoQueue.size():"+videoQueue.size());
+//                Log.d(TAG,"taking video videoEncoderLoop:"+videoEncoderLoop);
+
                 //视频消费者模型，不断从队列中取出视频流来进行h264编码
-                while (videoEncoderLoop && !Thread.interrupted()) {
-                    try {
+                try {
+                    while (videoQueue.size() != 0 || videoEncoderLoop) {
+//                        Log.d(TAG,"taking video");
                         start = System.currentTimeMillis();
                         //队列中取视频数据
                         videoData = videoQueue.take();
@@ -252,7 +270,7 @@ public class MediaEncoder {
 
                         //对YUV420P进行h264编码，返回一个数据大小，里面是编码出来的h264数据
                         numNals = ffmpegjni.encoderVideoEncode(videoData.videoData, videoData.videoData.length, fps, outbuffer, buffLength);
-                        //Log.e("RiemannLee", "data.length " +  videoData.videoData.length + " h264 encode length " + buffLength[0]);
+//                        Log.e("RiemannLee", "data.length " +  videoData.videoData.length + " h264 encode length " + buffLength[0]);
                         if (numNals > 0) {
                             segment = new int[numNals];
                             System.arraycopy(buffLength, 0, segment, 0, numNals);
@@ -274,16 +292,20 @@ public class MediaEncoder {
                                 videoFileManager.writeFileData(encodeData);
                             }
                         }
-
                         end = System.currentTimeMillis();
 //                        Log.d(TAG, "encodeTime:" + (end - start));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                        break;
+
+                        refreshFPS();
+                        System.gc();
                     }
-                    refreshFPS();
-                    System.gc();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
+                videoFileManager.closeFile();
+                isVideoEncoderThreadStop = true;
+                lastFPSCheckTime = 0;
+                lastPuttedVideoData = null;
+                refreshState();
             }
         };
         videoEncoderLoop = true;
@@ -301,8 +323,10 @@ public class MediaEncoder {
                 int haveCopyLength = 0;
                 byte[] inbuffer = new byte[audioEncodeBuffer];
                 Log.e(TAG, "startAudioEncode taking audio");
+                isAudioEncoderThreadStop = false;
+                refreshState();
 
-                while (audioEncoderLoop && !Thread.interrupted()) {
+                while ((audioQueue.size() != 0 || audioEncoderLoop) && !Thread.interrupted()) {
                     try {
                         AudioData audio = audioQueue.take();
                         //我们通过fdk-aac接口获取到了audioEncodeBuffer的数据，即每次编码多少数据为最优
@@ -339,19 +363,22 @@ public class MediaEncoder {
                         break;
                     }
                 }
-
+                audioFileManager.closeFile();
+                isAudioEncoderThreadStop = true;
+                refreshState();
             }
         };
         audioEncoderLoop = true;
         audioEncoderThread.start();
     }
+//
+//    private void saveFileForTest() {
+//        if (SAVE_FILE_FOR_TEST) {
+//            videoFileManager.closeFile();
+//            audioFileManager.closeFile();
+//        }
+//    }
 
-    private void saveFileForTest() {
-        if (SAVE_FILE_FOR_TEST) {
-            videoFileManager.closeFile();
-            audioFileManager.closeFile();
-        }
-    }
 
     public enum MuxType {
         MP4
@@ -370,6 +397,7 @@ public class MediaEncoder {
     }
 
     public void mux(final MuxType type) {
+        isMuxing = true;
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -382,6 +410,7 @@ public class MediaEncoder {
                 } else {
                     if (onMuxerListener != null)
                         onMuxerListener.onError("not support mux type");
+                    isMuxing = false;
                     return;
                 }
                 if (ret < 0) {
@@ -391,8 +420,7 @@ public class MediaEncoder {
                     if (onMuxerListener != null)
                         onMuxerListener.onSuccess(type, outputPath);
                 }
-
-
+                isMuxing = false;
             }
         }).start();
     }
@@ -476,4 +504,111 @@ public class MediaEncoder {
         return h264FPS;
     }
 
+    EncoderState cacheState = new EncoderState();
+
+    private void refreshState() {
+        if (videoEncoderLoop && isVideoEncoderThreadStop) {
+            cacheState.videoEncoderState = State.Starting;
+        } else if (videoEncoderLoop && !isVideoEncoderThreadStop) {
+            cacheState.videoEncoderState = State.Encoding;
+        } else if (!videoEncoderLoop && !isVideoEncoderThreadStop) {
+            cacheState.videoEncoderState = State.EncodeStoping;
+        } else {
+            cacheState.videoEncoderState = State.IDLE;
+        }
+
+        if (audioEncoderLoop && isAudioEncoderThreadStop) {
+            cacheState.audioEncoderState = State.Starting;
+        } else if (audioEncoderLoop && !isAudioEncoderThreadStop) {
+            cacheState.audioEncoderState = State.Encoding;
+        } else if (!audioEncoderLoop && !isAudioEncoderThreadStop) {
+            cacheState.audioEncoderState = State.EncodeStoping;
+        } else {
+            cacheState.audioEncoderState = State.IDLE;
+        }
+
+        if (isMuxing)
+            cacheState.muxEncoderState = State.Encoding;
+        else
+            cacheState.muxEncoderState = State.IDLE;
+        EncoderState cur = getState();
+        if (cur.audioEncoderState != cacheState.audioEncoderState
+                || cur.videoEncoderState != cacheState.videoEncoderState
+                || cur.muxEncoderState != cacheState.muxEncoderState) {
+            setState(cacheState);
+        }
+    }
+
+    public enum State {
+        IDLE,
+        Starting,
+        Encoding,
+        EncodeStoping,
+    }
+
+    private EncoderState ENCODER_STATE = new EncoderState();
+
+    public class EncoderState {
+        State videoEncoderState = State.IDLE;
+        State audioEncoderState = State.IDLE;
+        State muxEncoderState = State.IDLE;
+
+        public State getVideoEncoderState() {
+            return videoEncoderState;
+        }
+
+        public void setVideoEncoderState(State videoEncoderState) {
+            this.videoEncoderState = videoEncoderState;
+        }
+
+        public State getAudioEncoderState() {
+            return audioEncoderState;
+        }
+
+        public void setAudioEncoderState(State audioEncoderState) {
+            this.audioEncoderState = audioEncoderState;
+        }
+
+        public State getMuxEncoderState() {
+            return muxEncoderState;
+        }
+
+        public void setMuxEncoderState(State muxEncoderState) {
+            this.muxEncoderState = muxEncoderState;
+        }
+
+        @Override
+        public String toString() {
+            return "EncoderState{" +
+                    "videoEncoderState=" + videoEncoderState +
+                    ", audioEncoderState=" + audioEncoderState +
+                    ", muxEncoderState=" + muxEncoderState +
+                    '}';
+        }
+    }
+
+
+    private synchronized void setState(EncoderState state) {
+        Log.d(TAG, "setState :" + state);
+        this.ENCODER_STATE.muxEncoderState = state.muxEncoderState;
+        this.ENCODER_STATE.videoEncoderState = state.videoEncoderState;
+        this.ENCODER_STATE.audioEncoderState = state.audioEncoderState;
+
+        if (onEncoderChangedListener != null)
+            onEncoderChangedListener.onChanged(ENCODER_STATE);
+    }
+
+    private synchronized EncoderState getState() {
+        return this.ENCODER_STATE;
+    }
+
+    public void setOnEncoderChangedListener(OnEncoderChangedListener onEncoderChangedListener) {
+        this.onEncoderChangedListener = onEncoderChangedListener;
+    }
+
+    OnEncoderChangedListener onEncoderChangedListener;
+
+    public interface OnEncoderChangedListener {
+        void onChanged(EncoderState state);
+    }
 }

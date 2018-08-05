@@ -1,1 +1,1 @@
-include ':app', ':libffmpegplayer', ':appCameraToH264'
+include ':app', ':libffmpegplayer', ':appCameraToH264', ':widget'

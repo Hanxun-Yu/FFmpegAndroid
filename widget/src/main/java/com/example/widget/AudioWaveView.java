@@ -1,4 +1,4 @@
-package com.kedacom.demo.appcameratoh264.widget;
+package com.example.widget;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -74,7 +74,7 @@ public class AudioWaveView extends SurfaceView implements SurfaceHolder.Callback
                 this.surfaceHolder.unlockCanvasAndPost(canvas); // 释放锁并提交画布进行重绘
             }
             try {
-                Thread.sleep(40); // 这个就相当于帧频了，数值越小画面就越流畅
+                Thread.sleep(10); // 这个就相当于帧频了，数值越小画面就越流畅
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -229,7 +229,7 @@ public class AudioWaveView extends SurfaceView implements SurfaceHolder.Callback
             if (data.size() > dimen.waveWidth) {
                 data.remove(0);
             }
-//            Log.d(TAG, "addData waveVal:" + waveVal);
+            Log.d(TAG, "addData waveVal:" + waveVal);
             data.add(waveVal);
             tempPutCount = 0;
             tempPutMax = 0;
