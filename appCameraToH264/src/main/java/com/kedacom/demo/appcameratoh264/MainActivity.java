@@ -542,6 +542,9 @@ public class MainActivity extends AppCompatActivity implements
         buffer.append("\n");
         //---------------帧率--------------------------------
         buffer.append("-----------FPS-----------\n");
+        buffer.append("camera:");
+        buffer.append(mediaEncoder.getCamFPS());
+        buffer.append("\n");
         buffer.append("yuv:");
         buffer.append(mediaEncoder.getYuvFPS());
         buffer.append("\n");

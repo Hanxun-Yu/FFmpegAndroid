@@ -141,6 +141,7 @@ public class MediaEncoder {
         if (firstInputTime == 0)
             firstInputTime = System.currentTimeMillis();
 
+        putCAMCount++;
         if (checkInsertVideo(videoData))
             doPutVideoData(videoData);
     }
@@ -456,6 +457,7 @@ public class MediaEncoder {
         return recvH264Count;
     }
 
+    private int putCAMCount = 0;
     private int putYUVCount = 0;
     private int takeYUVCount = 0;
     private int putPCMCount = 0;
@@ -473,12 +475,15 @@ public class MediaEncoder {
     private int checkFPSH264Start = 0;
     private int checkFPSPCMStart = 0;
     private int checkFPSAACStart = 0;
+    private int checkFPSCAMStart = 0;
 
 
-    private int yuvFPS = 0;
-    private int h264FPS = 0;
-    private int pcmFPS = 0;
-    private int aacFPS = 0;
+
+    private int camFPS = 0;//camera fps
+    private int yuvFPS = 0;//yuv fps，原本和camera一致，由于camera fps变化，做了插帧处理
+    private int h264FPS = 0;//编码器输出h264 fps
+    private int pcmFPS = 0;//pcm fps
+    private int aacFPS = 0;//编码器输出 aac fps
 
     private void refreshFPS() {
         if (lastFPSCheckTime == 0) {
@@ -495,17 +500,21 @@ public class MediaEncoder {
                     checkFPSPCMStart = putPCMCount;
                 if (checkFPSAACStart == 0)
                     checkFPSAACStart = recvAACCount;
+                if (checkFPSCAMStart == 0)
+                    checkFPSCAMStart = putCAMCount;
             } else {
                 lastFPSCheckTime = now;
                 yuvFPS = (int) ((putYUVCount - checkFPSYUVStart) * 1000f / interval);
                 h264FPS = (int) ((recvH264Count - checkFPSH264Start) * 1000f / interval);
                 pcmFPS = (int) ((putPCMCount - checkFPSPCMStart) * 1000f / interval);
                 aacFPS = (int) ((recvAACCount - checkFPSAACStart) * 1000f / interval);
+                camFPS = (int) ((putCAMCount - checkFPSCAMStart) * 1000f / interval);
 
                 checkFPSYUVStart = 0;
                 checkFPSH264Start = 0;
                 checkFPSPCMStart = 0;
                 checkFPSAACStart = 0;
+                checkFPSCAMStart = 0;
             }
         }
     }
@@ -558,6 +567,9 @@ public class MediaEncoder {
 
     public int getAacFPS() {
         return aacFPS;
+    }
+    public int getCamFPS() {
+        return camFPS;
     }
 
     EncoderState cacheState = new EncoderState();
