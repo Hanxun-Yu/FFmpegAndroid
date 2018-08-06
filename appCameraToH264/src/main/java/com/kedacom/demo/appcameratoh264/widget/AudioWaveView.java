@@ -10,6 +10,8 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.kedacom.demo.appcameratoh264.R;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -25,6 +27,8 @@ public class AudioWaveView extends SurfaceView implements SurfaceHolder.Callback
     private SurfaceHolder surfaceHolder;
     private boolean stop = true;
     private boolean isReady = false;
+
+    private long startTime;
 
     public AudioWaveView(Context context) {
         this(context, null);
@@ -67,48 +71,76 @@ public class AudioWaveView extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void run() {
-        while (!stop) {
-            if (isReady) {
-                canvas = this.surfaceHolder.lockCanvas(); // 通过lockCanvas加锁并得到該SurfaceView的画布
-                myDraw(canvas);
-                this.surfaceHolder.unlockCanvasAndPost(canvas); // 释放锁并提交画布进行重绘
+        try {
+            while (!stop) {
+                if (isReady) {
+                    canvas = this.surfaceHolder.lockCanvas(); // 通过lockCanvas加锁并得到該SurfaceView的画布
+                    myDraw(canvas);
+                    this.surfaceHolder.unlockCanvasAndPost(canvas); // 释放锁并提交画布进行重绘
+                }
+                try {
+                    Thread.sleep(10); // 这个就相当于帧频了，数值越小画面就越流畅
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-            try {
-                Thread.sleep(40); // 这个就相当于帧频了，数值越小画面就越流畅
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
         }
     }
 
-    Paint paintForTickmark;
+    Paint paintForAxis;
     Paint paintForBg;
     Paint paintForWave;
 
     private void initPaint() {
         paintForBg = new Paint();
 
-        paintForTickmark = new Paint();
-        paintForTickmark.setColor(Color.GREEN);
+        paintForAxis = new Paint();
+        paintForAxis.setColor(getResources().getColor(R.color.audioTickmart));
 
         paintForWave = new Paint();
-        paintForWave.setColor(Color.BLUE);
+        paintForWave.setColor(getResources().getColor(R.color.audioWave));
+        paintForWave.setAntiAlias(true);
+        paintForWave.setStrokeWidth(2);
 
     }
 
     private void myDraw(Canvas canvas) {
-        drawBG(canvas);
-        drawWave(canvas);
-        drawTickmark(canvas);
+        try {
+            drawBG(canvas);
+            drawAxis(canvas);
+            drawWave(canvas);
+
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
 
     }
 
-    private void drawTickmark(Canvas canvas) {
-        canvas.drawLine(0, dimen.tickmarkHeight, dimen.width, dimen.tickmarkHeight, paintForTickmark);
+    private void drawAxis(Canvas canvas) {
+        canvas.drawLine(0, dimen.tickmarkHeight, dimen.width, dimen.tickmarkHeight, paintForAxis);
         canvas.drawLine(0, dimen.height - dimen.tickmarkHeight, dimen.width,
-                dimen.height - dimen.tickmarkHeight, paintForTickmark);
+                dimen.height - dimen.tickmarkHeight, paintForAxis);
         canvas.drawLine(0, dimen.heightHalf, dimen.width,
-                dimen.heightHalf, paintForTickmark);
+                dimen.heightHalf, paintForAxis);
+
+        //刻度
+        for (int i = 0; i < maxSecondRange+1; i++) {
+//            int x = dimen.pixelPerMsec*100*i - removeCount
+            //秒开始
+            int x = (int) (dimen.pixelPerSecond*i - (removeCount % dimen.pixelPerSecond));
+            if (x >= 0 && x <= dimen.waveWidth) {
+                canvas.drawLine(x, dimen.height - dimen.tickmarkHeight, x,
+                        (float) (dimen.height - dimen.tickmarkHeight * 1.5), paintForAxis);
+
+                canvas.drawLine(x, dimen.tickmarkHeight, x,
+                        (float) (dimen.tickmarkHeight * 1.5), paintForAxis);
+            }
+
+
+        }
+
     }
 
     private void drawBG(Canvas canvas) {
@@ -179,7 +211,7 @@ public class AudioWaveView extends SurfaceView implements SurfaceHolder.Callback
         int splCountNeededPerPixel;
 
         //每毫秒占宽度
-        int pixelPerMsec;
+        double pixelPerMsec;
         int pixelPerSecond;
 
         @Override
@@ -203,9 +235,11 @@ public class AudioWaveView extends SurfaceView implements SurfaceHolder.Callback
     }
 
     //控件最大数据显示时间段（秒）
-    final int maxSecondRange = 10;
+    final int maxSecondRange = 5;
     //最大采样值，范围-32767到32767
     final int pcmValRangeAbs = 32767;
+    final int pcmValRangeMax = 32767;
+
     final int pcmSampleRate = 44100;
 
     List<WaveVal> data = new LinkedList<>();
@@ -215,9 +249,14 @@ public class AudioWaveView extends SurfaceView implements SurfaceHolder.Callback
     short tempPutMax = 0;
     short tempPutMin = 0;
 
+    private long removeCount = 0;
+
     public synchronized void putData(short sample) {
         if (!isReady)
             return;
+
+        if (startTime == 0)
+            startTime = System.currentTimeMillis();
 
 //        Log.d(TAG,"putData sample:"+sample);
         tempPutCount++;
@@ -225,9 +264,10 @@ public class AudioWaveView extends SurfaceView implements SurfaceHolder.Callback
             tempPutMax = tempPutMax > sample ? tempPutMax : sample;
             tempPutMin = tempPutMin < sample ? tempPutMin : sample;
         } else {
-            WaveVal waveVal = new WaveVal(tempPutMax, tempPutMin);
+            WaveVal waveVal = new WaveVal(tempPutMax, tempPutMin, System.currentTimeMillis());
             if (data.size() > dimen.waveWidth) {
                 data.remove(0);
+                removeCount++;
             }
 //            Log.d(TAG, "addData waveVal:" + waveVal);
             data.add(waveVal);
@@ -238,12 +278,14 @@ public class AudioWaveView extends SurfaceView implements SurfaceHolder.Callback
     }
 
     class WaveVal {
+        long timestamp;
         int positiveVal;
         int negativeVal;
 
-        public WaveVal(int positiveVal, int negativeVal) {
+        public WaveVal(int positiveVal, int negativeVal, long timestamp) {
             this.positiveVal = positiveVal / dimen.pcmValPerPixel;
             this.negativeVal = negativeVal / dimen.pcmValPerPixel;
+            this.timestamp = timestamp;
         }
 
         @Override

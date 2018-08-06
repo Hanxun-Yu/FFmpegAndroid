@@ -31,7 +31,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.LinkedList;
+import java.util.TimeZone;
 
 public class MainActivity extends AppCompatActivity implements
         MediaEncoder.MediaEncoderCallback {
@@ -40,6 +42,8 @@ public class MainActivity extends AppCompatActivity implements
     private Button recordBtn;
     private Button stopBtn;
     private TextView infoText;
+    private TextView memoryText;
+    private TextView timeText;
 
     final String TAG = "MainActivity_xunxun";
     private Camera2Helper camera2Helper;
@@ -84,6 +88,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
+    long startTime;
     private void init() {
         mediaEncoder = new MediaEncoder();
         textureView = findViewById(R.id.textureview);
@@ -100,7 +105,8 @@ public class MainActivity extends AppCompatActivity implements
         recordBtn = findViewById(R.id.recordBtn);
         stopBtn = findViewById(R.id.stopBtn);
         infoText = findViewById(R.id.infoText);
-
+        memoryText = findViewById(R.id.memoryText);
+        timeText = findViewById(R.id.timeText);
 //        progressBar= (ProgressBar) findViewById(R.id.progressbar_loading);
         recordBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -109,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements
 //                camera2Helper.startCallbackFrame();
                 if (mediaEncoder.start()) {
                     recording = true;
+                    startTime = System.currentTimeMillis();
                 } else {
                     Toast.makeText(MainActivity.this, "MediaEncoder launch failer!", Toast.LENGTH_SHORT).show();
                 }
@@ -442,13 +449,23 @@ public class MainActivity extends AppCompatActivity implements
         @Override
         public void run() {
             infoText.setText(getDisplayData());
+            memoryText.setText(getMemoryInfo());
+            timeText.setText(getTimeData());
         }
 
     };
 
+    private String getTimeData() {
+        if(startTime == 0) {
+            return "00:00:00";
+        }
+        long diff = System.currentTimeMillis() - startTime;
+        SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+        return formatter.format(diff);
+    }
+
     private String getDisplayData() {
-        float[] memory = getMemory();
-        DecimalFormat fnum = new DecimalFormat("##0.00");
         StringBuffer buffer = new StringBuffer();
 
         buffer.append((useCameraOne ? "Camera" : "Camera2"));
@@ -456,14 +473,14 @@ public class MainActivity extends AppCompatActivity implements
         buffer.append((useSurfaceview ? "SurfaceView" : "TextureView"));
         buffer.append("\n");
 
-        buffer.append("-----SIZE-----\n");
+        buffer.append("----------SIZE----------\n");
         buffer.append("h264:");
         buffer.append(mediaEncoder.getVideoEncodedSize());
         buffer.append(" aac:");
         buffer.append(mediaEncoder.getAudioEncodedSize());
         buffer.append("\n");
         //----------------输入输出数--------------------------
-        buffer.append("-----IO-----\n");
+        buffer.append("-----------IO------------\n");
         buffer.append("pcm Put:");
         buffer.append(mediaEncoder.getPutPCMCount());
         buffer.append(" Take:");
@@ -486,7 +503,7 @@ public class MainActivity extends AppCompatActivity implements
         buffer.append(mediaEncoder.getWaitAudioEncodedQueueSize());
         buffer.append("\n");
         //---------------帧率--------------------------------
-        buffer.append("-----FPS-----\n");
+        buffer.append("-----------FPS-----------\n");
         buffer.append("yuv:");
         buffer.append(mediaEncoder.getYuvFPS());
         buffer.append("\n");
@@ -498,9 +515,13 @@ public class MainActivity extends AppCompatActivity implements
         buffer.append("\n");
         buffer.append("aac:");
         buffer.append(mediaEncoder.getAacFPS());
-        buffer.append("\n");
+        return buffer.toString();
+    }
 
-
+    private String getMemoryInfo() {
+        float[] memory = getMemory();
+        DecimalFormat fnum = new DecimalFormat("##0.00");
+        StringBuffer buffer = new StringBuffer();
         buffer.append("---------memory---------\n");
         buffer.append("max:");
         buffer.append(fnum.format(memory[0]));
@@ -513,7 +534,6 @@ public class MainActivity extends AppCompatActivity implements
         buffer.append("\n");
         buffer.append("free:");
         buffer.append(fnum.format(memory[2]));
-
         return buffer.toString();
     }
 
