@@ -3,10 +3,6 @@ package com.kedacom.demo.appcameratoh264;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.pm.ActivityInfo;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
 import android.graphics.SurfaceTexture;
 import android.media.Image;
 import android.os.Bundle;
@@ -15,7 +11,6 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
@@ -31,14 +26,12 @@ import com.kedacom.demo.appcameratoh264.media.audio.AudioRecoderManager;
 import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.video.VideoData420;
 import com.kedacom.demo.appcameratoh264.widget.AudioWaveView;
-import com.maxproj.simplewaveform.SimpleWaveform;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 import java.util.LinkedList;
-import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements
         MediaEncoder.MediaEncoderCallback {
@@ -69,7 +62,6 @@ public class MainActivity extends AppCompatActivity implements
     int videoBitrate = 2048;
     private AudioRecoderManager audioGathererManager;
 
-    private SimpleWaveform simpleWaveform;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -270,9 +262,9 @@ public class MainActivity extends AppCompatActivity implements
         mediaEncoder.setOnEncoderChangedListener(new MediaEncoder.OnEncoderChangedListener() {
             @Override
             public void onChanged(MediaEncoder.EncoderState state) {
-                Log.d(TAG,"Encoder state V:"+state.getVideoEncoderState()+" A:"+state.getAudioEncoderState()+
-                " Mux:"+state.getMuxEncoderState());
-                if(state.getAudioEncoderState() == MediaEncoder.State.IDLE
+                Log.d(TAG, "Encoder state V:" + state.getVideoEncoderState() + " A:" + state.getAudioEncoderState() +
+                        " Mux:" + state.getMuxEncoderState());
+                if (state.getAudioEncoderState() == MediaEncoder.State.IDLE
                         && state.getVideoEncoderState() == MediaEncoder.State.IDLE) {
                     mediaEncoder.mux(MediaEncoder.MuxType.MP4);
                 }
@@ -343,23 +335,23 @@ public class MainActivity extends AppCompatActivity implements
 
     private void notifyWave(byte[] audioData) {
 //        if (count % frequence == 0) {
-            for (int i = 0; i < audioData.length; i += 4) {
-                //PCM16,采样一次4个字节，左右各2个字节,PCM16
-                if (i > audioData.length - 4) {
-                    break;
-                }
-                byte left1 = audioData[i];
-                byte left2 = audioData[i + 1];
-                byte right1 = audioData[i + 2];
-                byte right2 = audioData[i + 3];
+        for (int i = 0; i < audioData.length; i += 4) {
+            //PCM16,采样一次4个字节，左右各2个字节,PCM16
+            if (i > audioData.length - 4) {
+                break;
+            }
+            byte left1 = audioData[i];
+            byte left2 = audioData[i + 1];
+            byte right1 = audioData[i + 2];
+            byte right2 = audioData[i + 3];
 
-                short u_left1 = (short) (left1 & 0xff);
-                short u_left2 = (short) (left2 & 0xff);
-                short u_right1 = (short) (right1 & 0xff);
-                short u_right2 = (short) (right2 & 0xff);
+            short u_left1 = (short) (left1 & 0xff);
+            short u_left2 = (short) (left2 & 0xff);
+            short u_right1 = (short) (right1 & 0xff);
+            short u_right2 = (short) (right2 & 0xff);
 
 
-                short left = (short) ((u_left1 ) | (u_left2<< 8));
+            short left = (short) ((u_left1) | (u_left2 << 8));
 //                short right = (short) ((u_right1 << 8) | u_right2);
 
 
@@ -370,8 +362,8 @@ public class MainActivity extends AppCompatActivity implements
 //                Log.d(TAG, "audio_right 1:" + Integer.toHexString(u_right1)
 //                        + " 2:" + Integer.toHexString(u_right2)
 //                        + " 1&2:" + Integer.toHexString(right) + " dex:" + right);
-                notigyWaveView(left);
-            }
+            notigyWaveView(left);
+        }
 //            Log.d(TAG, "audioData:" + size);
 //        }
     }
@@ -449,27 +441,81 @@ public class MainActivity extends AppCompatActivity implements
         @SuppressLint("SetTextI18n")
         @Override
         public void run() {
-            float[] memory = getMemory();
-            DecimalFormat fnum = new DecimalFormat("##0.00");
-            infoText.setText(
-                    (useCameraOne ? "Camera" : "Camera2") + "\n"
-                            + (useSurfaceview ? "SurfaceView" : "TextureView") + "\n"
-                            + "size:" + mediaEncoder.getEncodedSize() + "\n"
-                            + "putPCM:" + mediaEncoder.getPutPCMCount() + "\n"
-                            + "putYUV:" + mediaEncoder.getPutYUVCount() + "\n"
-                            + "recvH264:" + mediaEncoder.getRecvH264Count() + "\n"
-                            + "yuvFPS:" + mediaEncoder.getYuvFPS() + "\n"
-                            + "h264FPS:" + mediaEncoder.getH264FPS() + "\n"
-                            + "encoderQueue:" + mediaEncoder.getWaitEncodedQueueSize() + "\n"
-                            + "---------memory---------\n"
-                            + "max:" + fnum.format(memory[0]) + "\n"
-                            + "maxHeap:" + fnum.format(memory[3]) + "\n"
-
-                            + "malloc:" + fnum.format(memory[1]) + "\n"
-                            + "free:" + fnum.format(memory[2]));
+            infoText.setText(getDisplayData());
         }
 
     };
+
+    private String getDisplayData() {
+        float[] memory = getMemory();
+        DecimalFormat fnum = new DecimalFormat("##0.00");
+        StringBuffer buffer = new StringBuffer();
+
+        buffer.append((useCameraOne ? "Camera" : "Camera2"));
+        buffer.append("\n");
+        buffer.append((useSurfaceview ? "SurfaceView" : "TextureView"));
+        buffer.append("\n");
+
+        buffer.append("-----SIZE-----\n");
+        buffer.append("h264:");
+        buffer.append(mediaEncoder.getVideoEncodedSize());
+        buffer.append(" aac:");
+        buffer.append(mediaEncoder.getAudioEncodedSize());
+        buffer.append("\n");
+        //----------------输入输出数--------------------------
+        buffer.append("-----IO-----\n");
+        buffer.append("pcm Put:");
+        buffer.append(mediaEncoder.getPutPCMCount());
+        buffer.append(" Take:");
+        buffer.append(mediaEncoder.getTakePCMCount());
+        buffer.append("\n");
+        buffer.append("yuv Put:");
+        buffer.append(mediaEncoder.getPutYUVCount());
+        buffer.append(" Take:");
+        buffer.append(mediaEncoder.getTakeYUVCount());
+        buffer.append("\n");
+        buffer.append("aacOUT:");
+        buffer.append(mediaEncoder.getRecvAACCount());
+        buffer.append("\n");
+        buffer.append("h264OUT:");
+        buffer.append(mediaEncoder.getRecvH264Count());
+        buffer.append("\n");
+        buffer.append("queue v:");
+        buffer.append(mediaEncoder.getWaitVideoEncodedQueueSize());
+        buffer.append(" a:");
+        buffer.append(mediaEncoder.getWaitAudioEncodedQueueSize());
+        buffer.append("\n");
+        //---------------帧率--------------------------------
+        buffer.append("-----FPS-----\n");
+        buffer.append("yuv:");
+        buffer.append(mediaEncoder.getYuvFPS());
+        buffer.append("\n");
+        buffer.append("h264:");
+        buffer.append(mediaEncoder.getH264FPS());
+        buffer.append("\n");
+        buffer.append("pcm:");
+        buffer.append(mediaEncoder.getPcmFPS());
+        buffer.append("\n");
+        buffer.append("aac:");
+        buffer.append(mediaEncoder.getAacFPS());
+        buffer.append("\n");
+
+
+        buffer.append("---------memory---------\n");
+        buffer.append("max:");
+        buffer.append(fnum.format(memory[0]));
+        buffer.append("\n");
+        buffer.append("maxHeap:");
+        buffer.append(fnum.format(memory[3]));
+        buffer.append("\n");
+        buffer.append("malloc:");
+        buffer.append(fnum.format(memory[1]));
+        buffer.append("\n");
+        buffer.append("free:");
+        buffer.append(fnum.format(memory[2]));
+
+        return buffer.toString();
+    }
 
 
     private float[] getMemory() {
@@ -532,90 +578,5 @@ public class MainActivity extends AppCompatActivity implements
 //                simpleWaveform.refresh();
 //            }
 //        });
-
-    }
-    private void initSimpleWaveform() {
-        //restore default setting, you can omit all following setting and goto the final refresh() show
-        simpleWaveform.init();
-
-        //generate random data
-        Random ra =new Random();
-//        for (int i = 0; i < 80; i++) {
-//            ampList.add(ra.nextInt( 50));
-//        }
-        simpleWaveform.setDataList(ampList);//input data to show
-
-        //define bar gap
-        simpleWaveform.barGap = 30;
-
-        //define x-axis direction
-        simpleWaveform.modeDirection = SimpleWaveform.MODE_DIRECTION_LEFT_RIGHT;
-
-        //define if draw opposite pole when show bars
-        simpleWaveform.modeAmp = SimpleWaveform.MODE_AMP_ABSOLUTE;
-        //define if the unit is px or percent of the view's height
-        simpleWaveform.modeHeight = SimpleWaveform.MODE_HEIGHT_PERCENT;
-        //define where is the x-axis in y-axis
-        simpleWaveform.modeZero = SimpleWaveform.MODE_ZERO_CENTER;
-        //if show bars?
-        simpleWaveform.showBar = true;
-
-        //define how to show peaks outline
-        simpleWaveform.modePeak = SimpleWaveform.MODE_PEAK_PARALLEL;
-        //if show peaks outline?
-        simpleWaveform.showPeak = true;
-
-        //show x-axis
-        simpleWaveform.showXAxis = true;
-        Paint xAxisPencil = new Paint();
-        xAxisPencil.setStrokeWidth(1);
-        xAxisPencil.setColor(0x88ffffff);//the first 0x88 is transparency, the next 0xffffff is color
-        simpleWaveform.xAxisPencil = xAxisPencil;
-
-
-        Paint barPencilFirst = new Paint();
-        //define pencil to draw bar
-        barPencilFirst.setStrokeWidth(15);
-        barPencilFirst.setColor(0xff1dcf0f);
-        simpleWaveform.barPencilFirst = barPencilFirst;
-
-
-        Paint barPencilSecond = new Paint();
-        barPencilSecond.setStrokeWidth(15);
-        barPencilSecond.setColor(0xff1dcfcf);
-        simpleWaveform.barPencilSecond = barPencilSecond;
-
-        //define pencil to draw peaks outline
-        Paint peakPencilFirst = new Paint();
-        peakPencilFirst.setStrokeWidth(5);
-        peakPencilFirst.setColor(0xfffe2f3f);
-        simpleWaveform.peakPencilFirst = peakPencilFirst;
-
-        Paint peakPencilSecond = new Paint();
-        peakPencilSecond.setStrokeWidth(5);
-        peakPencilSecond.setColor(0xfffeef3f);
-        simpleWaveform.peakPencilSecond = peakPencilSecond;
-
-        //the first part will be draw by PencilFirst
-        simpleWaveform.firstPartNum = 20;//first 20 bars will be draw by first pencil
-
-        //define how to clear screen
-        simpleWaveform.clearScreenListener = new SimpleWaveform.ClearScreenListener() {
-            @Override
-            public void clearScreen(Canvas canvas) {
-                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-            }
-        };
-        // set touch listener
-        simpleWaveform.progressTouch = new SimpleWaveform.ProgressTouch() {
-            @Override
-            public void progressTouch(int progress, MotionEvent event) {
-                Log.d("", "you touch at: " + progress);
-                simpleWaveform.firstPartNum = progress;//set touch position back to its progress
-                simpleWaveform.refresh();
-            }
-        };
-        //show...
-//        simpleWaveform.refresh();
     }
 }

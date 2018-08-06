@@ -115,7 +115,7 @@ public class AudioWaveView extends SurfaceView implements SurfaceHolder.Callback
         canvas.drawColor(Color.BLACK);
     }
 
-    private void drawWave(Canvas canvas) {
+    private synchronized void drawWave(Canvas canvas) {
         WaveVal waveValItem = null;
         int nextX = 0;
         int startY = dimen.heightHalf;
@@ -215,7 +215,7 @@ public class AudioWaveView extends SurfaceView implements SurfaceHolder.Callback
     short tempPutMax = 0;
     short tempPutMin = 0;
 
-    public void putData(short sample) {
+    public synchronized void putData(short sample) {
         if (!isReady)
             return;
 

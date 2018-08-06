@@ -244,12 +244,14 @@ public class MediaEncoder {
 //                Log.d(TAG,"taking video videoEncoderLoop:"+videoEncoderLoop);
 
                 //视频消费者模型，不断从队列中取出视频流来进行h264编码
-                try {
-                    while (videoQueue.size() != 0 || videoEncoderLoop) {
+
+                while (videoQueue.size() != 0 || videoEncoderLoop || putYUVCount != takeYUVCount) {
 //                        Log.d(TAG,"taking video");
+                    try {
                         start = System.currentTimeMillis();
                         //队列中取视频数据
                         videoData = videoQueue.take();
+                        takeYUVCount++;
 //                        byte[] outbuffer = new byte[videoData.width * videoData.height];
                         outbuffer = new byte[videoData.videoData.length];
                         buffLength = new int[20];
@@ -294,13 +296,13 @@ public class MediaEncoder {
                         }
                         end = System.currentTimeMillis();
 //                        Log.d(TAG, "encodeTime:" + (end - start));
-
-                        refreshFPS();
-                        System.gc();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    refreshFPS();
+                    System.gc();
                 }
+
                 videoFileManager.closeFile();
                 isVideoEncoderThreadStop = true;
                 lastFPSCheckTime = 0;
@@ -310,6 +312,10 @@ public class MediaEncoder {
         };
         videoEncoderLoop = true;
         videoEncoderThread.start();
+    }
+
+    public int getRecvAACCount() {
+        return recvAACCount;
     }
 
     public void startAudioEncode() {
@@ -326,9 +332,10 @@ public class MediaEncoder {
                 isAudioEncoderThreadStop = false;
                 refreshState();
 
-                while ((audioQueue.size() != 0 || audioEncoderLoop) && !Thread.interrupted()) {
+                while ((audioQueue.size() != 0 || audioEncoderLoop || recvAACCount != putPCMCount) && !Thread.interrupted()) {
                     try {
                         AudioData audio = audioQueue.take();
+                        takePCMCount++;
                         //我们通过fdk-aac接口获取到了audioEncodeBuffer的数据，即每次编码多少数据为最优
                         //这里我这边的手机每次都是返回的4096即4K的数据，其实为了简单点，我们每次可以让
                         //MIC录取4K大小的数据，然后把录取的数据传递到AudioEncoder.cpp中取编码
@@ -346,6 +353,9 @@ public class MediaEncoder {
                                 if (VALID_LENGTH > 0) {
                                     byte[] encodeData = new byte[VALID_LENGTH];
                                     System.arraycopy(outbuffer, 0, encodeData, 0, VALID_LENGTH);
+
+                                    recvAACCount++;
+                                    aacTotalSize+=validLength;
                                     if (sMediaEncoderCallback != null) {
                                         //编码后，把数据抛给rtmp去推流
                                         sMediaEncoderCallback.receiveEncoderAudioData(encodeData, VALID_LENGTH);
@@ -425,10 +435,17 @@ public class MediaEncoder {
         }).start();
     }
 
+    //编码后的总大小
     private long h264TotalSize = 0L;
+    private long aacTotalSize = 0L;
+
 
     public int getPutYUVCount() {
         return putYUVCount;
+    }
+
+    public int getTakeYUVCount() {
+        return takeYUVCount;
     }
 
     public int getPutPCMCount() {
@@ -440,17 +457,28 @@ public class MediaEncoder {
     }
 
     private int putYUVCount = 0;
+    private int takeYUVCount = 0;
     private int putPCMCount = 0;
 
-    private int recvH264Count = 0;
+    public int getTakePCMCount() {
+        return takePCMCount;
+    }
 
+    private int takePCMCount = 0;
+
+    private int recvH264Count = 0;
+    private int recvAACCount = 0;
     private long lastFPSCheckTime = 0;
     private int checkFPSYUVStart = 0;
     private int checkFPSH264Start = 0;
+    private int checkFPSPCMStart = 0;
+    private int checkFPSAACStart = 0;
 
 
     private int yuvFPS = 0;
     private int h264FPS = 0;
+    private int pcmFPS = 0;
+    private int aacFPS = 0;
 
     private void refreshFPS() {
         if (lastFPSCheckTime == 0) {
@@ -463,22 +491,38 @@ public class MediaEncoder {
                     checkFPSYUVStart = putYUVCount;
                 if (checkFPSH264Start == 0)
                     checkFPSH264Start = recvH264Count;
+                if (checkFPSPCMStart == 0)
+                    checkFPSPCMStart = putPCMCount;
+                if (checkFPSAACStart == 0)
+                    checkFPSAACStart = recvAACCount;
             } else {
                 lastFPSCheckTime = now;
                 yuvFPS = (int) ((putYUVCount - checkFPSYUVStart) * 1000f / interval);
                 h264FPS = (int) ((recvH264Count - checkFPSH264Start) * 1000f / interval);
+                pcmFPS = (int) ((putPCMCount - checkFPSPCMStart) * 1000f / interval);
+                aacFPS = (int) ((recvAACCount - checkFPSAACStart) * 1000f / interval);
+
                 checkFPSYUVStart = 0;
                 checkFPSH264Start = 0;
+                checkFPSPCMStart = 0;
+                checkFPSAACStart = 0;
             }
         }
     }
 
-    public int getWaitEncodedQueueSize() {
+    public int getWaitVideoEncodedQueueSize() {
         return videoQueue.size();
     }
 
-    public String getEncodedSize() {
+    public int getWaitAudioEncodedQueueSize() {
+        return audioQueue.size();
+    }
+
+    public String getVideoEncodedSize() {
         return getSize(h264TotalSize);
+    }
+    public String getAudioEncodedSize() {
+        return getSize(aacTotalSize);
     }
 
     private String getSize(long sizel) {
@@ -502,6 +546,18 @@ public class MediaEncoder {
 
     public int getH264FPS() {
         return h264FPS;
+    }
+
+    public static String getTAG() {
+        return TAG;
+    }
+
+    public int getPcmFPS() {
+        return pcmFPS;
+    }
+
+    public int getAacFPS() {
+        return aacFPS;
     }
 
     EncoderState cacheState = new EncoderState();
