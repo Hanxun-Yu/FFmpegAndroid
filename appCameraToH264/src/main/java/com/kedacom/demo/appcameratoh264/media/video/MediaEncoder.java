@@ -660,6 +660,7 @@ public class MediaEncoder {
 
     public void setOnEncoderChangedListener(OnEncoderChangedListener onEncoderChangedListener) {
         this.onEncoderChangedListener = onEncoderChangedListener;
+
     }
 
     OnEncoderChangedListener onEncoderChangedListener;

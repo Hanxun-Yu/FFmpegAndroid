@@ -3,7 +3,15 @@ package com.kedacom.demo.appcameratoh264;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.pm.ActivityInfo;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.ImageFormat;
+import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.graphics.YuvImage;
+import android.hardware.Camera;
+import android.media.FaceDetector;
 import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,6 +27,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
 import com.kedacom.demo.appcameratoh264.jni.YuvUtil;
 import com.kedacom.demo.appcameratoh264.media.Camera1Helper;
 import com.kedacom.demo.appcameratoh264.media.audio.AudioData;
@@ -63,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements
 //    int widthOUT = 720;
 //    int heightOUT = 1280;
 
-    int videoBitrate = 2048;
+    int videoBitrate = 2048*2;
     private AudioRecoderManager audioGathererManager;
 
     @Override
@@ -84,11 +93,13 @@ public class MainActivity extends AppCompatActivity implements
         init();
         initCamera();
         initMicroPhone();
+        initCheckFaceThread();
 //        initSimpleWaveform();
     }
 
 
     long startTime;
+
     private void init() {
         mediaEncoder = new MediaEncoder();
         textureView = findViewById(R.id.textureview);
@@ -157,6 +168,9 @@ public class MainActivity extends AppCompatActivity implements
                     if (recording) {
                         notifyEncoderVideo(bytes);
                     }
+
+//                    if(checkFaceHandler != null)
+//                        checkFaceHandler.obtainMessage(0,bytes).sendToTarget();
                 }
             });
             if (useSurfaceview) {
@@ -282,6 +296,29 @@ public class MainActivity extends AppCompatActivity implements
 
     HandlerThread handlerThread;
     Handler putEncoderHandler;
+    HandlerThread checkFaceThread;
+    Handler checkFaceHandler;
+
+    private void initCheckFaceThread() {
+        checkFaceThread = new HandlerThread("checkFace");
+        checkFaceThread.start();
+        checkFaceHandler = new Handler(checkFaceThread.getLooper()) {
+            int incremental = 0;
+            int frequence = 20;
+            @Override
+            public void handleMessage(Message msg) {
+                super.handleMessage(msg);
+//                Log.d(TAG,"incremental:"+incremental);
+                if(incremental % frequence == 0) {
+                    checkFace((byte[]) msg.obj, widthIN, heightIN);
+                    if(incremental == frequence)
+                        incremental = 0;
+                }
+                incremental++;
+
+            }
+        };
+    }
 
 
     final int HANDLE_VIDEO_MSG = 0;
@@ -305,6 +342,7 @@ public class MainActivity extends AppCompatActivity implements
                             YuvUtil.compressYUV(yuv420sp, widthIN, heightIN,
                                     yuv420p, widthOUT, heightOUT, 0, camera1Helper.getDisplayOrientation(), false);
                             vd420Temp = new VideoData420(yuv420p, widthOUT, heightOUT, System.currentTimeMillis());
+
                             mediaEncoder.putVideoData(vd420Temp);
                         } else {
                             //收到420p
@@ -456,7 +494,7 @@ public class MainActivity extends AppCompatActivity implements
     };
 
     private String getTimeData() {
-        if(startTime == 0) {
+        if (startTime == 0) {
             return "00:00:00";
         }
         long diff = System.currentTimeMillis() - startTime;
@@ -598,5 +636,37 @@ public class MainActivity extends AppCompatActivity implements
 //                simpleWaveform.refresh();
 //            }
 //        });
+    }
+
+    private void checkFace(byte[] yuv, int width, int height) {
+        YuvImage image = new YuvImage(yuv, ImageFormat.NV21, width, height, null);
+        if (yuv != null) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            image.compressToJpeg(new Rect(0, 0, width, height), 50, out);
+            byte[] datas = out.toByteArray();
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inPreferredConfig = Bitmap.Config.RGB_565;
+            Bitmap mBitmap = BitmapFactory.decodeByteArray(datas, 0, datas.length, options);
+            //FileUtil.saveBitmap("cccc/"+l+"ee.png", mBitmap);
+            Matrix matrix = new Matrix();
+            //matrix.postRotate((float)90);
+            matrix.postScale(0.4f, 0.3125f); //照片的大小使 1280*960 屏幕的大小使 1024*600 这里需要注意换算比例
+            // Logger.v("MyCameraManager faceCheckFlag");
+            //synchronized (this) {
+            //Logger.v("MyCameraManager synchronized");
+            //if(faceCheckFlag){
+            //setFaceCheckFlag(false);
+            //Logger.v("MyCameraManager synchronized" + errornum + mBitmap.getWidth() + "dd " + mBitmap.getHeight());
+            Bitmap bitmap = Bitmap.createBitmap(mBitmap, 0, 0, mBitmap.getWidth(), mBitmap.getHeight(), matrix, false);
+            FaceDetector mFaceDetector = new FaceDetector(width, height, 5);
+            FaceDetector.Face[] mFace = new FaceDetector.Face[5];
+            int faceResult = mFaceDetector.findFaces(mBitmap, mFace);
+
+//            if (faceResult != 0) {
+                Log.d(TAG, "findFace:" + new Gson().toJson(mFace));
+//            }
+            mBitmap.recycle();
+            bitmap.recycle();
+        }
     }
 }

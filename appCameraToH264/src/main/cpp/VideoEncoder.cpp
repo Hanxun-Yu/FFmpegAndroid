@@ -196,27 +196,31 @@ void VideoEncoder::setParams() {
 //    params.rc.b_mb_tree = 0;
 
     // Intra refres:
-    params.i_keyint_max = 25;
+    params.i_keyint_max = 25*2;
     params.i_keyint_min = 1;
     params.b_intra_refresh = 1;
 
     //参数i_rc_method表示码率控制，CQP(恒定质量)，CRF(恒定码率)，ABR(平均码率)
+
+    //恒定码率-------------------------------
     //恒定码率，会尽量控制在固定码率
 //    params.rc.i_rc_method = X264_RC_CRF;
+    //图像质量控制,rc.f_rf_constant是实际质量，越大图像越花，越小越清晰,param.rc.f_rf_constant_max ，图像质量的最大值
+//    params.rc.f_rf_constant = 25;
+//    params.rc.f_rf_constant_max = 45;
+//    params.rc.i_bitrate = getBitrate();
+    //恒定码率-------------------------------
 
     //平均码率--------------------------
     params.rc.i_rc_method = X264_RC_ABR;
     params.rc.i_vbv_buffer_size = static_cast<int>(getBitrate() * 1.5);
+    params.rc.i_bitrate = getBitrate();
     //平均码率--------------------------
 
-    //图像质量控制,rc.f_rf_constant是实际质量，越大图像越花，越小越清晰
-    //param.rc.f_rf_constant_max ，图像质量的最大值
-    params.rc.f_rf_constant = 25;
-    params.rc.f_rf_constant_max = 35;
+
 
     // For streaming:
     //* 码率(比特率,单位Kbps)x264使用的bitrate需要/1000
-    params.rc.i_bitrate = getBitrate();
     LOGD("params.rc.i_bitrate:%d",params.rc.i_bitrate);
     //瞬时最大码率,平均码率模式下，最大瞬时码率，默认0(与-B设置相同)
     params.rc.i_vbv_max_bitrate = getBitrate() * 1.2;
@@ -226,7 +230,7 @@ void VideoEncoder::setParams() {
     //为了提高图像的纠错能力,该参数设置是让每个I帧都附带sps/pps。
     params.b_repeat_headers = 1;
     //设置Level级别,编码复杂度
-    params.i_level_idc = 51;
+    params.i_level_idc = 30;
 
     //profile
     //默认：无
