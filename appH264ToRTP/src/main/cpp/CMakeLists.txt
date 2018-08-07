@@ -23,7 +23,12 @@ add_library( # Sets the name of the library.
         SHARED
 
         # Provides a relative path to your source file(s).
-        FFmpegjni.cpp)
+        FFmpegjni.cpp
+        ThreadHandler.cpp
+        SyncQueue.hpp
+        RTPPackager.cpp
+        RtpToH264Thread.hpp
+        )
 add_library(
         ffmpeg
         SHARED
