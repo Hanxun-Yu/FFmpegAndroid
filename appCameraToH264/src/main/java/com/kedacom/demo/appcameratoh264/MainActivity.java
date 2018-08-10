@@ -10,7 +10,6 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.graphics.YuvImage;
-import android.hardware.Camera;
 import android.media.FaceDetector;
 import android.media.Image;
 import android.os.Bundle;
@@ -30,11 +29,13 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 import com.kedacom.demo.appcameratoh264.jni.YuvUtil;
 import com.kedacom.demo.appcameratoh264.media.Camera1Helper;
+import com.kedacom.demo.appcameratoh264.media.Camera2Helper;
 import com.kedacom.demo.appcameratoh264.media.audio.AudioData;
 import com.kedacom.demo.appcameratoh264.media.audio.AudioRecoderManager;
 import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.video.VideoData420;
 import com.kedacom.demo.appcameratoh264.widget.AudioWaveView;
+import com.kedacom.demo.appcameratoh264.widget.AutoFitTextureView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -72,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements
 //    int widthOUT = 720;
 //    int heightOUT = 1280;
 
-    int videoBitrate = 2048*2;
+    int videoBitrate = 1024;
     private AudioRecoderManager audioGathererManager;
 
     @Override
@@ -138,6 +139,7 @@ public class MainActivity extends AppCompatActivity implements
             public void onClick(View view) {
                 recording = false;
                 mediaEncoder.stop();
+                audioGathererManager.stopAudioIn();
 //                camera2Helper.stopCallbackFrame();
             }
         });
@@ -624,7 +626,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void releaseMicroPhone() {
-        audioGathererManager.stopAudioIn();
+        audioGathererManager.release();
     }
 
     LinkedList<Integer> ampList = new LinkedList<>();

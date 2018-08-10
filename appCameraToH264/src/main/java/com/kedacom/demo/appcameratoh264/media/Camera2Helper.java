@@ -1,11 +1,9 @@
-package com.kedacom.demo.appcameratoh264;
+package com.kedacom.demo.appcameratoh264.media;
 
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
-import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -35,11 +33,10 @@ import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
 
-import com.google.gson.Gson;
+import com.kedacom.demo.appcameratoh264.widget.AutoFitTextureView;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -676,7 +673,7 @@ public class Camera2Helper {
 
     OnRealFrameListener onRealFrameListener;
 
-    interface OnRealFrameListener {
+    public interface OnRealFrameListener {
         void onRealFrame(Image image);
     }
 

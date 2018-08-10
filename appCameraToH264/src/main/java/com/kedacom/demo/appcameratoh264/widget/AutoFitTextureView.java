@@ -1,4 +1,4 @@
-package com.kedacom.demo.appcameratoh264;
+package com.kedacom.demo.appcameratoh264.widget;
 
 import android.content.Context;
 import android.util.AttributeSet;

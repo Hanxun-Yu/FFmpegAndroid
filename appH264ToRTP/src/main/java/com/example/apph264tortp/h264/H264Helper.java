@@ -152,7 +152,7 @@ public class H264Helper {
         intBuffer.flip();
         int[] ret = new int[intBuffer.limit()];
         intBuffer.get(ret, 0, ret.length);
-        Log.d(TAG,"ret:"+ Arrays.toString(ret));
+//        Log.d(TAG,"ret:"+ Arrays.toString(ret));
         return ret;
     }
 

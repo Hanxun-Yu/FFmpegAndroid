@@ -29,7 +29,7 @@ public class FFmpegjni {
      * 编码视频数据接口
      * @param srcFrame      原始数据(YUV420P数据)
      * @param frameSize     帧大小
-     * @param fps           fps
+     * @param fps           fps 帧序 递增
      * @param dstFrame      编码后的数据存储
      * @param outFramewSize 编码后的数据大小
      * @return

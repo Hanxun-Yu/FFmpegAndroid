@@ -98,9 +98,6 @@ public class AudioRecoderManager {
         loop = false;
         workThread.interrupt();
         mAudioRecord.stop();
-        mAudioRecord.release();
-        mAudioRecord = null;
-
         if (SAVE_FILE_FOR_TEST) {
             fileManager.closeFile();
             //测试代码，以WAV格式保存数据啊
@@ -108,5 +105,10 @@ public class AudioRecoderManager {
             file.delete();
             PcmToWav.copyWaveFile(FileManager.TEST_PCM_FILE, FileManager.TEST_WAV_FILE, SAMPLE_HZ, bufferSizeInBytes);
         }
+    }
+
+    public void release() {
+        mAudioRecord.release();
+        mAudioRecord = null;
     }
 }

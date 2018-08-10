@@ -23,7 +23,7 @@
             android:layout_width="135dp"
             android:layout_height="240dp">
 
-            <com.kedacom.demo.appcameratoh264.AutoFitTextureView
+            <com.kedacom.demo.appcameratoh264.widget.AutoFitTextureView
                 android:id="@+id/textureview"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />

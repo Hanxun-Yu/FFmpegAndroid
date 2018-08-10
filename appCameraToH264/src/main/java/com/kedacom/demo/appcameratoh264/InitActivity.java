@@ -94,13 +94,16 @@ public class InitActivity extends AppCompatActivity {
     final int REQUEST_CODE = 99;
     String[] permissions = {Manifest.permission.CAMERA,
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.RECORD_AUDIO};
+            Manifest.permission.RECORD_AUDIO,
+//            Manifest.permission.CAPTURE_AUDIO_OUTPUT
+    };
 
     private boolean checkPermission() {
         //如果返回true表示已经授权了
         if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
                 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
                 && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+//                && checkSelfPermission(Manifest.permission.CAPTURE_AUDIO_OUTPUT) == PackageManager.PERMISSION_GRANTED
                 ) {
             return true;
         } else {

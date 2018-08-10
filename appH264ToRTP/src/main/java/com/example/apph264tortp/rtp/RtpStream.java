@@ -3,6 +3,7 @@ package com.example.apph264tortp.rtp;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
 public class RtpStream {
 
@@ -34,17 +35,21 @@ public class RtpStream {
 		64			SSRC identifier								 95
 		*/
 
-        ByteBuffer buffer = ByteBuffer.allocate(1500);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        final ByteBuffer buffer = ByteBuffer.allocate(1500);
         //1
         buffer.put((byte) ((1 << 7) & 254));
         //2
         buffer.put((byte) (payloadType));//96��һλ0�䵱��M
         //3-4
         buffer.putShort(sequenceNumber++);
-        //5-6
+        //5-8
         buffer.putInt((int) (timeUs));
-
+        //9-10
+        buffer.putShort((short) 0);
+        //11
+        buffer.put((byte) 0);
+        //12
+        buffer.put((byte) 10);
 
 
 //		intToByte(buffer, (int) timeUs);
@@ -57,22 +62,32 @@ public class RtpStream {
         buffer.put(data, offset, size);
 
         sendPacket(buffer, buffer.position());
-
     }
 
-    public static byte[] intToByte(ByteBuffer buffer, int number) {
-        int temp = number;
-        byte[] b = new byte[4];
-        for (int i = 0; i < b.length; i++) {
-            b[i] = new Integer(temp & 0xff).byteValue();// 将最低位保存在最低位
-            temp = temp >> 8; // 向右移8位
-        }
-        buffer.put(b);
-        return b;
+    public static void main(String[] args) {
+        ByteBuffer buffer = ByteBuffer.allocate(1500);
+        //1
+        buffer.put((byte) ((1 << 7) & 254));
+        //2
+        buffer.put((byte) (96));//96��һλ0�䵱��M
+        //3-4
+        buffer.putShort((short) 0);
+        //5-8
+        buffer.putInt((int) (0));
+        //9-10
+        buffer.putShort((short) 0);
+        buffer.put((byte) 0);
+        buffer.put((byte) 10);
+        System.out.println(Arrays.toString(buffer.array()));
     }
 
     protected void sendPacket(ByteBuffer buffer, int size) throws IOException {
         socket.sendPacket(buffer.array(), 0, size);
         buffer.clear();
+//        try {
+//            Thread.sleep(10);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
     }
 }

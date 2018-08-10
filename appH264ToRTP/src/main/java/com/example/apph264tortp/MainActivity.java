@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
     FFmpegJni fFmpegJni = new FFmpegJni();
 
     H264Helper h264Helper = new H264Helper();
-    RtpSenderWrapper rtpSenderWrapper = new RtpSenderWrapper("172.16.195.39", 54326, false);
+    RtpSenderWrapper rtpSenderWrapper = new RtpSenderWrapper("192.168.200.247", 54326, false);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +84,6 @@ public class MainActivity extends AppCompatActivity {
     final String TAG = getClass().getSimpleName() + "_xunxun";
 
     private void startSend(String path) {
-        final long startTime = System.currentTimeMillis();
         h264Helper.findNalFromH264File(path, new H264Helper.OnNalListener() {
             @Override
             public void onFindNalIncludeStart(H264Helper.ByteData data) {
@@ -94,10 +93,20 @@ public class MainActivity extends AppCompatActivity {
 
             int incrementalFps = 90000 / 25;
             long fpsStart = 0;
+            long lastFindNalTime = 0;
+
             @Override
-            public void onFindNal(H264Helper.ByteData data) {
+            public void onFindNal(final H264Helper.ByteData data) {
                 Log.d(TAG, "onFindNal:" + data.size);
-                fpsStart+=incrementalFps;
+                int incremental = 0;
+                if (lastFindNalTime == 0) {
+                    lastFindNalTime = System.currentTimeMillis();
+                } else {
+                    incremental = (int) (System.currentTimeMillis() - lastFindNalTime);
+                }
+                fpsStart += incremental * 90;
+
+//                fpsStart += incrementalFps;
                 rtpSenderWrapper.sendAvcPacket(data.data, 0, data.size, fpsStart);
             }
         });
