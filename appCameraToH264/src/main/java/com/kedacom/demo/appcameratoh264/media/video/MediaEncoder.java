@@ -32,6 +32,7 @@ public class MediaEncoder {
     private LinkedBlockingQueue<AudioData> audioQueue;
 
     private FileManager videoFileManager;
+    private FileManager video_LenFileManager;
     private FileManager audioFileManager;
     private static final boolean SAVE_FILE_FOR_TEST = true;
     private int fps = 0;
@@ -60,6 +61,7 @@ public class MediaEncoder {
     public MediaEncoder() {
         if (SAVE_FILE_FOR_TEST) {
             videoFileManager = new FileManager(FileManager.TEST_H264_FILE);
+            video_LenFileManager = new FileManager(FileManager.TEST_H264_LEN_FILE);
             audioFileManager = new FileManager(FileManager.TEST_AAC_FILE);
         }
         videoQueue = new LinkedBlockingQueue<>();
@@ -107,6 +109,7 @@ public class MediaEncoder {
         if (SAVE_FILE_FOR_TEST) {
             videoFileManager.openFile();
             audioFileManager.openFile();
+            video_LenFileManager.openFile();
         }
         startVideoEncode();
         startAudioEncode();
@@ -293,6 +296,7 @@ public class MediaEncoder {
                             //我们可以把数据在java层保存到文件中，看看我们编码的h264数据是否能播放，h264裸数据可以在VLC播放器中播放
                             if (SAVE_FILE_FOR_TEST) {
                                 videoFileManager.writeFileData(encodeData);
+                                video_LenFileManager.writeFileData((String.valueOf(encodeData.length)+"\n").getBytes());
                             }
                         }
                         end = System.currentTimeMillis();
@@ -305,6 +309,7 @@ public class MediaEncoder {
                 }
 
                 videoFileManager.closeFile();
+                video_LenFileManager.closeFile();
                 isVideoEncoderThreadStop = true;
                 lastFPSCheckTime = 0;
                 lastPuttedVideoData = null;

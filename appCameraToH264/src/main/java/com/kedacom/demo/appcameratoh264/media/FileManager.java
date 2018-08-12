@@ -4,6 +4,7 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 
 public class FileManager {
 
@@ -11,6 +12,8 @@ public class FileManager {
     public static final String TEST_WAV_FILE = "/sdcard/264/123.wav";
     public static final String TEST_YUV_FILE = "/sdcard/264/123.yuv";
     public static final String TEST_H264_FILE = "/sdcard/264/123.h264";
+    //264每帧长度
+    public static final String TEST_H264_LEN_FILE = "/sdcard/264/h264_len.txt";
     public static final String TEST_AAC_FILE = "/sdcard/264/123.aac";
     private String fileName;
     private FileOutputStream fileOutputStream;

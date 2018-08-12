@@ -38,6 +38,10 @@ import com.kedacom.demo.appcameratoh264.widget.AudioWaveView;
 import com.kedacom.demo.appcameratoh264.widget.AutoFitTextureView;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
@@ -95,6 +99,7 @@ public class MainActivity extends AppCompatActivity implements
         initCamera();
         initMicroPhone();
         initCheckFaceThread();
+//        initFile();
 //        initSimpleWaveform();
     }
 
@@ -474,7 +479,57 @@ public class MainActivity extends AppCompatActivity implements
             if (count == frequence)
                 count = 0;
         }
+//        try {
+//            fileOutputStream.write(videoData);
+//            writer.write(String.valueOf(totalLength)+"\n");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
         count++;
+    }
+
+//    //------------------------记录每一帧的大小---------------------------
+//    File file = new File("/sdcard/h264.264");
+//    File file2 = new File("/sdcard/h264_len.txt");
+//    FileOutputStream fileOutputStream;
+//    FileWriter writer;
+//    private void initFile() {
+//        try {
+//            fileOutputStream = new FileOutputStream(file);
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        }
+//        try {
+//            writer = new FileWriter(file2);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//    private void closeFile(){
+//        try {
+//            fileOutputStream.flush();
+//            writer.flush();
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } finally {
+//            try {
+//                fileOutputStream.close();
+//                writer.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//
+//    }
+    //------------------------------------------------------------------
+
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+//        closeFile();
     }
 
     @Override
