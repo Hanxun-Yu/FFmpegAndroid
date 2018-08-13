@@ -108,6 +108,7 @@ public class AudioRecoderManager {
     }
 
     public void release() {
+        stopAudioIn();
         mAudioRecord.release();
         mAudioRecord = null;
     }

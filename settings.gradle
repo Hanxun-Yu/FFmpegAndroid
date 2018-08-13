@@ -1,1 +1,1 @@
-include ':app', ':libffmpegplayer', ':appCameraToH264', ':widget', ':appH264ToRTP'
+include ':app', ':libffmpegplayer', ':appCameraToH264', ':widget', ':appH264ToRTP', ':libffmpeg', ':appH264Render'

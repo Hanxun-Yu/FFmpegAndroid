@@ -2,7 +2,8 @@
 # documentation: https://d.android.com/studio/projects/add-native-code.html
 
 # Sets the minimum version of CMake required to build the native library.
-set(SO_IMPORT_PATH ${PROJECT_SOURCE_DIR}/../../../libs/${ANDROID_ABI})
+#set(SO_IMPORT_PATH ${PROJECT_SOURCE_DIR}/../../../libs/${ANDROID_ABI})
+set(SO_IMPORT_PATH ${PROJECT_SOURCE_DIR}/../../../../libffmpeg/libs/${ANDROID_ABI})
 
 cmake_minimum_required(VERSION 3.4.1)
 

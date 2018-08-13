@@ -38,10 +38,6 @@ import com.kedacom.demo.appcameratoh264.widget.AudioWaveView;
 import com.kedacom.demo.appcameratoh264.widget.AutoFitTextureView;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
@@ -68,16 +64,16 @@ public class MainActivity extends AppCompatActivity implements
     boolean useCameraOne = false;
     boolean useSurfaceview = false;
     boolean usePortrait = false;
-    int widthIN = 1280;
+//    int widthIN = 1920;
+//    int heightIN = 1080;
+//    int widthOUT = 1920;
+//    int heightOUT = 1080;
+        int widthIN = 1280;
     int heightIN = 720;
     int widthOUT = 1280;
     int heightOUT = 720;
-//    int widthIN = 720;
-//    int heightIN = 1280;
-//    int widthOUT = 720;
-//    int heightOUT = 1280;
 
-    int videoBitrate = 1024;
+    int videoBitrate = 3000;
     private AudioRecoderManager audioGathererManager;
 
     @Override
