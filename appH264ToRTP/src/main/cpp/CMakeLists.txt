@@ -16,6 +16,7 @@ cmake_minimum_required(VERSION 3.4.1)
 include_directories(
         .
         include
+        util
         ${INCLUDE_PATH}
 )
 
@@ -27,10 +28,9 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         FFmpegjni.cpp
-        ThreadHandler.cpp
-        SyncQueue.hpp
         RTPPackager.cpp
         RtpToH264Thread.hpp
+        util/ThreadHandler.cpp
         )
 add_library(
         ffmpeg

@@ -18,7 +18,7 @@ RTPPackager::RtpH264Callback::RtpH264Callback(RTPPackager *rtpPackager): rtpPack
 
 }
 
-void RTPPackager::RtpH264Callback::onCallback(JNIEnv *jniEnv, jobject jobject, ByteData *data) {
+void RTPPackager::RtpH264Callback::onCallback(JNIEnv *jniEnv, jobject jobject, YuvData *data) {
     if (rtpPackager->onUnPackListener != NULL) {
         rtpPackager->onUnPackListener->onH264(jniEnv,jobject,data->getP_data(), data->getSize());
     }
@@ -28,7 +28,7 @@ RTPPackager::H264RtpCallback::H264RtpCallback(RTPPackager *rtpPackager) : rtpPac
 
 }
 
-void RTPPackager::H264RtpCallback::onCallback(JNIEnv *jniEnv, jobject jobject, ByteData *data) {
+void RTPPackager::H264RtpCallback::onCallback(JNIEnv *jniEnv, jobject jobject, YuvData *data) {
     if (rtpPackager->onPackListener != NULL) {
         rtpPackager->onPackListener->onRTP(jniEnv,jobject,data->getP_data(), data->getSize());
     }

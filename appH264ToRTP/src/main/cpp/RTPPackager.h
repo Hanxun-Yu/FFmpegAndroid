@@ -51,7 +51,7 @@ public:
 
         RtpH264Callback(RTPPackager *rtpPackager);
 
-        void onCallback(JNIEnv *jniEnv, jobject jobject, ByteData *data) override;
+        void onCallback(JNIEnv *jniEnv, jobject jobject, YuvData *data) override;
     };
 
     class H264RtpCallback : public ThreadHandler::ICallback {
@@ -60,7 +60,7 @@ public:
 
         H264RtpCallback(RTPPackager *rtpPackager);
 
-        void onCallback(JNIEnv *jniEnv, jobject jobject, ByteData *data) override;
+        void onCallback(JNIEnv *jniEnv, jobject jobject, YuvData *data) override;
 
     };
 };

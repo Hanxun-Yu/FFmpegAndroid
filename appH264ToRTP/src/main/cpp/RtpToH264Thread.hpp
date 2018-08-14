@@ -14,7 +14,7 @@ public:
     RtpToH264Thread(JavaVM *javaVM, jobject jobject1) : ThreadHandler(javaVM, jobject1) {}
 
 private:
-    ByteData* handleData(ByteData* data) override {
+    YuvData* handleData(ByteData* data) override {
         //rtp to h264
         LOGD("rtp->h264 data:%d",data->getSize());
         return NULL;
