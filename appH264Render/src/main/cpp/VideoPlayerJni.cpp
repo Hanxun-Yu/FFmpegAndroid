@@ -61,6 +61,8 @@ JNIEXPORT void JNICALL putFrame(JNIEnv *env, jclass clazz, jbyteArray srcFrame,
     jbyte *p_data = env->GetByteArrayElements(srcFrame, NULL);
     u_int8_t * cpy = static_cast<u_int8_t *>(malloc(frameSize));
     memcpy(cpy,p_data,frameSize);
+    LOGE("putFrame -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+
     videoDecoder->putFrame(cpy, frameSize);
     env->ReleaseByteArrayElements(srcFrame,p_data,0);
 }
@@ -78,10 +80,11 @@ JNINativeMethod nativeMethod[] = {
 
 
 
-std::string myClassName = "com/kedacom/demo/ceewaipcsdkdemo/media/VideoPlayer";
+std::string myClassName = "com/example/apph264render/ffmpegcodec/FFmpegCodec";
 
 JNIEXPORT jint
 JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+
     return jnicom->handleJNILoad(vm, reserved, myClassName,
                                  nativeMethod, sizeof(nativeMethod) / sizeof(nativeMethod[0]));
 }

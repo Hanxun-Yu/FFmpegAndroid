@@ -4,6 +4,7 @@
 # Sets the minimum version of CMake required to build the native library.
 #set(SO_IMPORT_PATH ${PROJECT_SOURCE_DIR}/../../../libs/${ANDROID_ABI})
 set(SO_IMPORT_PATH ${PROJECT_SOURCE_DIR}/../../../../libffmpeg/libs/${ANDROID_ABI})
+set(INCLUDE_PATH ${PROJECT_SOURCE_DIR}/../../../../libffmpeg/src/main/cpp/include)
 
 cmake_minimum_required(VERSION 3.4.1)
 
@@ -15,6 +16,7 @@ cmake_minimum_required(VERSION 3.4.1)
 include_directories(
         .
         ../include
+        ${INCLUDE_PATH}
 )
 
 add_library( # Sets the name of the library.

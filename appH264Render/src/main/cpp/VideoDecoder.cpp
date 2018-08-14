@@ -4,6 +4,7 @@
 
 #include "VideoDecoder.h"
 
+
 VideoDecoder::VideoDecoder(JavaVM *javaVM, jobject jobject) {
     decodeThread = new H264DecodeThread(javaVM, jobject);
 }
@@ -28,7 +29,7 @@ void VideoDecoder::setOnDecoderListener(VideoDecoder::OnDecoderListener *onDecod
     this->onDecoderListener = onDecoderListener;
 }
 
-AVFrame *pFrame = av_frame_alloc();
+
 
 void VideoDecoder::ThreadCallback::onCallback(JNIEnv *jniEnv, jobject jobj, YuvData *data) {
     //yuv->rgb
@@ -37,9 +38,10 @@ void VideoDecoder::ThreadCallback::onCallback(JNIEnv *jniEnv, jobject jobj, YuvD
 //        LOGD("callback yun size:%u w:%u h:%u", data->getSize(), data->getWidth(),
 //             data->getHeight());
 
+        clock_t start,ends;
+        start=clock();
 
-
-        // 由于解码出来的帧格式不是RGBA的,在渲染之前需要进行格式转换
+        // ���ڽ��������֡��ʽ����RGBA��,����Ⱦ֮ǰ��Ҫ���и�ʽת��
 //        struct SwsContext *sws_ctx = sws_getContext(data->getWidth(),
 //                                                    data->getHeight(),
 //                                                    AV_PIX_FMT_YUVJ420P,
@@ -52,7 +54,7 @@ void VideoDecoder::ThreadCallback::onCallback(JNIEnv *jniEnv, jobject jobj, YuvD
 //                                                    NULL);
 
 //        pFrame->data = data->getP_data();
-//        // 格式转换
+//        // ��ʽת��
 //        sws_scale(sws_ctx, (uint8_t const *const *) pFrame->data,
 //                  pFrame->linesize, 0, pCodecCtx->height,
 //                  pFrameRGBA->data, pFrameRGBA->linesize);
@@ -69,7 +71,10 @@ void VideoDecoder::ThreadCallback::onCallback(JNIEnv *jniEnv, jobject jobj, YuvD
                            w, h);
         free(data->getP_data());
         data->setP_data(buffer_dest);
+        ends=clock();
         this->videoDecoder->onDecoderListener->onRGB(jniEnv, jobj, data);
+        LOGE("VideoDecoder::ThreadCallback::onCallback time:%lf",(double)(ends-start)/CLOCKS_PER_SEC);
+
     }
     //callback to ui
 //    this->onDecoderListener

@@ -6,7 +6,7 @@
 #define FFMPEGPLAYER_RTPTOH264THREAD_HPP
 
 #include "bean/ByteData.hpp"
-#include "include/ThreadHandler.h"
+#include "ThreadHandler.h"
 
 
 class RtpToH264Thread : public ThreadHandler {

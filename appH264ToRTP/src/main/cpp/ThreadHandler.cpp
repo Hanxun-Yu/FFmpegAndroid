@@ -61,4 +61,5 @@ void *runnable(void *threadargs) {
 //        threadHandler->callback->onCallback(jniEnv,threadHandler->jobject1,"filename",true);
         threadHandler->callback->onCallback(jniEnv, threadHandler->jobject1, ret);
     }
+    return NULL;
 }

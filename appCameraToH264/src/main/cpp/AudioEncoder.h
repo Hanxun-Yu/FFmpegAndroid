@@ -6,10 +6,10 @@
 #define FFMPEGPLAYER_AUDIOENCODER_H
 
 extern "C" {
-#include "include/fdk-aac/aacenc_lib.h"
+#include "fdk-aac/aacenc_lib.h"
 }
 
-#include "include/Jnicom.h"
+#include "Jnicom.h"
 class AudioEncoder {
 private:
     int sampleRate;

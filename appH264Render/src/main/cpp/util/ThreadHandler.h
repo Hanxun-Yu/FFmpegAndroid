@@ -10,8 +10,10 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <jni.h>
-#include "include/logcat.h"
+#include "logcat.h"
 #include "SyncQueue.hpp"
+#include "Queue2.hpp"
+
 #include "ByteData.hpp"
 #include "YuvData.hpp"
 
@@ -32,6 +34,8 @@ public:
 public:
     bool isStop;
     SyncQueue<ByteData>* syncQueue;
+//    Queue2<ByteData>* syncQueue;
+
     ICallback* callback;
     JavaVM *javaVM;
     jobject jobj;

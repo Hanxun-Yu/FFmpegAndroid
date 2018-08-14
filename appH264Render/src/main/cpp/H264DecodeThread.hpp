@@ -8,11 +8,12 @@
 #include "ThreadHandler.h"
 
 extern "C" {
-#include <include/libavcodec/avcodec.h>
+#include <libavcodec/avcodec.h>
 #include <libavutil/imgutils.h>
 #include <libavutil/samplefmt.h>
 #include <libavutil/timestamp.h>
 #include <libavformat/avformat.h>
+#include <libavcodec/jni.h>
 
 };
 
@@ -35,74 +36,61 @@ private:
             LOGE("ffmpeg not init");
             return NULL;
         }
+        clock_t start, ends;
+        start = clock();
 
         //264 -> yuv
 //        LOGD("264 -> yuv data:%u", data->getSize());
         avpkt.size = data->getSize();
         avpkt.data = data->getP_data();
-        LOGE("1");
-        if (int ret = avcodec_send_packet(codec_ctx, &avpkt)) {
-            char *s = "haa";
-            if (ret == AVERROR(EAGAIN)) {
-                s = "EAGAIN";
-            } else if (ret == AVERROR_EOF) {
-                s = "AVERROR_EOF";
-            } else if (ret == AVERROR(EINVAL)) {
-                s = "EINVAL";
-            } else if (ret == AVERROR(ENOANO)) {
-                s = "ENOANO";
-            }
+//        LOGE("1");
+        if (avcodec_send_packet(codec_ctx, &avpkt)) {
+//            char *s = "haa";
+//            if (ret == AVERROR(EAGAIN)) {
+//                s = "EAGAIN";
+//            } else if (ret == AVERROR_EOF) {
+//                s = "AVERROR_EOF";
+//            } else if (ret == AVERROR(EINVAL)) {
+//                s = "EINVAL";
+//            } else if (ret == AVERROR(ENOANO)) {
+//                s = "ENOANO";
+//            }
 
-            LOGE("%s %d ret:%s avcodec_send_packet fail\n", __func__, __LINE__, s);
+            LOGE("%s %d avcodec_send_packet fail\n", __func__, __LINE__);
             return NULL;
         }
         if (avcodec_receive_frame(codec_ctx, frame)) {
             LOGE("%s %d avcodec_receive_frame fail\n", __func__, __LINE__);
             return NULL;
         }
+
         uint8_t *outputframe;
 //        LOGE("2");
 
         switch (codec_ctx->pix_fmt) {
-            case AV_PIX_FMT_YUVJ420P: {
-                case AV_PIX_FMT_YUV422P:
-                case AV_PIX_FMT_YUV420P:
-//                outputframe = static_cast<uint8_t *>(malloc(frame->width * frame->height * 2));
-//                int index = 0;
-//                int y_i = 0, u_i = 0, v_i = 0;
-//                for (index = 0; index < frame->width * frame->height * 2;) {
-//                    outputframe[index++] = frame->data[0][y_i++];
-//                    outputframe[index++] = frame->data[1][u_i++];
-//                    outputframe[index++] = frame->data[0][y_i++];
-//                    outputframe[index++] = frame->data[2][v_i++];
-//                }
-//                break;
-                    int w = frame->width;
+//                  YUV420p的像素颜色范围是[16,235]，16表示黑色，235表示白色
+//                YUVJ420P的像素颜色范围是[0,255]。0表示黑色，255表示白色
+            case AV_PIX_FMT_YUVJ420P:
+            case AV_PIX_FMT_YUV422P:
+            case AV_PIX_FMT_YUV420P: {
+                int w = frame->width;
                 int h = frame->height;
                 outputframe = static_cast<uint8_t *>(malloc(w * h * 3 / 2));
                 int index = 0;
                 int y_start = 0;
                 int u_start = w * h;
                 int v_start = w * h * 5 / 4;
-                for (index = 0; index < w * h; index++) {
-                    outputframe[y_start++] = frame->data[0][index];
-                    if (index < (w * h / 4)) {
-                        outputframe[u_start++] = frame->data[1][index];
-                        outputframe[v_start++] = frame->data[2][index];
-                    }
-                }
+                int count = w * h / 4;
+
+                memcpy(outputframe, frame->data[0], u_start);
+                memcpy(outputframe + u_start, frame->data[1], count);
+                memcpy(outputframe + v_start, frame->data[2], count);
+
                 break;
-//            case AV_PIX_FMT_YUVJ420P: {
-////                YUV420p的像素颜色范围是[16,235]，16表示黑色，235表示白色
-////                YUVJ420P的像素颜色范围是[0,255]。0表示黑色，255表示白色
-//                LOGD("AV_PIX_FMT_YUVJ420P");
-//                break;
-//            }
             }
-            default: {
+            default:
                 LOGE("default format:%d\n", codec_ctx->pix_fmt);
                 return NULL;
-            }
         }
 //        LOGE("3");
         YuvData *yuvData = new YuvData();
@@ -115,13 +103,18 @@ private:
 //        *width = codec_ctx->width;
 //        *height = codec_ctx->height;
 //        *pixfmt = codec_ctx->pix_fmt;
+        ends = clock();
+        LOGE("handle time:%lf", (double) (ends - start) / CLOCKS_PER_SEC);
         return yuvData;
     }
 
     bool initFFmpeg() {
+        av_jni_set_java_vm(this->javaVM, NULL);
         LOGD("initFFmpeg");
         avcodec_register_all();
         codec = avcodec_find_decoder(AV_CODEC_ID_H264);
+
+//        codec = avcodec_find_decoder_by_name("h264_mediacodec");
         if (!codec) {
             LOGE("avcodec_find_decoder fail\n");
             return false;
@@ -131,8 +124,15 @@ private:
             LOGE("avcodec_alloc_context3 fail\n");
             return false;
         }
-        if (avcodec_open2(codec_ctx, codec, NULL) < 0) {
-            LOGE("avcodec_open2 fail\n");
+//        if (codec->capabilities & CODEC_CAP_TRUNCATED)
+//            codec_ctx->flags |= CODEC_FLAG_TRUNCATED;
+        codec_ctx->thread_count = 20;
+        int error;
+        if ((error = avcodec_open2(codec_ctx, codec, NULL)) < 0) {
+            char *errbuf = static_cast<char *>(malloc(100));
+            av_strerror(error, errbuf, 100);
+            LOGE("avcodec_open2 fail %s \n", errbuf);
+
             return false;
         }
 //        codec_ctx->pix_fmt = AV_PIX_FMT_YUV422P;

@@ -13,7 +13,9 @@ void *runnable(void *threadargs);
 ThreadHandler::ThreadHandler(JavaVM *javaVM, jobject jobj) {
     this->javaVM = javaVM;
     this->jobj = jobj;
-    this->syncQueue = new SyncQueue<ByteData>(100);
+    this->syncQueue = new SyncQueue<ByteData>(10000);
+//    this->syncQueue = new Queue2<ByteData>(10000);
+
 }
 
 void ThreadHandler::start() {
@@ -59,7 +61,11 @@ void *runnable(void *threadargs) {
 
     while (!threadHandler->isStop) {
 //        LOGD("taking");
+        LOGI("runnable taking -----------------------");
+
         ByteData *bean = threadHandler->syncQueue->take();
+        LOGI("runnable taked ++++++++++++++++++++++");
+
 //        LOGD("take bean:%p", bean);
 //        LOGD("take size:%u", bean->getSize());
         YuvData *ret = threadHandler->handleData(bean);
@@ -68,6 +74,7 @@ void *runnable(void *threadargs) {
 //            LOGD("take handled size:%d", ret->getSize());
 //        }
 //        threadHandler->callback->onCallback(jniEnv,threadHandler->jobject1,"filename",true);
-        threadHandler->callback->onCallback(jniEnv, threadHandler->jobj, ret);
+        if(ret != NULL)
+            threadHandler->callback->onCallback(jniEnv, threadHandler->jobj, ret);
     }
 }

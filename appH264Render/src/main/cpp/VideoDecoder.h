@@ -12,12 +12,13 @@ extern "C" {
 #include <sys/types.h>
 #include "libswscale/swscale.h"
 #include "../include/libyuv.h"
+#include <time.h>
 
 };
 
 class VideoDecoder {
 public:
-    static class OnDecoderListener {
+    class OnDecoderListener {
     public:
         virtual void onRGB(JNIEnv *jniEnv, jobject jobject,YuvData *data) = 0;
     };
@@ -30,10 +31,10 @@ public:
     void setOnDecoderListener(OnDecoderListener *onDecoderListener);
 
 private:
-    ThreadHandler* decodeThread;
-    friend void onRGBTransform(JNIEnv *jniEnv, jobject jobject,YuvData *data);
-public :
     OnDecoderListener *onDecoderListener;
+    ThreadHandler* decodeThread;
+    void onRGBTransform(JNIEnv *jniEnv, jobject jobject,YuvData *data);
+public :
 
     class ThreadCallback : public ThreadHandler::ICallback {
         VideoDecoder *videoDecoder;

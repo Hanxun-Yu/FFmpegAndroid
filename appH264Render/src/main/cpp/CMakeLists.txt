@@ -6,6 +6,8 @@
 #set(SO_IMPORT_PATH ${PROJECT_SOURCE_DIR}/../../../libs/${ANDROID_ABI})
 #使用外部库工程内的库，如用本工程用上面这句
 set(SO_IMPORT_PATH ${PROJECT_SOURCE_DIR}/../../../../libffmpeg/libs/${ANDROID_ABI})
+set(INCLUDE_PATH ${PROJECT_SOURCE_DIR}/../../../../libffmpeg/src/main/cpp/include)
+
 
 cmake_minimum_required(VERSION 3.4.1)
 ADD_SUBDIRECTORY(yuvutil)
@@ -19,6 +21,7 @@ include_directories(
         .
         include
         util
+        ${INCLUDE_PATH}
 )
 
 add_library( # Sets the name of the library.
