@@ -2,6 +2,7 @@
 // Created by xunxun on 2018/8/12.
 //
 
+#include <string.h>
 #include "RGBRender.h"
 
 pthread_t threads2;
