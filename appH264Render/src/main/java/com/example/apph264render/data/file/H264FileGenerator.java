@@ -16,15 +16,17 @@ import java.io.IOException;
 public class H264FileGenerator implements IDataGenerator {
     private String h264FilePath;
     private String lenFilePath;
+    private boolean loop;
     private OnDataReceiverListener listener;
     private ReadFileRunn readFileRunn;
     private Thread thread;
 
     String TAG = getClass().getSimpleName() + "_xunxun";
 
-    public H264FileGenerator(String h264FilePath, String lenFilePath) {
+    public H264FileGenerator(String h264FilePath, String lenFilePath,boolean loop) {
         this.h264FilePath = h264FilePath;
         this.lenFilePath = lenFilePath;
+        this.loop = loop;
     }
 
     @Override
@@ -81,6 +83,8 @@ public class H264FileGenerator implements IDataGenerator {
                 while (!isStop) {
                     String len = file264LenBufReader.readLine();
                     if (len == null) {
+                        if(!loop)
+                            break;
                         file264LenBufReader.close();
                         file264Input.close();
                         file264Input = new FileInputStream(file264);

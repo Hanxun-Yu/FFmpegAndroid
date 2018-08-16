@@ -176,9 +176,11 @@ void VideoEncoder::setParams() {
 
 
     // B frames 两个相关图像间B帧的数目 */
-    params.i_bframe = 5;//getBFrameFrq();
+    params.i_bframe = 0;//getBFrameFrq();
 //    params.i_bframe = 0;//尝试降低cpu计算
-    params.b_sliced_threads = true;
+//    params.b_sliced_threads = true;//多slice
+    params.b_sliced_threads = false;//多slice
+
     params.b_vfr_input = 0;
 
     params.i_fps_num = 25;//getFps();
@@ -195,8 +197,9 @@ void VideoEncoder::setParams() {
 //    params.b_vfr_input = 0;
 //    params.rc.b_mb_tree = 0;
 
-    // Intra refres:
+    // Intra refres:I帧间隔,单位,帧数
     params.i_keyint_max = 25*2;
+//    params.i_keyint_max = 3;
     params.i_keyint_min = 1;
     params.b_intra_refresh = 1;
 

@@ -40,7 +40,6 @@ public:
     JavaVM *javaVM;
     jobject jobj;
     JNIEnv *jniEnv;
-
 };
 
 

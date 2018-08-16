@@ -1,8 +1,7 @@
 package com.example.apph264render.ffmpegcodec;
 
-import android.view.Surface;
-
 import com.example.apph264render.api.IMediaCodec;
+import com.example.apph264render.jni.VideoPlayerJni;
 
 /**
  * Created by yuhanxun
@@ -10,17 +9,23 @@ import com.example.apph264render.api.IMediaCodec;
  * description:
  */
 public class FFmpegCodec implements IMediaCodec {
-    static {
-        System.loadLibrary("ffmpegjni");
+
+    VideoPlayerJni videoPlayerJni = new VideoPlayerJni();
+
+    @Override
+    public void init() {
+        videoPlayerJni.init();
     }
-    public native void init();
 
     @Override
     public void setRenderView(Object obj) {
-        setRender(obj);
+        videoPlayerJni.setRender(obj);
     }
 
-    public native void release();
+    @Override
+    public void release() {
+        videoPlayerJni.release();
+    }
 
     @Override
     public boolean isStop() {
@@ -29,12 +34,7 @@ public class FFmpegCodec implements IMediaCodec {
 
     @Override
     public void putEncodeData(byte[] frames, int size) {
-        putFrame(frames,size);
+        videoPlayerJni.putFrame(frames, size);
     }
 
-
-    public native void setRender(Object surface);
-    public native void start();
-    public native void stop();
-    public native void putFrame(byte[] data, int size);
 }

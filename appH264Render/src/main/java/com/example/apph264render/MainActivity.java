@@ -13,6 +13,7 @@ import android.view.TextureView;
 import com.example.apph264render.api.IDataGenerator;
 import com.example.apph264render.api.IMediaCodec;
 import com.example.apph264render.data.file.H264FileGenerator;
+import com.example.apph264render.data.rtsp.RtspGenerator;
 import com.example.apph264render.ffmpegcodec.FFmpegCodec;
 import com.example.apph264render.mediacodec.MediaCodecDecoder;
 
@@ -24,8 +25,10 @@ public class MainActivity extends AppCompatActivity {
     IMediaCodec videoCodec = new MediaCodecDecoder();
 //    IMediaCodec videoCodec = new FFmpegCodec();
 
-    IDataGenerator dataGenerator
-            = new H264FileGenerator("/sdcard/h264.h264", "/sdcard/h264_len.txt");
+        IDataGenerator dataGenerator
+            = new H264FileGenerator("/sdcard/264/123.h264", "/sdcard/264/h264_len.txt",false);
+//    IDataGenerator dataGenerator
+//            = new RtspGenerator("rtsp://admin:admin123@172.16.192.194:554/realtime?id=0;aid=0,10000;agent=cgi;");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +70,6 @@ public class MainActivity extends AppCompatActivity {
         dataGenerator.setOnDataListener(new IDataGenerator.OnDataReceiverListener() {
             @Override
             public void onReceiveData(byte[] data, int size) {
-//                Log.d(TAG,"onReceiveData");
                 if (!videoCodec.isStop() && isRenderViewEnable) {
                     videoCodec.putEncodeData(data, size);
                 }
@@ -80,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        Log.d(TAG,"onDestroy");
         super.onDestroy();
         dataGenerator.stop();
         videoCodec.release();

@@ -80,7 +80,7 @@ JNINativeMethod nativeMethod[] = {
 
 
 
-std::string myClassName = "com/example/apph264render/ffmpegcodec/FFmpegCodec";
+std::string myClassName = "com/example/apph264render/jni/VideoPlayerJni";
 
 JNIEXPORT jint
 JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
