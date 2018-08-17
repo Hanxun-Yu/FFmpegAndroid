@@ -27,6 +27,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.kedacom.demo.appcameratoh264.jni.X264Param;
 import com.kedacom.demo.appcameratoh264.jni.YuvUtil;
 import com.kedacom.demo.appcameratoh264.media.Camera1Helper;
 import com.kedacom.demo.appcameratoh264.media.Camera2Helper;
@@ -99,7 +100,7 @@ public class MainActivity extends AppCompatActivity implements
 //        initSimpleWaveform();
     }
 
-
+X264Param param;
     long startTime;
 
     private void init() {
@@ -126,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements
             public void onClick(View view) {
 //                camera2Helper.takePicture();
 //                camera2Helper.startCallbackFrame();
-                if (mediaEncoder.start()) {
+                if (mediaEncoder.start(param)) {
                     recording = true;
                     startTime = System.currentTimeMillis();
                 } else {

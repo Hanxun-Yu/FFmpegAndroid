@@ -163,7 +163,7 @@ void VideoEncoder::setParams() {
     //后来发现设置x264_param_default_preset(&param, "fast" , "zerolatency" );后就能即时编码了
     x264_param_default_preset(&params, "ultrafast", "zerolatency");
 
-    //I帧间隔
+    //色彩空间设置
     params.i_csp = X264_CSP_I420;
     params.i_width = getOutWidth();
     params.i_height = getOutHeight();
@@ -176,7 +176,7 @@ void VideoEncoder::setParams() {
 
 
     // B frames 两个相关图像间B帧的数目 */
-    params.i_bframe = 0;//getBFrameFrq();
+    params.i_bframe = 5;//getBFrameFrq();
 //    params.i_bframe = 0;//尝试降低cpu计算
 //    params.b_sliced_threads = true;//多slice
     params.b_sliced_threads = false;//多slice
@@ -218,6 +218,8 @@ void VideoEncoder::setParams() {
     params.rc.i_rc_method = X264_RC_ABR;
     params.rc.i_vbv_buffer_size = static_cast<int>(getBitrate() * 1.5);
     params.rc.i_bitrate = getBitrate();
+    //瞬时最大码率,平均码率模式下，最大瞬时码率，默认0(与-B设置相同)
+    params.rc.i_vbv_max_bitrate = getBitrate() * 1.2;
     //平均码率--------------------------
 
 
@@ -225,13 +227,12 @@ void VideoEncoder::setParams() {
     // For streaming:
     //* 码率(比特率,单位Kbps)x264使用的bitrate需要/1000
     LOGD("params.rc.i_bitrate:%d",params.rc.i_bitrate);
-    //瞬时最大码率,平均码率模式下，最大瞬时码率，默认0(与-B设置相同)
-    params.rc.i_vbv_max_bitrate = getBitrate() * 1.2;
-    params.b_annexb = 1;
+
+    params.b_annexb = true;
     //是否把SPS和PPS放入每一个关键帧
     //SPS Sequence Parameter Set 序列参数集，PPS Picture Parameter Set 图像参数集
     //为了提高图像的纠错能力,该参数设置是让每个I帧都附带sps/pps。
-    params.b_repeat_headers = 1;
+    params.b_repeat_headers = true;
     //设置Level级别,编码复杂度
     params.i_level_idc = 30;
 

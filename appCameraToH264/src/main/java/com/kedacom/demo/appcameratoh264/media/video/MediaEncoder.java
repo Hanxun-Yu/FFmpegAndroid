@@ -4,6 +4,7 @@ package com.kedacom.demo.appcameratoh264.media.video;
 import android.util.Log;
 
 import com.kedacom.demo.appcameratoh264.jni.FFmpegjni;
+import com.kedacom.demo.appcameratoh264.jni.X264Param;
 import com.kedacom.demo.appcameratoh264.media.FileManager;
 import com.kedacom.demo.appcameratoh264.media.audio.AudioData;
 import com.kedacom.demo.appcameratoh264.media.audio.Contacts;
@@ -94,13 +95,13 @@ public class MediaEncoder {
         this.heightOut = heightOut;
     }
 
-    public synchronized boolean start() {
+    public synchronized boolean start(X264Param param) {
 //        startAudioEncode();
         if (ffmpegjni != null) {
             ffmpegjni.release();
         }
         ffmpegjni = new FFmpegjni();
-        ffmpegjni.encoderVideoinit(widthIn, heightIn, widthOut, heightOut, bitrate_kbps);
+        ffmpegjni.encoderVideoinit(param);
 
         //这里我们初始化音频数据，为什么要初始化音频数据呢？音频数据里面我们做了什么事情？
         audioEncodeBuffer = ffmpegjni.encoderAudioInit(Contacts.SAMPLE_RATE,

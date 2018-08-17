@@ -7,9 +7,9 @@
 
     <RadioGroup
         android:id="@+id/group1"
-        android:checkedButton="@id/camera"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:checkedButton="@id/camera"
         android:orientation="horizontal">
 
         <TextView
@@ -35,11 +35,11 @@
 
     <RadioGroup
         android:id="@+id/group2"
-        android:checkedButton="@id/surfaceview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/group1"
         android:layout_marginTop="10dp"
+        android:checkedButton="@id/surfaceview"
         android:orientation="horizontal">
 
         <TextView
@@ -64,16 +64,18 @@
 
     <RadioGroup
         android:id="@+id/group3"
-        android:checkedButton="@id/portrait"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/group2"
         android:layout_marginTop="10dp"
+        android:checkedButton="@id/portrait"
         android:orientation="horizontal">
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="方向：" />
+
         <RadioButton
             android:id="@+id/portrait"
             android:layout_width="wrap_content"
@@ -87,15 +89,59 @@
             android:layout_height="wrap_content"
             android:text="横屏" />
 
+    </RadioGroup>
 
+    <RadioGroup
+        android:id="@+id/group4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/group3"
+        android:layout_marginTop="10dp"
+        android:checkedButton="@id/x264"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="编码器：" />
+
+        <RadioButton
+            android:id="@+id/x264"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:text="x264" />
+
+        <RadioButton
+            android:id="@+id/mediacodec"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:text="MediaCodec" />
 
     </RadioGroup>
+
+    <ImageView
+        android:id="@+id/separate"
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:layout_below="@id/group4"
+        android:layout_marginTop="5dp"
+        android:src="@color/init_separate" />
+
+    <FrameLayout
+        android:id="@+id/fragment_place_params"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/separate"
+        android:layout_marginTop="5dp">
+    </FrameLayout>
 
     <Button
         android:id="@+id/goBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/group3"
+        android:layout_alignParentBottom="true"
         android:text="go" />
 
 </RelativeLayout>

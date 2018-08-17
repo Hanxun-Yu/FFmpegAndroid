@@ -11,6 +11,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.RadioGroup;
 
+import com.kedacom.demo.appcameratoh264.fragment.X264ParamFragment;
+
 /**
  * Created by yuhanxun
  * 2018/8/2
@@ -28,12 +30,14 @@ public class InitActivity extends AppCompatActivity {
     int camera = 0;
     int render = 0;
     int orientation = 0;
+    int codec = 0;
+
     private void init() {
         setContentView(R.layout.activity_init);
-        ((RadioGroup)findViewById(R.id.group1)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+        ((RadioGroup) findViewById(R.id.group1)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup radioGroup, int i) {
-                Log.d("_xunxun","group1:"+i);
+                Log.d("_xunxun", "group1:" + i);
                 switch (i) {
                     case R.id.camera:
                         camera = 0;
@@ -44,10 +48,10 @@ public class InitActivity extends AppCompatActivity {
                 }
             }
         });
-        ((RadioGroup)findViewById(R.id.group2)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+        ((RadioGroup) findViewById(R.id.group2)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup radioGroup, int i) {
-                Log.d("_xunxun","group2:"+i);
+                Log.d("_xunxun", "group2:" + i);
                 switch (i) {
                     case R.id.surfaceview:
                         render = 0;
@@ -59,10 +63,10 @@ public class InitActivity extends AppCompatActivity {
             }
         });
 
-        ((RadioGroup)findViewById(R.id.group3)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+        ((RadioGroup) findViewById(R.id.group3)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup radioGroup, int i) {
-                Log.d("_xunxun","group3:"+i);
+                Log.d("_xunxun", "group3:" + i);
                 switch (i) {
                     case R.id.portrait:
                         orientation = 0;
@@ -73,21 +77,48 @@ public class InitActivity extends AppCompatActivity {
                 }
             }
         });
+        ((RadioGroup) findViewById(R.id.group4)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup radioGroup, int i) {
+                Log.d("_xunxun", "group3:" + i);
+                switch (i) {
+                    case R.id.x264:
+                        codec = 0;
+                        break;
+                    case R.id.mediacodec:
+                        codec = 1;
+                        break;
+                }
+            }
+        });
         findViewById(R.id.goBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d("_xunxun","camera:"+camera+" render:"+render);
+                Log.d("_xunxun", "camera:" + camera + " render:" + render);
                 startMain();
             }
         });
+
+
+        switchX264();
+    }
+
+    private void switchX264() {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_place_params, new X264ParamFragment(), "X264ParamFragment").commit();
+    }
+
+    private void switchMediacodec() {
+
     }
 
 
     private void startMain() {
-        Intent intent = new Intent(this,MainActivity.class);
-        intent.putExtra("camera",camera);
-        intent.putExtra("render",render);
-        intent.putExtra("orientation",orientation);
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("camera", camera);
+        intent.putExtra("render", render);
+        intent.putExtra("orientation", orientation);
         startActivity(intent);
     }
 

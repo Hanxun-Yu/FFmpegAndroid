@@ -14,7 +14,7 @@ extern "C" {
 Jnicom *jnicom = new Jnicom();
 
 JNIEXPORT jint JNICALL init
-        (JNIEnv *env, jclass clazz, jint width, jint height, jint outWidth, jint outHeight) {
+        (JNIEnv *env, jclass clazz) {
 
     return 0;
 }
@@ -32,14 +32,13 @@ JNIEXPORT jint JNICALL release
 
 
 JNIEXPORT jint JNICALL encoderVideoinit
-        (JNIEnv *env, jclass clazz, jint in_width, jint in_height, jint out_width, jint out_height,
-         jint bitrate) {
+        (JNIEnv *env, jclass clazz, jobject params) {
     frameEncoder = new VideoEncoder();
-    frameEncoder->setInWidth(in_width);
-    frameEncoder->setInHeight(in_height);
-    frameEncoder->setOutWidth(out_width);
-    frameEncoder->setOutHeight(out_height);
-    frameEncoder->setBitrate(bitrate);
+//    frameEncoder->setInWidth(in_width);
+//    frameEncoder->setInHeight(in_height);
+//    frameEncoder->setOutWidth(out_width);
+//    frameEncoder->setOutHeight(out_height);
+//    frameEncoder->setBitrate(bitrate);
     frameEncoder->open();
     return 0;
 }
@@ -92,7 +91,8 @@ JNIEXPORT jint JNICALL muxMp4(JNIEnv *env, jclass clazz,
     const char *outMp4FilePath = env->GetStringUTFChars(outMP4FileName, NULL);
 
 
-    int ret = mp4Muxer->muxer_main((char *) h264FilePath, (char *) aacFilePath, (char *) outMp4FilePath, 0);
+    int ret = mp4Muxer->muxer_main((char *) h264FilePath, (char *) aacFilePath,
+                                   (char *) outMp4FilePath, 0);
 
     env->ReleaseStringUTFChars(inputH264FileName, h264FilePath);
     env->ReleaseStringUTFChars(inputAacFileName, aacFilePath);
