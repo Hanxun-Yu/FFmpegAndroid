@@ -49,27 +49,30 @@
             android:orientation="horizontal">
 
             <TextView
+                android:id="@+id/profileText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="profile"
+                android:text="val"
                 android:textSize="15sp" />
 
             <TextView
+                android:id="@+id/presetText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="preset"
+                android:text="val"
                 android:textSize="15sp" />
 
             <TextView
+                android:id="@+id/tuneText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="tune"
+                android:text="val"
                 android:textSize="15sp" />
 
         </LinearLayout>
@@ -120,27 +123,32 @@
             android:orientation="horizontal">
 
             <TextView
+                android:id="@+id/bitrateCtrlText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="profile"
+                android:text="val"
                 android:textSize="15sp" />
 
             <TextView
+                android:id="@+id/bitrateText"
+
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="preset"
+                android:text="val"
                 android:textSize="15sp" />
 
             <TextView
+                android:id="@+id/doSliceText"
+
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="tune"
+                android:text="val"
                 android:textSize="15sp" />
 
         </LinearLayout>
@@ -191,27 +199,30 @@
             android:orientation="horizontal">
 
             <TextView
+                android:id="@+id/fpsText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="profile"
+                android:text="val"
                 android:textSize="15sp" />
 
             <TextView
+                android:id="@+id/gopText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="preset"
+                android:text="val"
                 android:textSize="15sp" />
 
             <TextView
+                android:id="@+id/bFrameText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="tune"
+                android:text="val"
                 android:textSize="15sp" />
 
         </LinearLayout>

@@ -80,21 +80,6 @@ public class MediaEncoder {
 //        }.start();
     }
 
-    int bitrate_kbps = 0;
-
-    int widthIn;
-    int heightIn;
-    int widthOut;
-    int heightOut;
-
-    public void setMediaSize(int widthIn, int heightIn, int widthOut, int heightOut, int bitrate_kbps) {
-        this.bitrate_kbps = bitrate_kbps;
-        this.widthIn = widthIn;
-        this.heightIn = heightIn;
-        this.widthOut = widthOut;
-        this.heightOut = heightOut;
-    }
-
     public synchronized boolean start(X264Param param) {
 //        startAudioEncode();
         if (ffmpegjni != null) {

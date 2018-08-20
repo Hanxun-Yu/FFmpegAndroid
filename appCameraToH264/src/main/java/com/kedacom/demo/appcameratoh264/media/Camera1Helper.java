@@ -45,7 +45,6 @@ public class Camera1Helper implements Camera.PreviewCallback {
 
         setCameraDisplayOrientation((Activity) context, Camera.CameraInfo.CAMERA_FACING_BACK, mCamera);
         mParams.setPreviewSize(previewW, previewH);
-//        mParams.setPreviewFpsRange();
         mParams.setPreviewFormat(IMAGE_FORMAT); // setting preview format：YV12
         mParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
         mCamera.setParameters(mParams); // setting camera parameters

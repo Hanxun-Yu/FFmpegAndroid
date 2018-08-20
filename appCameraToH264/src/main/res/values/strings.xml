@@ -1,3 +1,88 @@
 <resources>
     <string name="app_name">CamH264</string>
+    <string name="preset_default">ultrafast</string>
+    <string name="tune_default">zerolatency</string>
+    <string name="profile_default">baseline</string>
+    <string name="bitratectrl_default">ABR</string>
+    <string name="bitrate_default">512</string>
+    <string name="fps_default">25</string>
+    <string name="gop_default">3</string>
+    <string name="doslice_default">false</string>
+    <string name="bframecount_default">0</string>
+
+    <string name="width_height_in_default">1280x720</string>
+    <string name="width_height_out_default">1280x720</string>
+
+
+    <string-array name="Preset">
+        <item>ultrafast</item>
+        <item>superfast</item>
+        <item>veryfast</item>
+        <item>faster</item>
+        <item>fast</item>
+        <item>medium</item>
+        <item>slow</item>
+        <item>slower</item>
+        <item>veryslow</item>
+        <item>placebo</item>
+    </string-array>
+    <string-array name="Tune">
+        <item>zerolatency</item>
+        <item>film</item>
+        <item>animation</item>
+        <item>grain</item>
+        <item>stillimage</item>
+        <item>psnr</item>
+        <item>ssim</item>
+        <item>fastdecode</item>
+    </string-array>
+    <string-array name="Profile">
+        <item>baseline</item>
+        <item>main</item>
+        <item>high</item>
+        <item>high10</item>
+        <item>high422</item>
+        <item>high444</item>
+    </string-array>
+    <string-array name="BitrateCtrl">
+        <item>ABR</item>
+        <item>CRF</item>
+    </string-array>
+    <string-array name="WidthHeight_IN">
+        <item>1280x720</item>
+        <item>1920x1080</item>
+    </string-array>
+    <string-array name="WidthHeight_OUT">
+        <item>1280x720</item>
+        <item>1920x1080</item>
+    </string-array>
+    <string-array name="Bitrate">
+        <item>512</item>
+        <item>1024</item>
+        <item>2048</item>
+        <item>3072</item>
+        <item>4096</item>
+        <item>5120</item>
+    </string-array>
+    <string-array name="Fps">
+        <item>25</item>
+    </string-array>
+
+    <string-array name="Gop">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+
+    <string-array name="DoSlice">
+        <item>true</item>
+        <item>false</item>
+    </string-array>
+    <string-array name="BFrameCount">
+        <item>0</item>
+        <item>2</item>
+        <item>4</item>
+    </string-array>
 </resources>

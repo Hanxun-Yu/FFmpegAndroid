@@ -1,51 +1,37 @@
 package com.kedacom.demo.appcameratoh264.jni;
 
-public class X264Param {
-    public enum Preset {
-        ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-        public static String[] getStrArray() {
-            String[] ret = new String[values().length];
-            int i = 0;
-            for (Preset item : values()) {
-                ret[i] = item.name();
-                i++;
-            }
-            return ret;
-        }
+public class X264Param implements Parcelable{
+    public X264Param(){}
+    protected X264Param(Parcel in) {
+        widthIN = in.readInt();
+        heightIN = in.readInt();
+        widthOUT = in.readInt();
+        heightOUT = in.readInt();
+        preset = in.readString();
+        tune = in.readString();
+        profile = in.readString();
+        bitrate = in.readInt();
+        bitrateCtrl = in.readString();
+        fps = in.readInt();
+        gop = in.readInt();
+        useSlice = in.readByte() != 0;
+        bFrameCount = in.readInt();
     }
 
-    public enum Tune {
-        zerolatency, film, animation, grain, stillimage, psnr, ssim, fastdecode;
-
-        public static String[] getStrArray() {
-            String[] ret = new String[values().length];
-            int i = 0;
-            for (Tune item : values()) {
-                ret[i] = item.name();
-                i++;
-            }
-            return ret;
-        }
+    public static final Creator<X264Param> CREATOR = new Creator<X264Param>() {
+        @Override
+        public X264Param createFromParcel(Parcel in) {
+            return new X264Param(in);
         }
 
-    public enum Profile {
-        baseline, main, high, high10, high422, high444;
-
-        public static String[] getStrArray() {
-            String[] ret = new String[values().length];
-            int i = 0;
-            for (Profile item : values()) {
-                ret[i] = item.name();
-                i++;
-            }
-            return ret;
+        @Override
+        public X264Param[] newArray(int size) {
+            return new X264Param[size];
         }
-    }
-
-    public enum BitrateCtrl {
-        VBR, CBR
-    }
+    };
 
     public int getWidthIN() {
         return widthIN;
@@ -83,24 +69,24 @@ public class X264Param {
         return preset;
     }
 
-    public void setPreset(Preset preset) {
-        this.preset = preset.name();
+    public void setPreset(String preset) {
+        this.preset = preset;
     }
 
     public String getTune() {
         return tune;
     }
 
-    public void setTune(Tune tune) {
-        this.tune = tune.name();
+    public void setTune(String tune) {
+        this.tune = tune;
     }
 
     public String getProfile() {
         return profile;
     }
 
-    public void setProfile(Profile profile) {
-        this.profile = profile.name();
+    public void setProfile(String profile) {
+        this.profile = profile;
     }
 
     public int getBitrate() {
@@ -115,8 +101,8 @@ public class X264Param {
         return bitrateCtrl;
     }
 
-    public void setBitrateCtrl(BitrateCtrl bitrateCtrl) {
-        this.bitrateCtrl = bitrateCtrl.name();
+    public void setBitrateCtrl(String bitrateCtrl) {
+        this.bitrateCtrl = bitrateCtrl;
     }
 
     public int getFps() {
@@ -156,17 +142,41 @@ public class X264Param {
     private int widthOUT;
     private int heightOUT;
 
-    private String preset = Preset.ultrafast.name();
-    private String tune = Tune.zerolatency.name();
-    private String profile = Profile.baseline.name();
+    private String preset;
+    private String tune;
+    private String profile;
     //Kbit
-    private int bitrate = 4096;
-    private String bitrateCtrl = BitrateCtrl.CBR.name();
+    private int bitrate;
+    private String bitrateCtrl;
 
-    private int fps = 25;
+    private int fps;
     //second
-    private int gop = 3;
-    private boolean useSlice = false;
+    private int gop;
+    private boolean useSlice;
     //I区间内B帧数量
-    private int bFrameCount = 0;
+    private int bFrameCount;
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeInt(widthIN);
+        parcel.writeInt(heightIN);
+        parcel.writeInt(widthOUT);
+        parcel.writeInt(heightOUT);
+        parcel.writeString(preset);
+        parcel.writeString(tune);
+        parcel.writeString(profile);
+        parcel.writeInt(bitrate);
+        parcel.writeString(bitrateCtrl);
+        parcel.writeInt(fps);
+        parcel.writeInt(gop);
+        parcel.writeByte((byte) (useSlice ? 1 : 0));
+        parcel.writeInt(bFrameCount);
+    }
+
+
 }

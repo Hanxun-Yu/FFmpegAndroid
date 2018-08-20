@@ -14,9 +14,8 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 
-
 import com.kedacom.demo.appcameratoh264.R;
-import com.kedacom.demo.appcameratoh264.jni.X264Param;
+import com.kedacom.demo.appcameratoh264.data.X264ParamUtil;
 import com.ycuwq.datepicker.CommonPicker.ParentPicker;
 
 import java.util.Arrays;
@@ -26,7 +25,7 @@ import java.util.List;
  * 时间选择器，弹出框
  * Created by ycuwq on 2018/1/6.
  */
-public class ProfilePickerDialogFragment extends DialogFragment {
+public class BitCtrlDoSliceDialogFragment extends DialogFragment {
 
     protected ProfilePicker profilePicker;
     private boolean mIsShowAnimation = true;
@@ -54,43 +53,46 @@ public class ProfilePickerDialogFragment extends DialogFragment {
         mDecideButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//				if (mOnDateChooseListener != null) {
-//					mOnDateChooseListener.onDateChoose(mDatePicker.getYear(),
-//							mDatePicker.getMonth(), mDatePicker.getDay());
-//				}
+                if(pickerRes != null) {
+                    x264ParamUtil.setBitrateCtrl(pickerRes[0]);
+                    x264ParamUtil.setBitrate(pickerRes[1]);
+                    x264ParamUtil.setDoSlice(pickerRes[2]);
+                }
+				if (onDateChooseListener != null && pickerRes != null) {
+                    onDateChooseListener.onDateChoose(pickerRes[0],pickerRes[1],pickerRes[2]);
+				}
+
                 dismiss();
             }
         });
-
+        x264ParamUtil = new X264ParamUtil(getContext());
         initChild();
 
         return view;
     }
 
+    X264ParamUtil x264ParamUtil;
+    String[] pickerRes;
     protected void initChild() {
-        List<String> profiles = Arrays.asList(X264Param.Profile.getStrArray());
-        List<String> presets = Arrays.asList(X264Param.Preset.getStrArray());
-        List<String> tunes = Arrays.asList(X264Param.Tune.getStrArray());
+        List<String> bitrateCtrl = Arrays.asList(x264ParamUtil.getBitrateCtrlList());
+        List<String> bitrate = Arrays.asList(x264ParamUtil.getBitrateList());
+        List<String> doSlice = Arrays.asList(x264ParamUtil.getDoSliceList());
 
-        profilePicker.initDataList(new ParentPicker.PickerData<>(profiles, null),
-                new ParentPicker.PickerData<>(presets, null),
-                new ParentPicker.PickerData<>(tunes, null));
+        profilePicker.initDataList(new ParentPicker.PickerData<>(bitrateCtrl, null),
+                new ParentPicker.PickerData<>(bitrate, "Kb"),
+                new ParentPicker.PickerData<>(doSlice, null));
         profilePicker.setOnSelectedListener(new ParentPicker.OnSelectedListener() {
             @Override
             public void onSelected(Object... data) {
                 Log.d("_xunxun", Arrays.toString(data));
-                if (onDateChooseListener != null) {
-                    onDateChooseListener.onDateChoose((String[]) data);
-                }
+//                if (onDateChooseListener != null) {
+//                    onDateChooseListener.onDateChoose((String[]) data);
+//                }
+                pickerRes = (String[]) data;
             }
         });
-        profilePicker.setSelectIndex(initSelected[0], initSelected[1], initSelected[2]);
-    }
-
-    int[] initSelected;
-
-    public void initSelected(int[] selected) {
-        initSelected = selected;
+        profilePicker.setSelectIndex(x264ParamUtil.getBitrateCtrl(),x264ParamUtil.getBitrate(),
+                x264ParamUtil.getDoSlice());
     }
 
     @NonNull

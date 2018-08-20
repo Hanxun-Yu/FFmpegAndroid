@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -11,7 +12,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.RadioGroup;
 
+import com.kedacom.demo.appcameratoh264.data.SizeParamUtil;
 import com.kedacom.demo.appcameratoh264.fragment.X264ParamFragment;
+import com.kedacom.demo.appcameratoh264.jni.X264Param;
 
 /**
  * Created by yuhanxun
@@ -33,6 +36,7 @@ public class InitActivity extends AppCompatActivity {
     int codec = 0;
 
     private void init() {
+        sizeParamUtil = new SizeParamUtil(this);
         setContentView(R.layout.activity_init);
         ((RadioGroup) findViewById(R.id.group1)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -103,22 +107,45 @@ public class InitActivity extends AppCompatActivity {
         switchX264();
     }
 
+    X264ParamFragment x264ParamFragment;
+
     private void switchX264() {
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.fragment_place_params, new X264ParamFragment(), "X264ParamFragment").commit();
+                .replace(R.id.fragment_place_params, x264ParamFragment = new X264ParamFragment(), "X264ParamFragment").commit();
     }
 
     private void switchMediacodec() {
 
     }
 
-
+    SizeParamUtil sizeParamUtil;
     private void startMain() {
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("camera", camera);
         intent.putExtra("render", render);
         intent.putExtra("orientation", orientation);
+        intent.putExtra("codec", codec);
+        if(codec == 0) {
+            X264Param param = x264ParamFragment.getParams();
+            if(sizeParamUtil.getWH_IN().equals("1280x720")) {
+                param.setWidthIN(1280);
+                param.setHeightIN(720);
+            } else if(sizeParamUtil.getWH_IN().equals("1920x1080")) {
+                param.setWidthIN(1920);
+                param.setHeightIN(1080);
+            }
+
+            if(sizeParamUtil.getWH_OUT().equals("1280x720")) {
+                param.setWidthOUT(1280);
+                param.setHeightOUT(720);
+            } else if(sizeParamUtil.getWH_OUT().equals("1920x1080")) {
+                param.setWidthOUT(1920);
+                param.setHeightOUT(1080);
+            }
+            intent.putExtra("param", param);
+        }
+
         startActivity(intent);
     }
 

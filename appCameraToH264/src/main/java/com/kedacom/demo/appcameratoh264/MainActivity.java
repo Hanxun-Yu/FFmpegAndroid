@@ -65,17 +65,19 @@ public class MainActivity extends AppCompatActivity implements
     boolean useCameraOne = false;
     boolean useSurfaceview = false;
     boolean usePortrait = false;
-//    int widthIN = 1920;
+    int codec = 0;
+    //    int widthIN = 1920;
 //    int heightIN = 1080;
 //    int widthOUT = 1920;
 //    int heightOUT = 1080;
-        int widthIN = 1280;
+    int widthIN = 1280;
     int heightIN = 720;
     int widthOUT = 1280;
     int heightOUT = 720;
 
     int videoBitrate = 3000;
     private AudioRecoderManager audioGathererManager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,6 +86,8 @@ public class MainActivity extends AppCompatActivity implements
         int camera = getIntent().getIntExtra("camera", 0);
         int render = getIntent().getIntExtra("render", 0);
         int orientation = getIntent().getIntExtra("orientation", 0);
+        int codec = getIntent().getIntExtra("codec", 0);
+
         useCameraOne = camera == 0;
         useSurfaceview = render == 0;
         usePortrait = orientation == 0;
@@ -91,6 +95,14 @@ public class MainActivity extends AppCompatActivity implements
         if (!usePortrait)
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
+        if (codec == 0) {
+            //x264
+            param = getIntent().getParcelableExtra("param");
+            widthIN = param.getWidthIN();
+            heightIN = param.getHeightIN();
+            widthOUT = param.getWidthOUT();
+            heightOUT = param.getHeightOUT();
+        }
 
         init();
         initCamera();
@@ -100,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements
 //        initSimpleWaveform();
     }
 
-X264Param param;
+    X264Param param;
     long startTime;
 
     private void init() {
@@ -127,6 +139,14 @@ X264Param param;
             public void onClick(View view) {
 //                camera2Helper.takePicture();
 //                camera2Helper.startCallbackFrame();
+                if(camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation()==270) {
+                    int temp = param.getWidthIN();
+                    param.setWidthIN(param.getHeightIN());
+                    param.setHeightIN(temp);
+                    temp = param.getWidthOUT();
+                    param.setWidthOUT(param.getHeightOUT());
+                    param.setHeightOUT(temp);
+                }
                 if (mediaEncoder.start(param)) {
                     recording = true;
                     startTime = System.currentTimeMillis();
@@ -250,15 +270,17 @@ X264Param param;
 
     private void initEncoder() {
         //写死了，应该与widthin and heightin应该与camera内yuv一致
-        if (useCameraOne) {
-            if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
-                mediaEncoder.setMediaSize(heightIN, widthIN, heightOUT, widthOUT, videoBitrate);
-            } else {
-                mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, videoBitrate);
-            }
-        } else {
-            mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, videoBitrate);
-        }
+//        if (useCameraOne) {
+//            if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
+//                mediaEncoder.setMediaSize(x264Param.getHeightIN(),
+//                        x264Param.getWidthIN(), x264Param.getHeightOUT(),
+//                        x264Param.getWidthOUT(), x264Param.getBitrate());
+//            } else {
+//                mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, videoBitrate);
+//            }
+//        } else {
+//            mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, videoBitrate);
+//        }
         mediaEncoder.setsMediaEncoderCallback(this);
         mediaEncoder.setOnMuxerListener(new MediaEncoder.OnMuxerListener() {
             @Override
@@ -309,13 +331,14 @@ X264Param param;
         checkFaceHandler = new Handler(checkFaceThread.getLooper()) {
             int incremental = 0;
             int frequence = 20;
+
             @Override
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
 //                Log.d(TAG,"incremental:"+incremental);
-                if(incremental % frequence == 0) {
+                if (incremental % frequence == 0) {
                     checkFace((byte[]) msg.obj, widthIN, heightIN);
-                    if(incremental == frequence)
+                    if (incremental == frequence)
                         incremental = 0;
                 }
                 incremental++;
@@ -720,7 +743,7 @@ X264Param param;
             int faceResult = mFaceDetector.findFaces(mBitmap, mFace);
 
 //            if (faceResult != 0) {
-                Log.d(TAG, "findFace:" + new Gson().toJson(mFace));
+            Log.d(TAG, "findFace:" + new Gson().toJson(mFace));
 //            }
             mBitmap.recycle();
             bitmap.recycle();

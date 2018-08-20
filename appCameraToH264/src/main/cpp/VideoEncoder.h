@@ -4,30 +4,22 @@
 
 #ifndef FFMPEGPLAYER_FRAMEENCODER_H
 #define FFMPEGPLAYER_FRAMEENCODER_H
+#include <string>
+#include "X264Param.hpp"
 
 extern "C" {
 #include <stdio.h>
+#include <string.h>
 #include "libx264/x264.h"
 #include "logcat.h"
-#include <string.h>
 #include <jni.h>
 #include <malloc.h>
 }
+using namespace std;
 
 class VideoEncoder {
 private:
-    int in_width;
-    int in_height;
-    int out_width;
-    int out_height;
-    /* e.g. 25, 60, etc.. */
-    int fps;
-    int bitrate;
-    int i_threads;
-    int i_vbv_buffer_size;
-    int i_slice_max_size;
-    int b_frame_frq;
-
+    X264Param* x264Param;
     /* x264 struct*/
     x264_picture_t pic_in;
     x264_picture_t pic_out;
@@ -57,30 +49,11 @@ public:
     bool validateSettings();
 
     /* sets the x264 params */
-    void setParams();
+    void setParams(X264Param* x264Param);
 
-    int getFps() const;
-    void setFps(int fps);
-    int getInHeight() const;
-    void setInHeight(int inHeight);
-    int getInWidth() const;
-    void setInWidth(int inWidth);
-    int getNumNals() const;
-    void setNumNals(int numNals);
-    int getOutHeight() const;
-    void setOutHeight(int outHeight);
-    int getOutWidth() const;
-    void setOutWidth(int outWidth);
-    int getBitrate() const;
-    void setBitrate(int bitrate);
-    int getSliceMaxSize() const;
-    void setSliceMaxSize(int sliceMaxSize);
-    int getVbvBufferSize() const;
-    void setVbvBufferSize(int vbvBufferSize);
-    int getIThreads() const;
-    void setIThreads(int threads);
-    int getBFrameFrq() const;
-    void setBFrameFrq(int frameFrq);
+    X264Param* getParams();
+
+
 
 };
 

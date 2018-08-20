@@ -38,6 +38,7 @@ public abstract class ParentPicker extends LinearLayout {
         setOrientation(LinearLayout.HORIZONTAL);
         addSubPicker();
         initAttrs(context, attrs);
+
     }
 
     protected abstract void addSubPicker();
@@ -70,6 +71,7 @@ public abstract class ParentPicker extends LinearLayout {
                 getResources().getColor(R.color.com_ycuwq_datepicker_divider));
         a.recycle();
 
+        setItemMaximumWidthText("000000");
         setBackgroundDrawable(getBackground());
         setTextSize(textSize);
         setTextColor(textColor);
@@ -339,6 +341,20 @@ public abstract class ParentPicker extends LinearLayout {
             for (WheelPicker item : mSubPickers) {
                 if (item != null)
                     item.setIndicatorTextColor(textColor);
+            }
+        }
+    }
+
+    /**
+     * 设置指示器文字的颜色
+     * set indicator text color
+     *
+     */
+    public void setItemMaximumWidthText(String str) {
+        if (mSubPickers != null && !mSubPickers.isEmpty()) {
+            for (WheelPicker item : mSubPickers) {
+                if (item != null)
+                    item.setItemMaximumWidthText(str);
             }
         }
     }

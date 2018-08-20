@@ -64,10 +64,10 @@ public class ProfilePicker extends ParentPicker {
             tunePicker.setIndicatorText(data3.unit);
     }
 
-    public void setSelectIndex(int i1,int i2, int i3) {
-        profilePicker.setCurrentPosition(i1);
-        presetPicker.setCurrentPosition(i2);
-        tunePicker.setCurrentPosition(i3);
+    public void setSelectIndex(String i1,String i2, String i3) {
+        profilePicker.setCurrentPosition(profilePicker.getDataList().indexOf(i1));
+        presetPicker.setCurrentPosition(presetPicker.getDataList().indexOf(i2));
+        tunePicker.setCurrentPosition(tunePicker.getDataList().indexOf(i3));
     }
 
     /**
