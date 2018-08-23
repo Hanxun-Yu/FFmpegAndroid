@@ -1,12 +1,11 @@
 
 
-#include "Jnicom.h"
+#include "JniHelper.h"
 #include "RTPPackager.h"
 
 extern "C" {
 
 }
-Jnicom *jnicom = new Jnicom();
 //ThreadHandler *threadHandler;
 //
 //class MyCallback : public ThreadHandler::ICallback {
@@ -101,6 +100,6 @@ std::string myClassName = "com/example/apph264tortp/jni/FFmpegJni";
 JNIEXPORT jint
 JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
-    return jnicom->handleJNILoad(vm, reserved, myClassName,
+    return JniHelper::handleJNILoad(vm, reserved, myClassName,
                                  nativeMethod, sizeof(nativeMethod) / sizeof(nativeMethod[0]));
 }

@@ -10,8 +10,8 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <jni.h>
-#include "logcat.h"
 #include "SyncQueue.hpp"
+#include <JniHelper.h>
 #include "Queue2.hpp"
 
 #include "ByteData.hpp"

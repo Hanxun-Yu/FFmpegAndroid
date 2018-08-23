@@ -1,7 +1,7 @@
 
 #include <jni.h>
 #include <string>
-#include "Jnicom.h"
+#include <JniHelper.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 
@@ -12,7 +12,6 @@ extern "C" {
 #include "libswscale/swscale.h"
 #include "libavutil/imgutils.h"
 }
-Jnicom *jnicom = new Jnicom();
 
 JNIEXPORT jint JNICALL play
         (JNIEnv *env, jclass clazz, jstring path, jobject surface) {
@@ -184,6 +183,6 @@ std::string myClassName = "com/example/ffmpeg/FFmpegNative";
 JNIEXPORT jint
 JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
-    return jnicom->handleJNILoad(vm, reserved, myClassName,
+    return JniHelper::handleJNILoad(vm, reserved, myClassName,
                                  nativeMethod, sizeof(nativeMethod) / sizeof(nativeMethod[0]));
 }

@@ -6,12 +6,11 @@
 #define FFMPEGPLAYER_FRAMEENCODER_H
 #include <string>
 #include "X264Param.hpp"
-
+#include <JniHelper.h>
 extern "C" {
 #include <stdio.h>
 #include <string.h>
 #include "libx264/x264.h"
-#include "logcat.h"
 #include <jni.h>
 #include <malloc.h>
 }

@@ -5,7 +5,7 @@
 #ifndef FFMPEGPLAYER_MP4MUXER_H
 #define FFMPEGPLAYER_MP4MUXER_H
 
-#include "Jnicom.h"
+#include "JniHelper.h"
 
 extern "C" {
 #include "libavcodec/avcodec.h"

@@ -2,7 +2,6 @@
 // Created by yuhanxun on 2018/8/16.
 //
 
-#include <logcat.h>
 #include "FFmpegRtsp.h"
 
 FFmpegRtsp::FFmpegRtsp(JavaVM *javaVM, jobject obj) {

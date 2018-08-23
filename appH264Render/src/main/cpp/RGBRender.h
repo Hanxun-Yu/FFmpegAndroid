@@ -10,7 +10,7 @@
 
 extern "C" {
 #include <jni.h>
-#include "Jnicom.h"
+#include "JniHelper.h"
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 };

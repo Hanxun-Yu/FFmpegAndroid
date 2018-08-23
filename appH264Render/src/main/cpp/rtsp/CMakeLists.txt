@@ -42,14 +42,14 @@ set_target_properties(
         ${SO_IMPORT_PATH}/libffmpeg.so)
 
 add_library(
-        jnicom
+        jnihelper
         SHARED
         IMPORTED
 )
 set_target_properties(
-        jnicom
+        jnihelper
         PROPERTIES IMPORTED_LOCATION
-        ${SO_IMPORT_PATH}/libjnicom.so)
+        ${SO_IMPORT_PATH}/libjnihelper.so)
 
         add_library(
                 libyuv
@@ -82,7 +82,7 @@ find_library( # Sets the name of the path variable.
 
 target_link_libraries( # Specifies the target library.
         rtspjni
-        jnicom
+        jnihelper
         ffmpeg
         libyuv
         # Links the target library to the log library

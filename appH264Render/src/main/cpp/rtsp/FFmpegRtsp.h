@@ -11,6 +11,7 @@
 #include <Thread.hpp>
 #include <jni.h>
 #include "FFmpegRtsp.h"
+#include <JniHelper.h>
 
 extern "C" {
 #include <libavcodec/avcodec.h>

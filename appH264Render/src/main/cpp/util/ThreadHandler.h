@@ -10,9 +10,9 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <jni.h>
-#include "logcat.h"
 #include "SyncQueue.hpp"
 #include "Queue2.hpp"
+#include <JniHelper.h>
 
 #include "ByteData.hpp"
 #include "YuvData.hpp"

@@ -2,7 +2,6 @@
 // Created by yuhanxun on 2018/8/16.
 //
 
-#include "Jnicom.h"
 #include "FFmpegRtsp.h"
 
 extern "C" {
@@ -10,7 +9,6 @@ extern "C" {
 }
 
 
-Jnicom *jnicom = new Jnicom();
 FFmpegRtsp *fFmpegRtsp;
 jobject globalObj;
 jmethodID callbackID;
@@ -73,6 +71,6 @@ std::string myClassName = "com/example/apph264render/jni/RtspHelperJni";
 JNIEXPORT jint
 JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
-    return jnicom->handleJNILoad(vm, reserved, myClassName,
+    return JniHelper::handleJNILoad(vm, reserved, myClassName,
                                  nativeMethod, sizeof(nativeMethod) / sizeof(nativeMethod[0]));
 }

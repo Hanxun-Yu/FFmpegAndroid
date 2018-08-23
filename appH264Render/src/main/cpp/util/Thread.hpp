@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <functional>
 #include <thread>
+#include <JniHelper.h>
 
 #ifndef FFMPEGPLAYER_Thread_H
 #define FFMPEGPLAYER_Thread_H

@@ -37,14 +37,14 @@ add_library(
         IMPORTED
 )
 add_library(
-        jnicom
+        jnihelper
         SHARED
         IMPORTED
 )
 set_target_properties(
-        jnicom
+        jnihelper
         PROPERTIES IMPORTED_LOCATION
-        ${SO_IMPORT_PATH}/libjnicom.so)
+        ${SO_IMPORT_PATH}/libjnihelper.so)
 set_target_properties(
         ffmpeg
         PROPERTIES IMPORTED_LOCATION
@@ -75,7 +75,7 @@ target_link_libraries( # Specifies the target library.
         ffmpegjni
 
         ffmpeg
-        jnicom
+        jnihelper
         # Links the target library to the log library
         # included in the NDK.
         ${log-lib}

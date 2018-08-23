@@ -9,7 +9,7 @@ extern "C" {
 #include "fdk-aac/aacenc_lib.h"
 }
 
-#include "Jnicom.h"
+#include "JniHelper.h"
 class AudioEncoder {
 private:
     int sampleRate;

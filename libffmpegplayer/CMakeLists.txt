@@ -3,7 +3,7 @@
 
 # Sets the minimum version of CMake required to build the native library.
 set(SO_IMPORT_PATH ${PROJECT_SOURCE_DIR}/libs/${ANDROID_ABI})
-
+set(INCLUDE_PATH ${PROJECT_SOURCE_DIR}/../libffmpeg/src/main/cpp/include)
 cmake_minimum_required(VERSION 3.4.1)
 
 # Creates and names a library, sets it as either STATIC
@@ -13,6 +13,7 @@ cmake_minimum_required(VERSION 3.4.1)
 include_directories(
         src/main/cpp/
         src/main/cpp/include
+        ${INCLUDE_PATH}
 )
 
 add_library( # Sets the name of the library.
@@ -24,14 +25,14 @@ add_library( # Sets the name of the library.
         # Provides a relative path to your source file(s).
         src/main/cpp/native-lib.cpp)
 add_library(
-        jnicom
+        jnihelper
         SHARED
         IMPORTED
 )
 set_target_properties(
-        jnicom
+        jnihelper
         PROPERTIES IMPORTED_LOCATION
-        ${SO_IMPORT_PATH}/libjnicom.so)
+        ${PROJECT_SOURCE_DIR}/../libffmpeg/libs/${ANDROID_ABI}/libjnihelper.so)
 add_library(
         avcodec
         SHARED
@@ -118,7 +119,7 @@ find_library( # Sets the name of the path variable.
 target_link_libraries( # Specifies the target library.
         ffmpeg
 
-        jnicom
+        jnihelper
         avcodec
         avdevice
         avfilter

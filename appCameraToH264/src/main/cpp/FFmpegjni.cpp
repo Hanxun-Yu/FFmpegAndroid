@@ -3,7 +3,7 @@
 #include "VideoEncoder.h"
 #include "AudioEncoder.h"
 #include "Mp4Muxer.h"
-#include "Jnicom.h"
+#include "JniHelper.h"
 
 VideoEncoder *frameEncoder;
 AudioEncoder *audioEncoder;
@@ -11,7 +11,6 @@ Mp4Muxer *mp4Muxer = new Mp4Muxer();
 extern "C" {
 
 }
-Jnicom *jnicom = new Jnicom();
 
 X264Param *switchX264Param(JNIEnv *jniEnv, jobject obj);
 
@@ -192,6 +191,6 @@ std::string myClassName = "com/kedacom/demo/appcameratoh264/jni/FFmpegjni";
 JNIEXPORT jint
 JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
-    return jnicom->handleJNILoad(vm, reserved, myClassName,
+    return JniHelper::handleJNILoad(vm, reserved, myClassName,
                                  nativeMethod, sizeof(nativeMethod) / sizeof(nativeMethod[0]));
 }

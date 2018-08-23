@@ -1,13 +1,12 @@
 
 #include <jni.h>
 #include <string>
-#include <Jnicom.h>
+#include <JniHelper.h>
 #include "../include/libyuv.h"
 
 extern "C" {
 
 }
-Jnicom *jnicom = new Jnicom();
 
 void nv21ToI420(jbyte *src_nv21_data, jint width, jint height, jbyte *src_i420_data);
 
@@ -164,6 +163,6 @@ std::string myClassName = "com/kedacom/demo/appcameratoh264/jni/YuvUtil";
 JNIEXPORT jint
 JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
-    return jnicom->handleJNILoad(vm, reserved, myClassName,
+    return JniHelper::handleJNILoad(vm, reserved, myClassName,
                                  nativeMethod, sizeof(nativeMethod) / sizeof(nativeMethod[0]));
 }

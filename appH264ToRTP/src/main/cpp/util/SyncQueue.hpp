@@ -5,7 +5,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <iostream>
-#include "Jnicom.h"
+#include "JniHelper.h"
 
 template<typename T>
 class SyncQueue {
