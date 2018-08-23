@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements
     private Button stopBtn;
     private TextView infoText;
     private TextView memoryText;
+    private TextView paramText;
     private TextView timeText;
 
     final String TAG = "MainActivity_xunxun";
@@ -65,17 +66,11 @@ public class MainActivity extends AppCompatActivity implements
     boolean useCameraOne = false;
     boolean useSurfaceview = false;
     boolean usePortrait = false;
-    int codec = 0;
-    //    int widthIN = 1920;
-//    int heightIN = 1080;
-//    int widthOUT = 1920;
-//    int heightOUT = 1080;
     int widthIN = 1280;
     int heightIN = 720;
     int widthOUT = 1280;
     int heightOUT = 720;
 
-    int videoBitrate = 3000;
     private AudioRecoderManager audioGathererManager;
 
 
@@ -132,6 +127,7 @@ public class MainActivity extends AppCompatActivity implements
         stopBtn = findViewById(R.id.stopBtn);
         infoText = findViewById(R.id.infoText);
         memoryText = findViewById(R.id.memoryText);
+        paramText = findViewById(R.id.paramText);
         timeText = findViewById(R.id.timeText);
 //        progressBar= (ProgressBar) findViewById(R.id.progressbar_loading);
         recordBtn.setOnClickListener(new View.OnClickListener() {
@@ -165,6 +161,46 @@ public class MainActivity extends AppCompatActivity implements
 //                camera2Helper.stopCallbackFrame();
             }
         });
+        showParams();
+    }
+
+    private void showParams() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("IN:");
+        sb.append(param.getWidthIN());
+        sb.append("x");
+        sb.append(param.getHeightIN());
+        sb.append("\n");
+        sb.append("OUT:");
+        sb.append(param.getWidthOUT());
+        sb.append("x");
+        sb.append(param.getHeightOUT());
+        sb.append("\n");
+        sb.append("bitrate:");
+        sb.append(param.getBitrate());
+        sb.append("Kbit\n");
+        sb.append("bitrateCtrl:");
+        sb.append(param.getBitrateCtrl());
+        sb.append("\n");
+        sb.append("fps:");
+        sb.append(param.getFps());
+        sb.append("\n");
+        sb.append("GOP:");
+        sb.append(param.getGop());
+        sb.append("\n");
+        sb.append("B帧:");
+        sb.append(param.getbFrameCount());
+        sb.append("\n");
+        sb.append("profile:");
+        sb.append(param.getProfile());
+        sb.append("\n");
+        sb.append("preset:");
+        sb.append(param.getPreset());
+        sb.append("\n");
+        sb.append("tune:");
+        sb.append(param.getTune());
+        sb.append("\n");
+        paramText.setText(sb.toString());
     }
 
     private void initMicroPhone() {

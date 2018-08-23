@@ -11,10 +11,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.RadioGroup;
+import android.widget.TextView;
 
 import com.kedacom.demo.appcameratoh264.data.SizeParamUtil;
 import com.kedacom.demo.appcameratoh264.fragment.X264ParamFragment;
 import com.kedacom.demo.appcameratoh264.jni.X264Param;
+import com.kedacom.demo.appcameratoh264.widget.pick.ResolutionSrcDialogFragment;
+import com.kedacom.demo.appcameratoh264.widget.pick.ResolutionTargetDialogFragment;
 
 /**
  * Created by yuhanxun
@@ -22,6 +25,8 @@ import com.kedacom.demo.appcameratoh264.jni.X264Param;
  * description:
  */
 public class InitActivity extends AppCompatActivity {
+    private TextView resolutionSrcText;
+    private TextView resolutionTargetText;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,6 +43,8 @@ public class InitActivity extends AppCompatActivity {
     private void init() {
         sizeParamUtil = new SizeParamUtil(this);
         setContentView(R.layout.activity_init);
+        resolutionSrcText = findViewById(R.id.resolution_src_text);
+        resolutionTargetText = findViewById(R.id.resolution_target_text);
         ((RadioGroup) findViewById(R.id.group1)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup radioGroup, int i) {
@@ -103,8 +110,34 @@ public class InitActivity extends AppCompatActivity {
             }
         });
 
-
+        findViewById(R.id.resolution_src_parent).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ResolutionSrcDialogFragment fragment = new ResolutionSrcDialogFragment();
+                fragment.setOnDateChooseListener(new ResolutionSrcDialogFragment.OnDateChooseListener() {
+                    @Override
+                    public void onDateChoose(String... data) {
+                        refreshData();
+                    }
+                });
+                fragment.show(getSupportFragmentManager(), "ResolutionSrcDialogFragment");
+            }
+        });
+        findViewById(R.id.resolution_target_parent).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ResolutionTargetDialogFragment fragment = new ResolutionTargetDialogFragment();
+                fragment.setOnDateChooseListener(new ResolutionTargetDialogFragment.OnDateChooseListener() {
+                    @Override
+                    public void onDateChoose(String... data) {
+                        refreshData();
+                    }
+                });
+                fragment.show(getSupportFragmentManager(), "ResolutionTargetDialogFragment");
+            }
+        });
         switchX264();
+        refreshData();
     }
 
     X264ParamFragment x264ParamFragment;
@@ -117,6 +150,10 @@ public class InitActivity extends AppCompatActivity {
 
     private void switchMediacodec() {
 
+    }
+    private void refreshData() {
+        resolutionSrcText.setText(sizeParamUtil.getWH_IN());
+        resolutionTargetText.setText(sizeParamUtil.getWH_OUT());
     }
 
     SizeParamUtil sizeParamUtil;

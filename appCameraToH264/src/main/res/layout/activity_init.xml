@@ -121,11 +121,58 @@
 
     </RadioGroup>
 
+    <LinearLayout
+        android:clickable="true"
+        android:id="@+id/resolution_src_parent"
+        android:layout_width="wrap_content"
+        android:gravity="center_vertical"
+        android:layout_height="30dp"
+        android:layout_below="@id/group4"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="源    分辨率:"
+            />
+
+        <TextView
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:id="@+id/resolution_src_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:clickable="true"
+        android:id="@+id/resolution_target_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="30dp"
+        android:gravity="center_vertical"
+        android:layout_below="@id/resolution_src_parent"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="编码分辨率:"
+            />
+        <TextView
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:id="@+id/resolution_target_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
     <ImageView
         android:id="@+id/separate"
         android:layout_width="match_parent"
         android:layout_height="1px"
-        android:layout_below="@id/group4"
+        android:layout_below="@id/resolution_target_parent"
         android:layout_marginTop="5dp"
         android:src="@color/init_separate" />
 
@@ -134,8 +181,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/separate"
-        android:layout_marginTop="5dp">
-    </FrameLayout>
+        android:layout_marginTop="5dp"></FrameLayout>
 
     <Button
         android:id="@+id/goBtn"

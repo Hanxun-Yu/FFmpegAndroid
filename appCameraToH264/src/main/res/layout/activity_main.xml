@@ -14,10 +14,9 @@
 
         <com.kedacom.demo.appcameratoh264.widget.AudioWaveView
             android:id="@+id/audioWaveView"
-            android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="240dp"
-            />
+            android:layout_weight="1" />
 
         <RelativeLayout
             android:layout_width="135dp"
@@ -37,47 +36,78 @@
 
     </LinearLayout>
 
-    <Button
-        android:id="@+id/recordBtn"
+    <LinearLayout
+        android:id="@+id/btn_parent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="record" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-    <Button
-        android:id="@+id/stopBtn"
+        <Button
+            android:id="@+id/recordBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="record" />
+
+        <Button
+            android:id="@+id/stopBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="stop" />
+
+        <TextView
+            android:id="@+id/timeText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dp"
+            android:text="00:00:00"
+            android:textColor="@android:color/holo_green_light"
+            android:textSize="30sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/param_parent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_toRightOf="@id/recordBtn"
-        android:text="stop" />
+        android:layout_below="@id/btn_parent"
+        android:orientation="vertical">
 
-    <TextView
-        android:text="00:00:00"
-        android:textColor="@android:color/holo_green_light"
-        android:layout_toRightOf="@id/stopBtn"
-        android:layout_marginTop="5dp"
-        android:layout_marginLeft="5dp"
-        android:textSize="30sp"
-        android:id="@+id/timeText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <TextView
-        android:id="@+id/infoText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/recordBtn"
-        android:textSize="10sp"
-        android:textColor="@android:color/holo_green_light" />
+        <TextView
+            android:id="@+id/paramText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/holo_green_light"
+            android:textSize="10sp" />
 
 
-    <TextView
-        android:id="@+id/memoryText"
+    </LinearLayout>
+    <LinearLayout
+        android:layout_toRightOf="@id/param_parent"
+        android:id="@+id/info_parent"
         android:layout_marginLeft="10dp"
-        android:textSize="10sp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/recordBtn"
-        android:layout_toRightOf="@id/infoText"
-        android:textColor="@android:color/holo_green_light" />
+        android:layout_below="@id/btn_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/infoText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/holo_green_light"
+            android:textSize="10sp" />
+
+
+        <TextView
+            android:id="@+id/memoryText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/holo_green_light"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+
+
 
 </RelativeLayout>
