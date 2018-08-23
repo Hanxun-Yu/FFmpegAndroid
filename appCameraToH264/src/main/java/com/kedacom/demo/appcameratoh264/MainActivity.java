@@ -26,6 +26,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.widget.AudioWaveView;
 import com.google.gson.Gson;
 import com.kedacom.demo.appcameratoh264.jni.X264Param;
 import com.kedacom.demo.appcameratoh264.jni.YuvUtil;
@@ -35,7 +36,6 @@ import com.kedacom.demo.appcameratoh264.media.audio.AudioData;
 import com.kedacom.demo.appcameratoh264.media.audio.AudioRecoderManager;
 import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.video.VideoData420;
-import com.kedacom.demo.appcameratoh264.widget.AudioWaveView;
 import com.kedacom.demo.appcameratoh264.widget.AutoFitTextureView;
 
 import java.io.ByteArrayOutputStream;
@@ -164,44 +164,7 @@ public class MainActivity extends AppCompatActivity implements
         showParams();
     }
 
-    private void showParams() {
-        StringBuffer sb = new StringBuffer();
-        sb.append("IN:");
-        sb.append(param.getWidthIN());
-        sb.append("x");
-        sb.append(param.getHeightIN());
-        sb.append("\n");
-        sb.append("OUT:");
-        sb.append(param.getWidthOUT());
-        sb.append("x");
-        sb.append(param.getHeightOUT());
-        sb.append("\n");
-        sb.append("bitrate:");
-        sb.append(param.getBitrate());
-        sb.append("Kbit\n");
-        sb.append("bitrateCtrl:");
-        sb.append(param.getBitrateCtrl());
-        sb.append("\n");
-        sb.append("fps:");
-        sb.append(param.getFps());
-        sb.append("\n");
-        sb.append("GOP:");
-        sb.append(param.getGop());
-        sb.append("\n");
-        sb.append("B帧:");
-        sb.append(param.getbFrameCount());
-        sb.append("\n");
-        sb.append("profile:");
-        sb.append(param.getProfile());
-        sb.append("\n");
-        sb.append("preset:");
-        sb.append(param.getPreset());
-        sb.append("\n");
-        sb.append("tune:");
-        sb.append(param.getTune());
-        sb.append("\n");
-        paramText.setText(sb.toString());
-    }
+
 
     private void initMicroPhone() {
         audioGathererManager = new AudioRecoderManager();
@@ -691,7 +654,44 @@ public class MainActivity extends AppCompatActivity implements
         return buffer.toString();
     }
 
-
+    private void showParams() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("IN:");
+        sb.append(param.getWidthIN());
+        sb.append("x");
+        sb.append(param.getHeightIN());
+        sb.append("\n");
+        sb.append("OUT:");
+        sb.append(param.getWidthOUT());
+        sb.append("x");
+        sb.append(param.getHeightOUT());
+        sb.append("\n");
+        sb.append("bitrate:");
+        sb.append(param.getBitrate());
+        sb.append("Kbit\n");
+        sb.append("bitrateCtrl:");
+        sb.append(param.getBitrateCtrl());
+        sb.append("\n");
+        sb.append("fps:");
+        sb.append(param.getFps());
+        sb.append("\n");
+        sb.append("GOP:");
+        sb.append(param.getGop());
+        sb.append("\n");
+        sb.append("B帧:");
+        sb.append(param.getbFrameCount());
+        sb.append("\n");
+        sb.append("profile:");
+        sb.append(param.getProfile());
+        sb.append("\n");
+        sb.append("preset:");
+        sb.append(param.getPreset());
+        sb.append("\n");
+        sb.append("tune:");
+        sb.append(param.getTune());
+        sb.append("\n");
+        paramText.setText(sb.toString());
+    }
     private float[] getMemory() {
         float ret[] = new float[4];
         ActivityManager activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);

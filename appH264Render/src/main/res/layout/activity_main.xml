@@ -5,9 +5,14 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-   <TextureView
-       android:id="@+id/textureview"
-       android:layout_width="320dp"
-       android:layout_height="180dp" />
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
 
+        <TextureView
+            android:id="@+id/textureview"
+            android:layout_width="240dp"
+            android:layout_height="135dp" />
+    </LinearLayout>
 </RelativeLayout>

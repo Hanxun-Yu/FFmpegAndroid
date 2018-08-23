@@ -1,0 +1,50 @@
+//# config all projects
+
+ext {
+    props = [
+            version : "1.0",
+            nexusDomain : "http://172.16.193.178:8081"
+    ]
+
+    set('basic.version', props.version)
+
+    android = [compileSdkVersion: 28,
+               buildToolsVersion: "28.0.0",
+               minSdkVersion    : 19,
+               targetSdkVersion : 23,
+               versionCode      : 1,
+               versionName      : props.version]
+
+    keystore = [  normalKeyStore : rootDir.getAbsolutePath() + "/keystore/normal.jks",
+                  normalKeyStorePwd : "123456",
+                  normalKeyAlias : "crashxun",
+                  normalKeyPwd : "123456"]
+
+    dependencies = ["tools-build-gradle" : "com.android.tools.build:gradle:3.2.0-alpha15",
+                    "appcompat-v7"       : "com.android.support:appcompat-v7:27.1.1",
+                    "support-v4"         : 'com.android.support:support-v4:24.1.1',
+                    "support-annotations": 'com.android.support:support-annotations:25.3.1',
+                    "recycleview-v7"     : 'com.android.support:recyclerview-v7:25.3.1',
+
+
+                    "nineoldandroids"    : 'com.nineoldandroids:library:2.4.0',
+                    "multidex"           : 'com.android.support:multidex:1.0.1',
+
+                    "junit"              : 'junit:junit:4.12',
+                    "android-test"       : ['com.android.support.test.espresso:espresso-core:2.2.2',
+                                            'com.android.support.test:runner:0.5',
+                                            'com.android.support:support-annotations:24.2.0',
+                                            'com.android.support.test:rules:0.4.1',
+                                            'com.android.support.test.espresso:espresso-intents:2.2.1',
+                                            'com.android.support.test.espresso:espresso-web:2.2.1'],
+
+//                    "rxjava-group"       : ["io.reactivex.rxjava2:rxjava:2.0.1",
+//                                            "io.reactivex.rxjava2:rxandroid:2.0.1"],
+//
+                    "gson"               : 'com.google.code.gson:gson:2.7',
+
+//                    "basic-database"       : 'com.kedacom.basic:basic-database:' + property('basic.version') + '@jar',
+//                    "basic-template"       : 'com.kedacom.basic:basic-template:' + property('basic.version'),
+//                    "basic-media-uniplay"  : 'com.kedacom.basic:basic-media-uniplay:' + property('basic.version') + '@aar',
+    ]
+}

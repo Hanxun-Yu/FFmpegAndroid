@@ -3,8 +3,10 @@ package com.kedacom.demo.appcameratoh264.jni;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class X264Param implements Parcelable{
-    public X264Param(){}
+public class X264Param implements Parcelable {
+    public X264Param() {
+    }
+
     protected X264Param(Parcel in) {
         widthIN = in.readInt();
         heightIN = in.readInt();

@@ -13,7 +13,7 @@
         android:layout_alignParentBottom="true"
         android:orientation="vertical">
 
-        <com.kedacom.demo.appcameratoh264.widget.AudioWaveView
+        <com.example.widget.AudioWaveView
             android:id="@+id/audioWaveView"
             android:layout_width="320dp"
             android:layout_height="0dp"

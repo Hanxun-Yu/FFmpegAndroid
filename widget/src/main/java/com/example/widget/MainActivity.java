@@ -13,7 +13,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        audioWaveView = findViewById(R.id.audioWaveView);
+        audioWaveView = (AudioWaveView) findViewById(R.id.audioWaveView);
         new Thread(new TestDataRunn()).start();
     }
 

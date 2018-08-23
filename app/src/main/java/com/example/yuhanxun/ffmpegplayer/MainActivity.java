@@ -1,16 +1,12 @@
 package com.example.yuhanxun.ffmpegplayer;
 
 import android.Manifest;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
-import android.media.MediaPlayer;
-import android.net.Uri;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -20,10 +16,8 @@ import android.view.TextureView;
 import com.example.ffmpeg.FFmpegNative;
 
 import java.io.File;
-import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
-
 
     SurfaceView surfaceView;
     private SurfaceHolder surfaceHolder;
