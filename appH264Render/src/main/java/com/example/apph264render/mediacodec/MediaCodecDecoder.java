@@ -264,13 +264,13 @@ public class MediaCodecDecoder implements IMediaCodec {
                 }
 
                 //这里可以根据实际情况调整解码速度
-                long sleep = 40;
-
-                if (mFrmList.size() > 20) {
-                    sleep = 0;
-                }
-
-                SystemClock.sleep(sleep);
+//                long sleep = 40;
+//
+//                if (mFrmList.size() > 20) {
+//                    sleep = 0;
+//                }
+//
+//                SystemClock.sleep(sleep);
 
 
                 int outIndex = MediaCodec.INFO_TRY_AGAIN_LATER;
@@ -287,18 +287,19 @@ public class MediaCodecDecoder implements IMediaCodec {
                 if (outIndex >= 0) {
 
                     //帧控制
-                    while (info.presentationTimeUs / 1000 > System.currentTimeMillis() - startMs) {
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    boolean doRender = (info.size != 0);
-
-                    //对outputbuffer的处理完后，调用这个函数把buffer重新返回给codec类。
-                    //调用这个api之后，SurfaceView才有图像
-                    mMediaCodec.releaseOutputBuffer(outIndex, doRender);
+//                    while (info.presentationTimeUs / 1000 > System.currentTimeMillis() - startMs) {
+//                        try {
+//                            Thread.sleep(100);
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                    boolean doRender = (info.size != 0);
+//
+//                    //对outputbuffer的处理完后，调用这个函数把buffer重新返回给codec类。
+//                    //调用这个api之后，SurfaceView才有图像
+//                    mMediaCodec.releaseOutputBuffer(outIndex, doRender);
+                    mMediaCodec.releaseOutputBuffer(outIndex, info.presentationTimeUs);
 
                     if (mOnDecodeListener != null) {
                         mOnDecodeListener.decodeResult(mVideoWidth, mVideoHeight);
