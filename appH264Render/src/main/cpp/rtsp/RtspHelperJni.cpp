@@ -17,12 +17,17 @@ public:
     void onDataCallback(JNIEnv *jniEnv, jobject obj, uint8_t *data, int32_t size) override {
 
 //        LOGE("FFmpegRtsp::OnDataCallback data:%p size:%d", data, size);
+//        char * aaa = malloc(size);
         if(size <= 0)
             return;
         jbyteArray ret = jniEnv->NewByteArray(size);
         jniEnv->SetByteArrayRegion(ret, 0, size, reinterpret_cast<const jbyte *>(data));
         jniEnv->CallVoidMethod(obj, callbackID, ret, size);
-        jniEnv->ReleaseByteArrayElements(ret, reinterpret_cast<jbyte *>(data), 0);
+
+
+        free(data);
+
+//        jniEnv->ReleaseByteArrayElements(ret, reinterpret_cast<jbyte *>(data), 0);
         //不加这句一会就crash
         jniEnv->DeleteLocalRef(ret);
     }

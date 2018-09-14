@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private AudioRecoderManager audioGathererManager;
 
+    String muxerFormat;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +83,8 @@ public class MainActivity extends AppCompatActivity implements
         int render = getIntent().getIntExtra("render", 0);
         int orientation = getIntent().getIntExtra("orientation", 0);
         int codec = getIntent().getIntExtra("codec", 0);
+        int muxer = getIntent().getIntExtra("muxer", 0);
+        muxerFormat = muxer == 0 ? "mp4" : "mkv";
 
         useCameraOne = camera == 0;
         useSurfaceview = render == 0;
@@ -135,7 +138,7 @@ public class MainActivity extends AppCompatActivity implements
             public void onClick(View view) {
 //                camera2Helper.takePicture();
 //                camera2Helper.startCallbackFrame();
-                if(camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation()==270) {
+                if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
                     int temp = param.getWidthIN();
                     param.setWidthIN(param.getHeightIN());
                     param.setHeightIN(temp);
@@ -163,7 +166,6 @@ public class MainActivity extends AppCompatActivity implements
         });
         showParams();
     }
-
 
 
     private void initMicroPhone() {
@@ -281,6 +283,7 @@ public class MainActivity extends AppCompatActivity implements
 //            mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, videoBitrate);
 //        }
         mediaEncoder.setsMediaEncoderCallback(this);
+        mediaEncoder.setMuxerFormat(muxerFormat);
         mediaEncoder.setOnMuxerListener(new MediaEncoder.OnMuxerListener() {
             @Override
             public void onSuccess(MediaEncoder.MuxType type, final String path) {
@@ -692,6 +695,7 @@ public class MainActivity extends AppCompatActivity implements
         sb.append("\n");
         paramText.setText(sb.toString());
     }
+
     private float[] getMemory() {
         float ret[] = new float[4];
         ActivityManager activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);

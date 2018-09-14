@@ -120,6 +120,34 @@
             android:text="MediaCodec" />
 
     </RadioGroup>
+    <RadioGroup
+        android:id="@+id/group5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/group4"
+        android:layout_marginTop="10dp"
+        android:checkedButton="@id/MP4"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="封装格式：" />
+
+        <RadioButton
+            android:id="@+id/MP4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:text="mp4" />
+
+        <RadioButton
+            android:id="@+id/MKV"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="mkv" />
+
+    </RadioGroup>
 
     <LinearLayout
         android:clickable="true"
@@ -127,7 +155,7 @@
         android:layout_width="wrap_content"
         android:gravity="center_vertical"
         android:layout_height="30dp"
-        android:layout_below="@id/group4"
+        android:layout_below="@id/group5"
         android:layout_marginTop="10dp"
         android:orientation="horizontal">
 

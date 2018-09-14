@@ -282,7 +282,7 @@ public class MediaEncoder {
                             //我们可以把数据在java层保存到文件中，看看我们编码的h264数据是否能播放，h264裸数据可以在VLC播放器中播放
                             if (SAVE_FILE_FOR_TEST) {
                                 videoFileManager.writeFileData(encodeData);
-                                video_LenFileManager.writeFileData((String.valueOf(encodeData.length)+"\n").getBytes());
+                                video_LenFileManager.writeFileData((String.valueOf(encodeData.length) + "\n").getBytes());
                             }
                         }
                         end = System.currentTimeMillis();
@@ -347,7 +347,7 @@ public class MediaEncoder {
                                     System.arraycopy(outbuffer, 0, encodeData, 0, VALID_LENGTH);
 
                                     recvAACCount++;
-                                    aacTotalSize+=validLength;
+                                    aacTotalSize += validLength;
                                     if (sMediaEncoderCallback != null) {
                                         //编码后，把数据抛给rtmp去推流
                                         sMediaEncoderCallback.receiveEncoderAudioData(encodeData, VALID_LENGTH);
@@ -398,6 +398,18 @@ public class MediaEncoder {
         void onError(String error);
     }
 
+    private String muxer = "mp4";
+
+    public void setMuxerFormat(String format) {
+        if (format.toLowerCase().equals("mp4")) {
+            this.muxer = "mp4";
+        } else if (format.toLowerCase().equals("mkv")) {
+            this.muxer = "mkv";
+        } else {
+            throw new IllegalArgumentException("unsupported muxer format:" + format);
+        }
+    }
+
     public void mux(final MuxType type) {
         isMuxing = true;
         new Thread(new Runnable() {
@@ -406,7 +418,7 @@ public class MediaEncoder {
                 int ret = 0;
                 String outputPath;
                 if (type == MuxType.MP4) {
-                    outputPath = "/sdcard/264/123.mp4";
+                    outputPath = "/sdcard/264/123." + muxer;
                     ret = ffmpegjni.muxMp4(FileManager.TEST_H264_FILE,
                             FileManager.TEST_AAC_FILE, outputPath);
                 } else {
@@ -469,7 +481,6 @@ public class MediaEncoder {
     private int checkFPSCAMStart = 0;
 
 
-
     private int camFPS = 0;//camera fps
     private int yuvFPS = 0;//yuv fps，原本和camera一致，由于camera fps变化，做了插帧处理
     private int h264FPS = 0;//编码器输出h264 fps
@@ -521,6 +532,7 @@ public class MediaEncoder {
     public String getVideoEncodedSize() {
         return getSize(h264TotalSize);
     }
+
     public String getAudioEncodedSize() {
         return getSize(aacTotalSize);
     }
@@ -559,6 +571,7 @@ public class MediaEncoder {
     public int getAacFPS() {
         return aacFPS;
     }
+
     public int getCamFPS() {
         return camFPS;
     }

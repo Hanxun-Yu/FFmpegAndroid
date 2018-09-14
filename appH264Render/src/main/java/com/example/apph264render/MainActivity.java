@@ -25,10 +25,10 @@ public class MainActivity extends AppCompatActivity {
     IMediaCodec videoCodec = new MediaCodecDecoder();
 //    IMediaCodec videoCodec = new FFmpegCodec();
 
-        IDataGenerator dataGenerator
-            = new H264FileGenerator("/sdcard/264/123.h264", "/sdcard/264/h264_len.txt",false);
-//    IDataGenerator dataGenerator
-//            = new RtspGenerator("rtsp://admin:admin123@172.16.192.194:554/realtime?id=0;aid=0,10000;agent=cgi;");
+//        IDataGenerator dataGenerator
+//            = new H264FileGenerator("/sdcard/264/123.h264", "/sdcard/264/h264_len.txt",false);
+    IDataGenerator dataGenerator
+            = new RtspGenerator("rtsp://admin:admin123@172.16.192.194:554/realtime?id=0;aid=0,10000;agent=cgi;");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

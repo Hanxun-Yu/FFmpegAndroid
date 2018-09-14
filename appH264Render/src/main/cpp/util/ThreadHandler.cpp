@@ -76,5 +76,7 @@ void *runnable(void *threadargs) {
 //        threadHandler->callback->onCallback(jniEnv,threadHandler->jobject1,"filename",true);
         if(ret != NULL)
             threadHandler->callback->onCallback(jniEnv, threadHandler->jobj, ret);
+
+
     }
 }

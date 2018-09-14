@@ -14,14 +14,17 @@
  H.264 in some container (MPEG2TS) don't need this BSF.
  */
 //'1': Use H.264 Bitstream Filter
-#define USE_H264BSF 1
+#define USE_H264BSF 0 //只有当输入源不是裸流时(在某封装格式内)才需要打开此项,至1
 
 /*
  FIX:AAC in some container format (FLV, MP4, MKV etc.) need
  "aac_adtstoasc" bitstream filter (BSF)
  */
 //'1': Use AAC Bitstream Filter
-#define USE_AACBSF 1
+#define USE_AACBSF 0 //只有当输入源不是裸流时(在某封装格式内)才需要打开此项,至1
+
+
+static void log_callback_null(void *ptr, int level, const char *fmt, va_list vl);
 
 static int open_input_file(const char *filename) {
     FILE *fp;
@@ -35,6 +38,8 @@ static int open_input_file(const char *filename) {
 
 int muxer_main_c(char *inputH264FileName, char *inputAacFileName, char *outMP4FileName,
                  char *angle) {
+    av_log_set_callback(log_callback_null);
+
     AVOutputFormat *ofmt = NULL;
     //Input AVFormatContext and Output AVFormatContext
     AVFormatContext *ifmt_ctx_v = NULL, *ifmt_ctx_a = NULL, *ofmt_ctx = NULL;
@@ -94,6 +99,20 @@ int muxer_main_c(char *inputH264FileName, char *inputAacFileName, char *outMP4Fi
         //    }
         //
 
+        LOGD("===========CheckOutPutMuxer==========\n");
+        AVOutputFormat *outfmt = av_guess_format(NULL, out_filename, NULL);
+
+        if (!outfmt) {
+            LOGD("Could not deduce output format from file extension: using %s\n", out_filename);
+            outfmt = av_guess_format("mkv", NULL, NULL);
+        }
+
+        if (!outfmt) {
+            LOGD("Could not find suitable output format %s\n", out_filename);
+            throw ("Could not find suitable output format");
+
+        }
+        LOGD("======================================\n");
 
         LOGD("===========Input Information==========\n");
         av_dump_format(ifmt_ctx_v, 0, in_filename_v, 0);
@@ -188,6 +207,7 @@ int muxer_main_c(char *inputH264FileName, char *inputAacFileName, char *outMP4Fi
 #endif
 #if USE_AACBSF
         AVBitStreamFilterContext *aacbsfc = av_bitstream_filter_init("aac_adtstoasc");
+//        AVBitStreamFilterContext *aacbsfc = av_bitstream_filter_init("aac");
 #endif
 
         while (1) {
@@ -303,11 +323,16 @@ int muxer_main_c(char *inputH264FileName, char *inputAacFileName, char *outMP4Fi
             pkt.pos = -1;
             pkt.stream_index = stream_index;
 
-            LOGD("Write 1 Packet. size:%5d\tpts:%lld\n", pkt.size, pkt.pts);
+            LOGD("Write 1 Packet. size:%5d\tdts:%lld\tpts:%lld\tduring:%lld\n", pkt.size, pkt.dts,
+                 pkt.pts, pkt.duration);
             //Write
 
-            if (av_interleaved_write_frame(ofmt_ctx, &pkt) < 0) {
-                LOGD("Error muxing packet\n");
+
+            if ((ret = av_interleaved_write_frame(ofmt_ctx, &pkt)) < 0) {
+                LOGD("AVPacket stream_index %d", pkt.stream_index);
+                LOGD("AVFormatContext nb_streams  %d", ofmt_ctx->nb_streams);
+
+                LOGD("Error muxing packet error:%d\n", ret);
                 break;
             }
 
@@ -328,6 +353,9 @@ int muxer_main_c(char *inputH264FileName, char *inputAacFileName, char *outMP4Fi
     } catch (...) {
 
     }
+//    } catch (const std::exception& e) {
+//        LOGE("Exception:%s",e.what());
+//    }
     avformat_close_input(&ifmt_ctx_v);
     avformat_close_input(&ifmt_ctx_a);
     /* close output */
@@ -341,6 +369,28 @@ int muxer_main_c(char *inputH264FileName, char *inputAacFileName, char *outMP4Fi
     return 0;
 }
 
+static void log_callback_null(void *ptr, int level, const char *fmt, va_list vl)
+{
+    static int print_prefix = 1;
+    static int count;
+    static char prev[1024];
+    char line[1024];
+    static int is_atty;
+
+    av_log_format_line(ptr, level, fmt, vl, line, sizeof(line), &print_prefix);
+
+    strcpy(prev, line);
+    //sanitize((uint8_t *)line);
+
+    if (level <= AV_LOG_WARNING)
+    {
+        LOGE("%s", line);
+    }
+    else
+    {
+        LOGD("%s", line);
+    }
+}
 
 int Mp4Muxer::muxer_main(char *inputH264FileName, char *inputAacFileName, char *outMP4FileName,
                          char *angle) {

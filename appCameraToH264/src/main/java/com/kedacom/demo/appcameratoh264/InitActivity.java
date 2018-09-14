@@ -39,6 +39,7 @@ public class InitActivity extends AppCompatActivity {
     int render = 0;
     int orientation = 0;
     int codec = 0;
+    int muxer = 0;
 
     private void init() {
         sizeParamUtil = new SizeParamUtil(this);
@@ -91,13 +92,27 @@ public class InitActivity extends AppCompatActivity {
         ((RadioGroup) findViewById(R.id.group4)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup radioGroup, int i) {
-                Log.d("_xunxun", "group3:" + i);
+                Log.d("_xunxun", "group4:" + i);
                 switch (i) {
                     case R.id.x264:
                         codec = 0;
                         break;
                     case R.id.mediacodec:
                         codec = 1;
+                        break;
+                }
+            }
+        });
+        ((RadioGroup) findViewById(R.id.group5)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup radioGroup, int i) {
+                Log.d("_xunxun", "group5:" + i);
+                switch (i) {
+                    case R.id.MP4:
+                        muxer = 0;
+                        break;
+                    case R.id.MKV:
+                        muxer = 1;
                         break;
                 }
             }
@@ -163,6 +178,7 @@ public class InitActivity extends AppCompatActivity {
         intent.putExtra("render", render);
         intent.putExtra("orientation", orientation);
         intent.putExtra("codec", codec);
+        intent.putExtra("muxer",muxer);
         if(codec == 0) {
             X264Param param = x264ParamFragment.getParams();
             if(sizeParamUtil.getWH_IN().equals("1280x720")) {
