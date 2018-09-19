@@ -237,7 +237,7 @@ public class MediaEncoder2Codec {
 
             //p2 支持 COLOR_FormatSurface COLOR_FormatYUV420Flexible  COLOR_FormatYUV420SemiPlanar
             mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT,
-                    MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible);
+                    MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar);
             mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
             Log.d(TAG,"mediaFormat:"+mediaFormat);
 

@@ -50,8 +50,8 @@ JNIEXPORT jint JNICALL compressYUV
 
 
     if (degree != 0) {
-//        nv21ToI420(Src_data, width, height, temp_i420_data);
-        nv21Tonv12(Src_data, width, height, temp_i420_data);
+        nv21ToI420(Src_data, width, height, temp_i420_data);
+//        nv21Tonv12(Src_data, width, height, temp_i420_data);
         rotateI420(temp_i420_data, dst_width, dst_height, Dst_data, degree);
 //        rotateI420(Src_data, dst_width, dst_height, Dst_data, degree);
     } else {
