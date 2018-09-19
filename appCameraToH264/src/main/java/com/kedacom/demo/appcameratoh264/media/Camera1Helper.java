@@ -21,7 +21,6 @@ public class Camera1Helper implements Camera.PreviewCallback {
     private Camera mCamera;
     private Camera.Parameters mParams;
     private int IMAGE_FORMAT = ImageFormat.NV21;
-
     private Context context;
     private int previewW;
     private int previewH;

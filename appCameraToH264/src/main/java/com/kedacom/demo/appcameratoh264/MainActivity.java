@@ -35,6 +35,7 @@ import com.kedacom.demo.appcameratoh264.media.Camera2Helper;
 import com.kedacom.demo.appcameratoh264.media.audio.AudioData;
 import com.kedacom.demo.appcameratoh264.media.audio.AudioRecoderManager;
 import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder;
+import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder2Codec;
 import com.kedacom.demo.appcameratoh264.media.video.VideoData420;
 import com.kedacom.demo.appcameratoh264.widget.AutoFitTextureView;
 
@@ -60,8 +61,8 @@ public class MainActivity extends AppCompatActivity implements
     final String TAG = "MainActivity_xunxun";
     private Camera2Helper camera2Helper;
     private Camera1Helper camera1Helper;
-    MediaEncoder mediaEncoder;
-
+//    MediaEncoder mediaEncoder;
+    MediaEncoder2Codec mediaEncoder;
     private AudioWaveView audioWaveView;
     boolean useCameraOne = false;
     boolean useSurfaceview = false;
@@ -114,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements
     long startTime;
 
     private void init() {
-        mediaEncoder = new MediaEncoder();
+        mediaEncoder = new MediaEncoder2Codec();
         textureView = findViewById(R.id.textureview);
         surfaceView = findViewById(R.id.surfaceview);
         audioWaveView = findViewById(R.id.audioWaveView);
@@ -283,7 +284,6 @@ public class MainActivity extends AppCompatActivity implements
 //            mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, videoBitrate);
 //        }
         mediaEncoder.setsMediaEncoderCallback(this);
-        mediaEncoder.setMuxerFormat(muxerFormat);
         mediaEncoder.setOnMuxerListener(new MediaEncoder.OnMuxerListener() {
             @Override
             public void onSuccess(MediaEncoder.MuxType type, final String path) {
@@ -315,7 +315,7 @@ public class MainActivity extends AppCompatActivity implements
                         " Mux:" + state.getMuxEncoderState());
                 if (state.getAudioEncoderState() == MediaEncoder.State.IDLE
                         && state.getVideoEncoderState() == MediaEncoder.State.IDLE) {
-                    mediaEncoder.mux(MediaEncoder.MuxType.MP4);
+                    mediaEncoder.mux(MediaEncoder.MuxType.valueOf(muxerFormat));
                 }
             }
         });
@@ -371,7 +371,7 @@ public class MainActivity extends AppCompatActivity implements
                             YuvUtil.compressYUV(yuv420sp, widthIN, heightIN,
                                     yuv420p, widthOUT, heightOUT, 0, camera1Helper.getDisplayOrientation(), false);
                             vd420Temp = new VideoData420(yuv420p, widthOUT, heightOUT, System.currentTimeMillis());
-
+//                            vd420Temp = new VideoData420(yuv420sp, widthOUT, heightOUT, System.currentTimeMillis());
                             mediaEncoder.putVideoData(vd420Temp);
                         } else {
                             //收到420p

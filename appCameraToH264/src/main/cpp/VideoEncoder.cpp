@@ -3,9 +3,11 @@
 //
 
 #include "VideoEncoder.h"
-
+#include "media/NdkMediaCodec.h"
 VideoEncoder::VideoEncoder() : encoder(NULL), num_nals(0) {
-
+//    AMediaCodec* mMediaCodec =  AMediaCodec_createEncoderByType();
+//    AMediaFormat* videoFormat = AMediaFormat_new();
+//    AMediaCodec_setParameters();
 }
 
 VideoEncoder::~VideoEncoder() {

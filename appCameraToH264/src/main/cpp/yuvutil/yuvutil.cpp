@@ -10,8 +10,11 @@ extern "C" {
 
 void nv21ToI420(jbyte *src_nv21_data, jint width, jint height, jbyte *src_i420_data);
 
+void nv21Tonv12(jbyte *src_nv21_data, jint width, jint height, jbyte *src_nv12_data);
+
 void scaleI420(jbyte *src_i420_data, jint width, jint height, jbyte *dst_i420_data, jint dst_width,
                jint dst_height, jint mode);
+
 void rotateI420(jbyte *src_i420_data, jint width, jint height, jbyte *dst_i420_data, jint degree);
 
 JNIEXPORT jint JNICALL compressYUV
@@ -46,11 +49,14 @@ JNIEXPORT jint JNICALL compressYUV
     jbyte *temp_i420_data = (jbyte *) malloc(sizeof(jbyte) * dst_width * dst_height * 3 / 2);
 
 
-    if(degree != 0) {
-        nv21ToI420(Src_data, width, height, temp_i420_data);
+    if (degree != 0) {
+//        nv21ToI420(Src_data, width, height, temp_i420_data);
+        nv21Tonv12(Src_data, width, height, temp_i420_data);
         rotateI420(temp_i420_data, dst_width, dst_height, Dst_data, degree);
+//        rotateI420(Src_data, dst_width, dst_height, Dst_data, degree);
     } else {
-        nv21ToI420(Src_data, width, height, Dst_data);
+//        nv21ToI420(Src_data, width, height, Dst_data);
+        nv21Tonv12(Src_data, width, height, Dst_data);
     }
 
     free(temp_i420_data);
@@ -94,6 +100,28 @@ void nv21ToI420(jbyte *src_nv21_data, jint width, jint height, jbyte *src_i420_d
                        (uint8 *) src_i420_u_data, width >> 1,
                        (uint8 *) src_i420_v_data, width >> 1,
                        width, height);
+
+}
+
+
+//yyyyyyyyuvuv => yyyyyyyyvuvu
+void nv21Tonv12(jbyte *src_nv21_data, jint width, jint height, jbyte *src_nv12_data) {
+    //Y通道数据大小
+    jint src_y_size = width * height;
+    //U通道数据大小
+    jint src_u_size = (width >> 1) * (height >> 1);
+
+
+    memcpy(src_nv12_data, src_nv21_data, src_y_size);
+    for (int i = 0; i < src_u_size; i++) {
+        *(src_nv12_data + src_y_size + i*2) = *(src_nv21_data + src_y_size + i*2 + 1);
+        *(src_nv12_data + src_y_size + i*2+1) = *(src_nv21_data + src_y_size + i*2);
+    }
+
+
+//    memcpy(src_nv12_data + src_y_size, src_nv21_data + src_y_size + src_u_size, src_u_size);
+//    memcpy(src_nv12_data + src_y_size + src_u_size, src_nv21_data + src_y_size, src_u_size);
+
 }
 
 //进行缩放操作，此时是把1080 * 1920的YUV420P的数据 ==> 480 * 640的YUV420P的数据
@@ -154,7 +182,7 @@ void rotateI420(jbyte *src_i420_data, jint width, jint height, jbyte *dst_i420_d
 
 JNINativeMethod nativeMethod[] = {
         {"compressYUV", "([BII[BIIIIZ)I", (void *) compressYUV},
-        {"cropYUV", "([BII[BIIII)I",  (void *) cropYUV}
+        {"cropYUV",     "([BII[BIIII)I",  (void *) cropYUV}
 };
 
 
@@ -164,5 +192,5 @@ JNIEXPORT jint
 JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
     return JniHelper::handleJNILoad(vm, reserved, myClassName,
-                                 nativeMethod, sizeof(nativeMethod) / sizeof(nativeMethod[0]));
+                                    nativeMethod, sizeof(nativeMethod) / sizeof(nativeMethod[0]));
 }
