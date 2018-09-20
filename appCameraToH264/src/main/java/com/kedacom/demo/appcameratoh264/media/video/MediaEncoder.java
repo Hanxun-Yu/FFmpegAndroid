@@ -28,7 +28,7 @@ public class MediaEncoder {
     private boolean isMuxing = false;
 
     //视频流队列
-    private LinkedBlockingQueue<VideoData420> videoQueue;
+    private LinkedBlockingQueue<YuvData> videoQueue;
     //音频流队列
     private LinkedBlockingQueue<AudioData> audioQueue;
 
@@ -117,7 +117,9 @@ public class MediaEncoder {
         refreshState();
     }
 
+    public void setBitrate(int byteRate) {
 
+    }
     public void release() {
         if (ffmpegjni != null) {
             ffmpegjni.release();
@@ -127,9 +129,9 @@ public class MediaEncoder {
     private long firstInputTime = 0;
 
     //摄像头的YUV420P数据，put到队列中，生产者模型
-    VideoData420 lastPuttedVideoData;
+    YuvData lastPuttedVideoData;
 
-    public synchronized void putVideoData(VideoData420 videoData) {
+    public synchronized void putVideoData(YuvData videoData) {
         if (firstInputTime == 0)
             firstInputTime = System.currentTimeMillis();
 
@@ -138,7 +140,7 @@ public class MediaEncoder {
             doPutVideoData(videoData);
     }
 
-    private void doPutVideoData(VideoData420 videoData) {
+    private void doPutVideoData(YuvData videoData) {
 //        Log.d(TAG,"videoQueue.size():"+videoQueue.size());
 //        Log.d(TAG, "doPutVideoData videoQueue size:"+videoQueue.size());
         try {
@@ -160,7 +162,7 @@ public class MediaEncoder {
      * @param videoData
      * @return
      */
-    private boolean checkInsertVideo(VideoData420 videoData) {
+    private boolean checkInsertVideo(YuvData videoData) {
         if (lastPuttedVideoData == null)
             return true;
         //当前帧与上一帧间隔
@@ -174,7 +176,7 @@ public class MediaEncoder {
             //采集慢,可能需要插帧
             while (Math.abs(fpsOffset) >= normalInterval) {
                 //间隔差累计到一帧间隔，插帧
-                VideoData420 insertVideo = new VideoData420(lastPuttedVideoData.videoData,
+                YuvData insertVideo = new YuvData(lastPuttedVideoData.videoData,
                         lastPuttedVideoData.width, lastPuttedVideoData.height, lastPuttedVideoData.timestamp + normalInterval);
                 doPutVideoData(insertVideo);
                 fpsOffset -= normalInterval;
@@ -225,7 +227,7 @@ public class MediaEncoder {
             byte[] encodeData;
             int totalLength;
             int numNals;
-            VideoData420 videoData;
+            YuvData videoData;
 
             @Override
             public void run() {

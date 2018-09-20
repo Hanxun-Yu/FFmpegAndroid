@@ -36,7 +36,7 @@ import com.kedacom.demo.appcameratoh264.media.audio.AudioData;
 import com.kedacom.demo.appcameratoh264.media.audio.AudioRecoderManager;
 import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder2Codec;
-import com.kedacom.demo.appcameratoh264.media.video.VideoData420;
+import com.kedacom.demo.appcameratoh264.media.video.YuvData;
 import com.kedacom.demo.appcameratoh264.widget.AutoFitTextureView;
 
 import java.io.ByteArrayOutputStream;
@@ -157,6 +157,14 @@ public class MainActivity extends AppCompatActivity implements
                 } else {
                     Toast.makeText(MainActivity.this, "MediaEncoder launch failer!", Toast.LENGTH_SHORT).show();
                 }
+
+
+                view.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mediaEncoder.setBitrate(10*1024*1024);
+                    }
+                },10000);
             }
         });
 
@@ -368,7 +376,7 @@ public class MainActivity extends AppCompatActivity implements
         handlerThread = new HandlerThread("putEncoderThread");
         handlerThread.start();
         putEncoderHandler = new Handler(handlerThread.getLooper()) {
-            VideoData420 vd420Temp;
+            YuvData vd420Temp;
 
             @Override
             public void handleMessage(Message msg) {
@@ -393,16 +401,16 @@ public class MainActivity extends AppCompatActivity implements
 
                             }
                             if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
-                                vd420Temp = new VideoData420(yuv420p, heightOUT, widthOUT, System.currentTimeMillis());
+                                vd420Temp = new YuvData(yuv420p, heightOUT, widthOUT, System.currentTimeMillis());
                             } else {
-                                vd420Temp = new VideoData420(yuv420p, widthOUT, heightOUT, System.currentTimeMillis());
+                                vd420Temp = new YuvData(yuv420p, widthOUT, heightOUT, System.currentTimeMillis());
                             }
 //                            Log.d(TAG, "yuv size:" + yuv420p.length + " w:" + widthOUT + " h:" + heightOUT);
-//                            vd420Temp = new VideoData420(yuv420sp, widthOUT, heightOUT, System.currentTimeMillis());
+//                            vd420Temp = new YuvData(yuv420sp, widthOUT, heightOUT, System.currentTimeMillis());
                             mediaEncoder.putVideoData(vd420Temp);
                         } else {
                             //收到420p
-                            vd420Temp = new VideoData420((byte[]) msg.obj, widthOUT, heightOUT, System.currentTimeMillis());
+                            vd420Temp = new YuvData((byte[]) msg.obj, widthOUT, heightOUT, System.currentTimeMillis());
                             mediaEncoder.putVideoData(vd420Temp);
                         }
                         break;

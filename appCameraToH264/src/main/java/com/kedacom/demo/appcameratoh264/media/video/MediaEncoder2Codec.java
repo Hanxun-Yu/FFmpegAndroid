@@ -5,6 +5,7 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
+import android.os.Bundle;
 import android.util.Log;
 
 import com.kedacom.demo.appcameratoh264.jni.FFmpegjni;
@@ -36,7 +37,7 @@ public class MediaEncoder2Codec extends MediaEncoder{
     private boolean isMuxing = false;
 
     //视频流队列
-    private LinkedBlockingQueue<VideoData420> videoQueue;
+    private LinkedBlockingQueue<YuvData> videoQueue;
     //音频流队列
     private LinkedBlockingQueue<AudioData> audioQueue;
 
@@ -120,9 +121,9 @@ public class MediaEncoder2Codec extends MediaEncoder{
     private long firstInputTime = 0;
 
     //摄像头的YUV420P数据，put到队列中，生产者模型
-    VideoData420 lastPuttedVideoData;
+    YuvData lastPuttedVideoData;
 
-    public synchronized void putVideoData(VideoData420 videoData) {
+    public synchronized void putVideoData(YuvData videoData) {
 //        Log.d(TAG,"putVideoData queueSize:"+videoQueue.size()+ " takeYUVCount:"+takeYUVCount);
         if (firstInputTime == 0)
             firstInputTime = System.currentTimeMillis();
@@ -132,7 +133,7 @@ public class MediaEncoder2Codec extends MediaEncoder{
             doPutVideoData(videoData);
     }
 
-    private void doPutVideoData(VideoData420 videoData) {
+    private void doPutVideoData(YuvData videoData) {
 //        Log.d(TAG,"videoQueue.size():"+videoQueue.size());
 //        Log.d(TAG, "doPutVideoData videoQueue size:"+videoQueue.size());
         try {
@@ -154,7 +155,7 @@ public class MediaEncoder2Codec extends MediaEncoder{
      * @param videoData
      * @return
      */
-    private boolean checkInsertVideo(VideoData420 videoData) {
+    private boolean checkInsertVideo(YuvData videoData) {
         if (lastPuttedVideoData == null)
             return true;
         //当前帧与上一帧间隔
@@ -168,7 +169,7 @@ public class MediaEncoder2Codec extends MediaEncoder{
             //采集慢,可能需要插帧
             while (Math.abs(fpsOffset) >= normalInterval) {
                 //间隔差累计到一帧间隔，插帧
-                VideoData420 insertVideo = new VideoData420(lastPuttedVideoData.videoData,
+                YuvData insertVideo = new YuvData(lastPuttedVideoData.videoData,
                         lastPuttedVideoData.width, lastPuttedVideoData.height, lastPuttedVideoData.timestamp + normalInterval);
                 doPutVideoData(insertVideo);
                 fpsOffset -= normalInterval;
@@ -267,6 +268,12 @@ public class MediaEncoder2Codec extends MediaEncoder{
         return null;
     }
 
+    public void setBitrate(int byteRate) {
+        Bundle params = new Bundle();
+        params.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE,byteRate);
+        mMediaCodec.setParameters(params);
+    }
+
 
     public void startVideoEncode() {
         if (videoEncoderLoop) {
@@ -277,9 +284,11 @@ public class MediaEncoder2Codec extends MediaEncoder{
             int[] buffLength;
             int[] segment;
             byte[] encodeData;
+            byte[] finalData;
+            byte[] spsppsData;
             int totalLength;
             int numNals;
-            VideoData420 videoData;
+            YuvData videoData;
 
             @Override
             public void run() {
@@ -325,24 +334,45 @@ public class MediaEncoder2Codec extends MediaEncoder{
                                 outputBuffer.get(encodeData);
                                 //进行处理
                                 //...
+                                //存储sps,pps
+                                if(spsppsData == null) {
+                                    ByteBuffer bb = ByteBuffer.wrap(encodeData);
+                                    if(bb.getInt() == 0x00000001 && bb.get() == 0x67) {
+                                        spsppsData = new byte[encodeData.length];
+                                        System.arraycopy(encodeData,0,spsppsData,0,encodeData.length);
+                                    }
+                                } else {
+                                    //i帧前插入sps,pps
+                                    ByteBuffer bb = ByteBuffer.wrap(encodeData);
+                                    if(bb.getInt() == 0x00000001 && bb.get() == 0x65) {
+                                        finalData = new byte[encodeData.length+spsppsData.length];
+                                        System.arraycopy(spsppsData,0,finalData,0,spsppsData.length);
+                                        System.arraycopy(encodeData,0,finalData,spsppsData.length,encodeData.length);
+                                        encodeData = null;
+                                    } else {
+                                        finalData = encodeData;
+                                    }
 
-                                //对YUV420P进行h264编码，返回一个数据大小，里面是编码出来的h264数据
-                                //编码后的h264数据
+
+                                    //对YUV420P进行h264编码，返回一个数据大小，里面是编码出来的h264数据
+                                    //编码后的h264数据
 //                                encodeData = new byte[bytes.length];
 //                                System.arraycopy(bytes, 0, encodeData, 0, encodeData.length);
-                                h264TotalSize += encodeData.length;
-                                recvH264Count++;
-                                if (sMediaEncoderCallback != null) {
-                                    sMediaEncoderCallback.receiveEncoderVideoData(encodeData, encodeData.length, segment);
-                                }
-                                //我们可以把数据在java层保存到文件中，看看我们编码的h264数据是否能播放，h264裸数据可以在VLC播放器中播放
-                                if (SAVE_FILE_FOR_TEST) {
-                                    videoFileManager.writeFileData(encodeData);
-                                    video_LenFileManager.writeFileData((String.valueOf(encodeData.length) + "\n").getBytes());
-                                }
-                                //Log.d(TAG,"encoding out size:"+encodeData.length);
-                                end = System.currentTimeMillis();
+                                    h264TotalSize += finalData.length;
+                                    recvH264Count++;
+                                    if (sMediaEncoderCallback != null) {
+                                        sMediaEncoderCallback.receiveEncoderVideoData(finalData, finalData.length, segment);
+                                    }
+                                    //我们可以把数据在java层保存到文件中，看看我们编码的h264数据是否能播放，h264裸数据可以在VLC播放器中播放
+                                    if (SAVE_FILE_FOR_TEST) {
+                                        videoFileManager.writeFileData(finalData);
+                                        video_LenFileManager.writeFileData((String.valueOf(finalData.length) + "\n").getBytes());
+                                    }
+                                    //Log.d(TAG,"encoding out size:"+encodeData.length);
+                                    end = System.currentTimeMillis();
 //                        Log.d(TAG, "encodeTime:" + (end - start));
+
+                                }
                                 refreshFPS();
                                 System.gc();
                                 mMediaCodec.releaseOutputBuffer(outputBufferIndex, false);
