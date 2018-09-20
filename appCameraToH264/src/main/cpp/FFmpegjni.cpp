@@ -25,6 +25,7 @@ JNIEXPORT jint JNICALL release
 //    free(temp_i420_data);
 //    free(temp_i420_data_scale);
 //    free(temp_i420_data_rotate);
+    frameEncoder->close();
     free(frameEncoder);
 //    free(audioEncoder);
 //    free(rtmpLivePublish);

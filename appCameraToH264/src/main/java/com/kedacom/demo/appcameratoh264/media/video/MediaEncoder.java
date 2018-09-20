@@ -119,6 +119,9 @@ public class MediaEncoder {
 
 
     public void release() {
+        if (ffmpegjni != null) {
+            ffmpegjni.release();
+        }
     }
 
     private long firstInputTime = 0;

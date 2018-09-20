@@ -756,6 +756,7 @@ public class MainActivity extends AppCompatActivity implements
     private void releaseMediaEncoder() {
         if (!mediaEncoder.isStop())
             mediaEncoder.stop();
+        mediaEncoder.release();
     }
 
     private void releaseCamera() {
