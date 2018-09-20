@@ -3,6 +3,7 @@ package com.kedacom.demo.appcameratoh264;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
@@ -10,8 +11,10 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.kedacom.demo.appcameratoh264.data.SizeParamUtil;
 import com.kedacom.demo.appcameratoh264.fragment.X264ParamFragment;
@@ -27,6 +30,7 @@ import com.kedacom.demo.appcameratoh264.widget.pick.ResolutionTargetDialogFragme
 public class InitActivity extends AppCompatActivity {
     private TextView resolutionSrcText;
     private TextView resolutionTargetText;
+    private TextView deviceText;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,11 +45,16 @@ public class InitActivity extends AppCompatActivity {
     int codec = 0;
     int muxer = 0;
 
+    final String vendor = android.os.Build.BRAND;
+    final String model = Build.MODEL;
+
     private void init() {
         sizeParamUtil = new SizeParamUtil(this);
         setContentView(R.layout.activity_init);
         resolutionSrcText = findViewById(R.id.resolution_src_text);
         resolutionTargetText = findViewById(R.id.resolution_target_text);
+        deviceText = findViewById(R.id.deviceText);
+        deviceText.setText(vendor+" "+model );
         ((RadioGroup) findViewById(R.id.group1)).setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup radioGroup, int i) {
@@ -96,9 +105,17 @@ public class InitActivity extends AppCompatActivity {
                 switch (i) {
                     case R.id.x264:
                         codec = 0;
+                        ((RadioButton)findViewById(R.id.portrait)).setEnabled(true);
                         break;
                     case R.id.mediacodec:
                         codec = 1;
+                        if(vendor.equals("Kedacom") && model.equals("P2")) {
+                            if(((RadioButton)findViewById(R.id.portrait)).isChecked()) {
+                                ((RadioButton)findViewById(R.id.landscape)).setChecked(true);
+                            }
+                            ((RadioButton)findViewById(R.id.portrait)).setEnabled(false);
+                            Toast.makeText(InitActivity.this,"P2 硬编不支持竖屏",Toast.LENGTH_SHORT).show();
+                        }
                         break;
                 }
             }
@@ -179,25 +196,29 @@ public class InitActivity extends AppCompatActivity {
         intent.putExtra("orientation", orientation);
         intent.putExtra("codec", codec);
         intent.putExtra("muxer",muxer);
-        if(codec == 0) {
-            X264Param param = x264ParamFragment.getParams();
-            if(sizeParamUtil.getWH_IN().equals("1280x720")) {
-                param.setWidthIN(1280);
-                param.setHeightIN(720);
-            } else if(sizeParamUtil.getWH_IN().equals("1920x1080")) {
-                param.setWidthIN(1920);
-                param.setHeightIN(1080);
-            }
+        X264Param param;
+//        if(codec == 0) {
+            param = x264ParamFragment.getParams();
+//        } else {
+//            param = new X264Param();
+//        }
 
-            if(sizeParamUtil.getWH_OUT().equals("1280x720")) {
-                param.setWidthOUT(1280);
-                param.setHeightOUT(720);
-            } else if(sizeParamUtil.getWH_OUT().equals("1920x1080")) {
-                param.setWidthOUT(1920);
-                param.setHeightOUT(1080);
-            }
-            intent.putExtra("param", param);
+        if(sizeParamUtil.getWH_IN().equals("1280x720")) {
+            param.setWidthIN(1280);
+            param.setHeightIN(720);
+        } else if(sizeParamUtil.getWH_IN().equals("1920x1080")) {
+            param.setWidthIN(1920);
+            param.setHeightIN(1080);
         }
+
+        if(sizeParamUtil.getWH_OUT().equals("1280x720")) {
+            param.setWidthOUT(1280);
+            param.setHeightOUT(720);
+        } else if(sizeParamUtil.getWH_OUT().equals("1920x1080")) {
+            param.setWidthOUT(1920);
+            param.setHeightOUT(1080);
+        }
+        intent.putExtra("param", param);
 
         startActivity(intent);
     }

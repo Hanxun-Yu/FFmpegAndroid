@@ -22,7 +22,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * 编码类MediaEncoder，主要是把视频流YUV420P格式编码为h264格式,把PCM裸音频转化为AAC格式
  */
-public class MediaEncoder2Codec {
+public class MediaEncoder2Codec extends MediaEncoder{
     private final String TAG = getClass().getSimpleName() + "_xunxun";
 
     private Thread videoEncoderThread, audioEncoderThread;
@@ -44,7 +44,6 @@ public class MediaEncoder2Codec {
     private FileManager video_LenFileManager;
     private FileManager audioFileManager;
     private static final boolean SAVE_FILE_FOR_TEST = true;
-    private int fps = 0;
     private int audioEncodeBuffer;
 
     private MediaEncoder.MediaEncoderCallback sMediaEncoderCallback;
@@ -124,6 +123,7 @@ public class MediaEncoder2Codec {
     VideoData420 lastPuttedVideoData;
 
     public synchronized void putVideoData(VideoData420 videoData) {
+//        Log.d(TAG,"putVideoData queueSize:"+videoQueue.size()+ " takeYUVCount:"+takeYUVCount);
         if (firstInputTime == 0)
             firstInputTime = System.currentTimeMillis();
 
@@ -237,7 +237,7 @@ public class MediaEncoder2Codec {
 
             //p2 支持 COLOR_FormatSurface COLOR_FormatYUV420Flexible  COLOR_FormatYUV420SemiPlanar
             mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT,
-                    MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible);
+                    MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar);
             mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
             Log.d(TAG,"mediaFormat:"+mediaFormat);
 
@@ -303,7 +303,10 @@ public class MediaEncoder2Codec {
 
                         takeYUVCount++;
 
-                        int bufferIndex = mMediaCodec.dequeueInputBuffer(40);
+                        int bufferIndex = mMediaCodec.dequeueInputBuffer(-1);
+                        start = System.currentTimeMillis();
+                        Log.d(TAG,"start IF bufferIndex:"+bufferIndex +" -------------------------------------");
+
                         if (videoData != null && bufferIndex >= 0) {
                             inputBuffer = mMediaCodec.getInputBuffer(bufferIndex);
                             inputBuffer.clear();
@@ -313,21 +316,20 @@ public class MediaEncoder2Codec {
                                     System.nanoTime() / 1000, 0);
                             MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
 
-                            int outputBufferIndex = mMediaCodec.dequeueOutputBuffer(bufferInfo, 0);
+                            int outputBufferIndex = mMediaCodec.dequeueOutputBuffer(bufferInfo, 40);
                             while (outputBufferIndex >= 0) {
                                 outputBuffer = mMediaCodec.getOutputBuffer(outputBufferIndex);
                                 outputBuffer.position(bufferInfo.offset);
                                 outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
-                                byte[] bytes = new byte[outputBuffer.remaining()];
-                                outputBuffer.get(bytes);
+                                encodeData = new byte[outputBuffer.remaining()];
+                                outputBuffer.get(encodeData);
                                 //进行处理
                                 //...
-                                fps++;
 
                                 //对YUV420P进行h264编码，返回一个数据大小，里面是编码出来的h264数据
                                 //编码后的h264数据
-                                encodeData = new byte[bytes.length];
-                                System.arraycopy(bytes, 0, encodeData, 0, encodeData.length);
+//                                encodeData = new byte[bytes.length];
+//                                System.arraycopy(bytes, 0, encodeData, 0, encodeData.length);
                                 h264TotalSize += encodeData.length;
                                 recvH264Count++;
                                 if (sMediaEncoderCallback != null) {
@@ -344,11 +346,12 @@ public class MediaEncoder2Codec {
                                 refreshFPS();
                                 System.gc();
                                 mMediaCodec.releaseOutputBuffer(outputBufferIndex, false);
-                                outputBufferIndex = mMediaCodec.dequeueOutputBuffer(bufferInfo, 0);
+                                outputBufferIndex = mMediaCodec.dequeueOutputBuffer(bufferInfo, 40);
                             }
-
+                            Log.d(TAG,"end while recvH264Count:"+recvH264Count);
                         }
-
+                        end = System.currentTimeMillis();
+                        Log.d(TAG,"end IF bufferIndex:"+bufferIndex +" time:"+(end-start)+" -------------------------------------");
 
                     } catch (InterruptedException e) {
                         e.printStackTrace();

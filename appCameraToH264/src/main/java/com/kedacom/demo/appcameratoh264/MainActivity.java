@@ -61,8 +61,8 @@ public class MainActivity extends AppCompatActivity implements
     final String TAG = "MainActivity_xunxun";
     private Camera2Helper camera2Helper;
     private Camera1Helper camera1Helper;
-//    MediaEncoder mediaEncoder;
-    MediaEncoder2Codec mediaEncoder;
+    MediaEncoder mediaEncoder;
+    //    MediaEncoder2Codec mediaEncoder;
     private AudioWaveView audioWaveView;
     boolean useCameraOne = false;
     boolean useSurfaceview = false;
@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity implements
     private AudioRecoderManager audioGathererManager;
 
     String muxerFormat;
+    int codec;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements
         int camera = getIntent().getIntExtra("camera", 0);
         int render = getIntent().getIntExtra("render", 0);
         int orientation = getIntent().getIntExtra("orientation", 0);
-        int codec = getIntent().getIntExtra("codec", 0);
+        codec = getIntent().getIntExtra("codec", 0);
         int muxer = getIntent().getIntExtra("muxer", 0);
         muxerFormat = muxer == 0 ? "mp4" : "mkv";
 
@@ -94,13 +95,16 @@ public class MainActivity extends AppCompatActivity implements
         if (!usePortrait)
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
+        param = getIntent().getParcelableExtra("param");
+        widthIN = param.getWidthIN();
+        heightIN = param.getHeightIN();
+        widthOUT = param.getWidthOUT();
+        heightOUT = param.getHeightOUT();
         if (codec == 0) {
             //x264
-            param = getIntent().getParcelableExtra("param");
-            widthIN = param.getWidthIN();
-            heightIN = param.getHeightIN();
-            widthOUT = param.getWidthOUT();
-            heightOUT = param.getHeightOUT();
+
+        } else if (codec == 1) {
+            //mediaCodec
         }
 
         init();
@@ -115,7 +119,6 @@ public class MainActivity extends AppCompatActivity implements
     long startTime;
 
     private void init() {
-        mediaEncoder = new MediaEncoder2Codec();
         textureView = findViewById(R.id.textureview);
         surfaceView = findViewById(R.id.surfaceview);
         audioWaveView = findViewById(R.id.audioWaveView);
@@ -139,6 +142,7 @@ public class MainActivity extends AppCompatActivity implements
             public void onClick(View view) {
 //                camera2Helper.takePicture();
 //                camera2Helper.startCallbackFrame();
+                Log.e(TAG, "camera degree:" + camera1Helper.getDisplayOrientation());
                 if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
                     int temp = param.getWidthIN();
                     param.setWidthIN(param.getHeightIN());
@@ -271,6 +275,12 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void initEncoder() {
+        if (codec == 0) {
+            mediaEncoder = new MediaEncoder();
+
+        } else {
+            mediaEncoder = new MediaEncoder2Codec();
+        }
         //写死了，应该与widthin and heightin应该与camera内yuv一致
 //        if (useCameraOne) {
 //            if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
@@ -283,6 +293,7 @@ public class MainActivity extends AppCompatActivity implements
 //        } else {
 //            mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, videoBitrate);
 //        }
+
         mediaEncoder.setsMediaEncoderCallback(this);
         mediaEncoder.setOnMuxerListener(new MediaEncoder.OnMuxerListener() {
             @Override
@@ -368,9 +379,25 @@ public class MainActivity extends AppCompatActivity implements
                             //收到NV21
                             byte[] yuv420sp = (byte[]) msg.obj;
                             byte[] yuv420p = new byte[yuv420sp.length];
-                            YuvUtil.compressYUV(yuv420sp, widthIN, heightIN,
-                                    yuv420p, widthOUT, heightOUT, 0, camera1Helper.getDisplayOrientation(), false);
-                            vd420Temp = new VideoData420(yuv420p, widthOUT, heightOUT, System.currentTimeMillis());
+                            //就算是竖屏,这里拿到的还是横屏图像,所以要旋转
+                            if (codec == 0) {
+                                //nv21 转 yuv420p
+                                YuvUtil.compressYUV(yuv420sp, widthIN, heightIN,
+                                        yuv420p, widthOUT, heightOUT, 0, camera1Helper.getDisplayOrientation(), false);
+                            } else {
+                                //nv21 转 nv12
+                                long start = System.currentTimeMillis();
+                                YuvUtil.compressNV12(yuv420sp, widthIN, heightIN,
+                                        yuv420p, widthOUT, heightOUT, 0, camera1Helper.getDisplayOrientation(), false);
+//                                Log.d(TAG,"compressNV12 time:"+(System.currentTimeMillis()-start));
+
+                            }
+                            if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
+                                vd420Temp = new VideoData420(yuv420p, heightOUT, widthOUT, System.currentTimeMillis());
+                            } else {
+                                vd420Temp = new VideoData420(yuv420p, widthOUT, heightOUT, System.currentTimeMillis());
+                            }
+//                            Log.d(TAG, "yuv size:" + yuv420p.length + " w:" + widthOUT + " h:" + heightOUT);
 //                            vd420Temp = new VideoData420(yuv420sp, widthOUT, heightOUT, System.currentTimeMillis());
                             mediaEncoder.putVideoData(vd420Temp);
                         } else {
