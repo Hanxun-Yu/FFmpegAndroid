@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -18,7 +17,7 @@ import android.widget.Toast;
 
 import com.kedacom.demo.appcameratoh264.data.SizeParamUtil;
 import com.kedacom.demo.appcameratoh264.fragment.X264ParamFragment;
-import com.kedacom.demo.appcameratoh264.jni.X264Param;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.X264Param;
 import com.kedacom.demo.appcameratoh264.widget.pick.ResolutionSrcDialogFragment;
 import com.kedacom.demo.appcameratoh264.widget.pick.ResolutionTargetDialogFragment;
 

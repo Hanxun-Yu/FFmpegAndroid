@@ -4,14 +4,13 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.kedacom.demo.appcameratoh264.R;
 import com.kedacom.demo.appcameratoh264.data.X264ParamUtil;
-import com.kedacom.demo.appcameratoh264.jni.X264Param;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.X264Param;
 import com.kedacom.demo.appcameratoh264.widget.pick.BitCtrlDoSliceDialogFragment;
 import com.kedacom.demo.appcameratoh264.widget.pick.FpsGopBFrDialogFragment;
 import com.kedacom.demo.appcameratoh264.widget.pick.ProPreTuneDialogFragment;

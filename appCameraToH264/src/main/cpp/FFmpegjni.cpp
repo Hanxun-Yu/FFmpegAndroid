@@ -178,7 +178,7 @@ JNIEXPORT jint JNICALL muxMp4(JNIEnv *env, jclass clazz,
 JNINativeMethod nativeMethod[] = {
         {"init",               "()I",                                                       (void *) init},
         {"release",            "()I",                                                       (void *) release},
-        {"encoderVideoinit",   "(Lcom/kedacom/demo/appcameratoh264/jni/X264Param;)I",                                     (void *) encoderVideoinit},
+        {"encoderVideoinit",   "(Lcom/kedacom/demo/appcameratoh264/media/encoder/video/X264Param;)I",                                     (void *) encoderVideoinit},
         {"encoderVideoEncode", "([BII[B[I)I",                                               (void *) encoderVideoEncode},
         {"encoderAudioInit",   "(III)I",                                                    (void *) encoderAudioInit},
         {"encoderAudioEncode", "([BI[BI)I",                                                 (void *) encoderAudioEncode},

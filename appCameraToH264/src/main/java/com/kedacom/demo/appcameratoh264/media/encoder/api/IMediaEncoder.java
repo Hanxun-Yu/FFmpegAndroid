@@ -1,6 +1,4 @@
-package com.kedacom.demo.appcameratoh264.media.api;
-
-import com.kedacom.demo.appcameratoh264.media.video.MediaEncoder;
+package com.kedacom.demo.appcameratoh264.media.encoder.api;
 
 /**
  * Created by yuhanxun
@@ -12,6 +10,7 @@ public interface IMediaEncoder {
     void config(IEncoderParam param);
     void start();
     void stop();
+    void release();
     void putPacket(PacketData packetData);
     void changeBitrate(int byterate);
 
@@ -26,7 +25,7 @@ public interface IMediaEncoder {
     void setCallback(Callback callback);
     void setOnStateChangedListener(OnStateChangedListener onStateChangedListener);
 
-    interface Callback<EncodedData>{
+    interface Callback{
         void onDataEncoded(EncodedData encodedData);
     }
     interface OnStateChangedListener {

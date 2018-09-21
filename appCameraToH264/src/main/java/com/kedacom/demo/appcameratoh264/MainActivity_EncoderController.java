@@ -12,6 +12,7 @@ import android.graphics.SurfaceTexture;
 import android.graphics.YuvImage;
 import android.media.FaceDetector;
 import android.media.Image;
+import android.media.MediaCodec;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -28,15 +29,21 @@ import android.widget.Toast;
 
 import com.example.widget.AudioWaveView;
 import com.google.gson.Gson;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.X264Param;
 import com.kedacom.demo.appcameratoh264.jni.YuvUtil;
-import com.kedacom.demo.appcameratoh264.media.gather.Camera1Helper;
-import com.kedacom.demo.appcameratoh264.media.gather.Camera2Helper;
+import com.kedacom.demo.appcameratoh264.media.encoder.EncoderConfig;
+import com.kedacom.demo.appcameratoh264.media.encoder.EncoderManager;
+import com.kedacom.demo.appcameratoh264.media.encoder.EncoderType;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IEncoderParam;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IMediaEncoder;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.VideoEncoderParam;
 import com.kedacom.demo.appcameratoh264.media.encoder.audio.AudioData;
-import com.kedacom.demo.appcameratoh264.media.gather.AudioRecoderManager;
 import com.kedacom.demo.appcameratoh264.media.encoder.video.MediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.encoder.video.MediaEncoder2Codec;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.X264Param;
 import com.kedacom.demo.appcameratoh264.media.encoder.video.YuvData;
+import com.kedacom.demo.appcameratoh264.media.gather.AudioRecoderManager;
+import com.kedacom.demo.appcameratoh264.media.gather.Camera1Helper;
+import com.kedacom.demo.appcameratoh264.media.gather.Camera2Helper;
 import com.kedacom.demo.appcameratoh264.widget.AutoFitTextureView;
 
 import java.io.ByteArrayOutputStream;
@@ -47,8 +54,7 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.TimeZone;
 
-public class MainActivity extends AppCompatActivity implements
-        MediaEncoder.MediaEncoderCallback {
+public class MainActivity_EncoderController extends AppCompatActivity {
     private AutoFitTextureView textureView;
     private SurfaceView surfaceView;
     private Button recordBtn;
@@ -61,8 +67,6 @@ public class MainActivity extends AppCompatActivity implements
     final String TAG = "MainActivity_xunxun";
     private Camera2Helper camera2Helper;
     private Camera1Helper camera1Helper;
-    MediaEncoder mediaEncoder;
-    //    MediaEncoder2Codec mediaEncoder;
     private AudioWaveView audioWaveView;
     boolean useCameraOne = false;
     boolean useSurfaceview = false;
@@ -110,12 +114,13 @@ public class MainActivity extends AppCompatActivity implements
         init();
         initCamera();
         initMicroPhone();
-        initCheckFaceThread();
-//        initFile();
-//        initSimpleWaveform();
+//        initCheckFaceThread();
+
+        configEncoder();
+        initEncoderPutThread();
     }
 
-    X264Param param;
+    VideoEncoderParam param;
     long startTime;
 
     private void init() {
@@ -136,12 +141,9 @@ public class MainActivity extends AppCompatActivity implements
         memoryText = findViewById(R.id.memoryText);
         paramText = findViewById(R.id.paramText);
         timeText = findViewById(R.id.timeText);
-//        progressBar= (ProgressBar) findViewById(R.id.progressbar_loading);
         recordBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                camera2Helper.takePicture();
-//                camera2Helper.startCallbackFrame();
                 Log.e(TAG, "camera degree:" + camera1Helper.getDisplayOrientation());
                 if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
                     int temp = param.getWidthIN();
@@ -151,20 +153,9 @@ public class MainActivity extends AppCompatActivity implements
                     param.setWidthOUT(param.getHeightOUT());
                     param.setHeightOUT(temp);
                 }
-                if (mediaEncoder.start(param)) {
-                    recording = true;
-                    startTime = System.currentTimeMillis();
-                } else {
-                    Toast.makeText(MainActivity.this, "MediaEncoder launch failer!", Toast.LENGTH_SHORT).show();
-                }
-
-
-                view.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        mediaEncoder.setBitrate(10*1024*1024);
-                    }
-                },10000);
+                encoderManager.start();
+                recording = true;
+                startTime = System.currentTimeMillis();
             }
         });
 
@@ -172,7 +163,7 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onClick(View view) {
                 recording = false;
-                mediaEncoder.stop();
+                encoderManager.stop();
                 audioGathererManager.stopAudioIn();
 //                camera2Helper.stopCallbackFrame();
             }
@@ -180,199 +171,26 @@ public class MainActivity extends AppCompatActivity implements
         showParams();
     }
 
+    EncoderManager encoderManager = new EncoderManager();
 
-    private void initMicroPhone() {
-        audioGathererManager = new AudioRecoderManager();
-        audioGathererManager.setAudioDataListener(new AudioRecoderManager.AudioDataListener() {
-            @Override
-            public void audioData(byte[] data) {
-//                Log.d(TAG,"audioData data size:"+data.length);
-                if (recording) {
-                    notifyEncoderAudio(data);
-                    notifyWave(data);
-                }
-            }
-        });
-        audioGathererManager.startAudioIn();
-    }
-
-
-    private void initCamera() {
-        if (useCameraOne) {
-            camera1Helper = new Camera1Helper(this, widthIN, heightIN);
-            camera1Helper.setOnRealFrameListener(new Camera1Helper.OnRealFrameListener() {
-                @Override
-                public void onRealFrame(byte[] bytes) {
-                    if (recording) {
-                        notifyEncoderVideo(bytes);
-                    }
-
-//                    if(checkFaceHandler != null)
-//                        checkFaceHandler.obtainMessage(0,bytes).sendToTarget();
-                }
-            });
-            if (useSurfaceview) {
-                surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
-                    @Override
-                    public void surfaceCreated(SurfaceHolder surfaceHolder) {
-                        camera1Helper.openCamera(surfaceHolder);
-                        initEncoder();
-                    }
-
-                    @Override
-                    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-
-                    }
-
-                    @Override
-                    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-                    }
-                });
-            } else {
-                textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
-                    @Override
-                    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
-                        camera1Helper.openCamera(surfaceTexture);
-                        initEncoder();
-                    }
-
-                    @Override
-                    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
-
-                    }
-
-                    @Override
-                    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
-                        return false;
-                    }
-
-                    @Override
-                    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
-
-                    }
-                });
-            }
-        } else {
-            if (useSurfaceview) {
-                Toast.makeText(this, "Camera2 not support for now", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            camera2Helper = Camera2Helper.getInstance(MainActivity.this, textureView, null);
-            camera2Helper.setOnRealFrameListener(new Camera2Helper.OnRealFrameListener() {
-                @Override
-                public void onRealFrame(Image image) {
-//                    Log.d(TAG, "onRealFrame image w:" + image.getWidth() + " h:" + image.getHeight() + " time:" + image.getTimestamp());
-
-                    if (recording) {
-                        long start = System.currentTimeMillis();
-//            Log.d(TAG, "onRealFrame: isMainThread:" + (Looper.myLooper() == Looper.getMainLooper()));
-
-                        notifyEncoderVideo(getByte(image.getPlanes()[0].getBuffer(),
-                                image.getPlanes()[1].getBuffer(),
-                                image.getPlanes()[2].getBuffer()));
-//                        Log.d(TAG, "recording time:" + (System.currentTimeMillis() - start));
-
-                    }
-                }
-            });
-            camera2Helper.setRealTimeFrameSize(widthIN, heightIN);
-            camera2Helper.startCameraPreView();
-            initEncoder();
-
-        }
-    }
-
-    private void initEncoder() {
-        if (codec == 0) {
-            mediaEncoder = new MediaEncoder();
-
-        } else {
-            mediaEncoder = new MediaEncoder2Codec();
-        }
-        //写死了，应该与widthin and heightin应该与camera内yuv一致
-//        if (useCameraOne) {
-//            if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
-//                mediaEncoder.setMediaSize(x264Param.getHeightIN(),
-//                        x264Param.getWidthIN(), x264Param.getHeightOUT(),
-//                        x264Param.getWidthOUT(), x264Param.getBitrate());
-//            } else {
-//                mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, videoBitrate);
-//            }
-//        } else {
-//            mediaEncoder.setMediaSize(widthIN, heightIN, widthOUT, heightOUT, videoBitrate);
-//        }
-
-        mediaEncoder.setsMediaEncoderCallback(this);
-        mediaEncoder.setOnMuxerListener(new MediaEncoder.OnMuxerListener() {
-            @Override
-            public void onSuccess(MediaEncoder.MuxType type, final String path) {
-                Log.d(TAG, "onSuccess type:" + type + " path:" + path);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(MainActivity.this, "mux OK:" + path, Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-
-            @Override
-            public void onError(final String error) {
-                Log.d(TAG, "onError error:" + error);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(MainActivity.this, "mux Error:" + error, Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-        });
-
-        mediaEncoder.setOnEncoderChangedListener(new MediaEncoder.OnEncoderChangedListener() {
-            @Override
-            public void onChanged(MediaEncoder.EncoderState state) {
-                Log.d(TAG, "Encoder state V:" + state.getVideoEncoderState() + " A:" + state.getAudioEncoderState() +
-                        " Mux:" + state.getMuxEncoderState());
-                if (state.getAudioEncoderState() == MediaEncoder.State.IDLE
-                        && state.getVideoEncoderState() == MediaEncoder.State.IDLE) {
-                    mediaEncoder.mux(MediaEncoder.MuxType.valueOf(muxerFormat));
-                }
-            }
-        });
-        initEncoderThread();
+    private void configEncoder() {
+        encoderManager.config(new EncoderConfig.Build()
+                .setVideo(codec == 0 ? EncoderType.Video.X264 : EncoderType.Video.MediaCodec)
+                .setVideoParam(param)
+                .setVideoSavePath("/sdcard/264/123.h264")
+                .setAudio(EncoderType.Audio.AAC)
+                .setAudioSavePath("/sdcard/264/123.aac")
+                .build());
     }
 
     HandlerThread handlerThread;
     Handler putEncoderHandler;
-    HandlerThread checkFaceThread;
-    Handler checkFaceHandler;
-
-    private void initCheckFaceThread() {
-        checkFaceThread = new HandlerThread("checkFace");
-        checkFaceThread.start();
-        checkFaceHandler = new Handler(checkFaceThread.getLooper()) {
-            int incremental = 0;
-            int frequence = 20;
-
-            @Override
-            public void handleMessage(Message msg) {
-                super.handleMessage(msg);
-//                Log.d(TAG,"incremental:"+incremental);
-                if (incremental % frequence == 0) {
-                    checkFace((byte[]) msg.obj, widthIN, heightIN);
-                    if (incremental == frequence)
-                        incremental = 0;
-                }
-                incremental++;
-
-            }
-        };
-    }
 
 
     final int HANDLE_VIDEO_MSG = 0;
     final int HANDLE_AUDIO_MSG = 1;
 
-    private void initEncoderThread() {
+    private void initEncoderPutThread() {
         handlerThread = new HandlerThread("putEncoderThread");
         handlerThread.start();
         putEncoderHandler = new Handler(handlerThread.getLooper()) {
@@ -429,6 +247,9 @@ public class MainActivity extends AppCompatActivity implements
     ByteArrayOutputStream audioTmpByteOut = new ByteArrayOutputStream();
 
     private void notifyEncoderVideo(byte[] bytes) {
+        if(!recording)
+            return;
+
         videoTmpByteOut.reset();
         try {
             videoTmpByteOut.write(bytes);
@@ -442,7 +263,7 @@ public class MainActivity extends AppCompatActivity implements
         msg.sendToTarget();
     }
 
-    private void notifyWave(byte[] audioData) {
+    private void notifyUIWave(byte[] audioData) {
 //        if (count % frequence == 0) {
         for (int i = 0; i < audioData.length; i += 4) {
             //PCM16,采样一次4个字节，左右各2个字节,PCM16
@@ -461,23 +282,13 @@ public class MainActivity extends AppCompatActivity implements
 
 
             short left = (short) ((u_left1) | (u_left2 << 8));
-//                short right = (short) ((u_right1 << 8) | u_right2);
-
-
-//                Log.d(TAG, "audio_left 1:" + Integer.toHexString(u_left1)
-//                        + " 2:" + Integer.toHexString(u_left2)
-//                        + " 1&2:" + Integer.toHexString(left) + " dex:" + left);
-//                Log.d(TAG," dex:" + left);
-//                Log.d(TAG, "audio_right 1:" + Integer.toHexString(u_right1)
-//                        + " 2:" + Integer.toHexString(u_right2)
-//                        + " 1&2:" + Integer.toHexString(right) + " dex:" + right);
-            notigyWaveView(left);
+            notifyWaveView(left);
         }
-//            Log.d(TAG, "audioData:" + size);
-//        }
     }
 
     private void notifyEncoderAudio(byte[] bytes) {
+        if(!recording)
+            return;
         audioTmpByteOut.reset();
         try {
             audioTmpByteOut.write(bytes);
@@ -492,108 +303,6 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     boolean recording = false;
-
-
-    private byte[] getByte(ByteBuffer yb, ByteBuffer ub, ByteBuffer vb) {
-//        long start = System.currentTimeMillis();
-        byte[] ret = new byte[yb.remaining() + ub.remaining() + vb.remaining()];
-        int position = 0;
-        while (yb.hasRemaining()) {
-//            Log.d(TAG, "bb.remaining():" + bb.remaining());
-            byte[] t = new byte[yb.remaining()];
-            yb.get(t);
-            System.arraycopy(t, 0, ret, position, t.length);
-            position += t.length;
-        }
-
-        while (ub.hasRemaining()) {
-//            Log.d(TAG, "bb.remaining():" + bb.remaining());
-            byte[] t = new byte[ub.remaining()];
-            ub.get(t);
-            System.arraycopy(t, 0, ret, position, t.length);
-            position += t.length;
-        }
-
-        while (vb.hasRemaining()) {
-//            Log.d(TAG, "bb.remaining():" + bb.remaining());
-            byte[] t = new byte[vb.remaining()];
-            vb.get(t);
-            System.arraycopy(t, 0, ret, position, t.length);
-            position += t.length;
-        }
-//        Log.d(TAG, "getByte time:" + (System.currentTimeMillis() - start));
-        return ret;
-    }
-
-    int count = 0;
-    int frequence = 8;
-
-    @Override
-    public void receiveEncoderVideoData(byte[] videoData, int totalLength, int[] segment) {
-//        Log.d(TAG, "recv h264 len:" + totalLength + " nalCount:" + segment.length);
-        if (count % frequence == 0) {
-            runOnUiThread(runnable);
-            if (count == frequence)
-                count = 0;
-        }
-//        try {
-//            fileOutputStream.write(videoData);
-//            writer.write(String.valueOf(totalLength)+"\n");
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-        count++;
-    }
-
-//    //------------------------记录每一帧的大小---------------------------
-//    File file = new File("/sdcard/h264.264");
-//    File file2 = new File("/sdcard/h264_len.txt");
-//    FileOutputStream fileOutputStream;
-//    FileWriter writer;
-//    private void initFile() {
-//        try {
-//            fileOutputStream = new FileOutputStream(file);
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        }
-//        try {
-//            writer = new FileWriter(file2);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void closeFile(){
-//        try {
-//            fileOutputStream.flush();
-//            writer.flush();
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } finally {
-//            try {
-//                fileOutputStream.close();
-//                writer.close();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//    }
-    //------------------------------------------------------------------
-
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-//        closeFile();
-    }
-
-    @Override
-    public void receiveEncoderAudioData(byte[] audioData, int size) {
-//        Log.d(TAG, "receiveEncoderAudioData size:" + size);
-
-    }
 
 
     Runnable runnable = new Runnable() {
@@ -762,14 +471,15 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void releaseMediaEncoder() {
-        if (!mediaEncoder.isStop())
+        if (!encoderManager.isStop())
             mediaEncoder.stop();
         mediaEncoder.release();
     }
 
     private void releaseCamera() {
         if (useCameraOne) {
-            camera1Helper.releaseCamera();
+            if (camera1Helper != null)
+                camera1Helper.releaseCamera();
         } else {
             if (camera2Helper != null)
                 camera2Helper.onDestroyHelper();
@@ -782,8 +492,7 @@ public class MainActivity extends AppCompatActivity implements
 
     LinkedList<Integer> ampList = new LinkedList<>();
 
-    private void notigyWaveView(final short val) {
-//        Log.d(TAG,"notigyWaveView:"+val);
+    private void notifyWaveView(final short val) {
         audioWaveView.putData(val);
 //        runOnUiThread(new Runnable() {
 //            @Override
@@ -794,35 +503,162 @@ public class MainActivity extends AppCompatActivity implements
 //        });
     }
 
-    private void checkFace(byte[] yuv, int width, int height) {
-        YuvImage image = new YuvImage(yuv, ImageFormat.NV21, width, height, null);
-        if (yuv != null) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            image.compressToJpeg(new Rect(0, 0, width, height), 50, out);
-            byte[] datas = out.toByteArray();
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inPreferredConfig = Bitmap.Config.RGB_565;
-            Bitmap mBitmap = BitmapFactory.decodeByteArray(datas, 0, datas.length, options);
-            //FileUtil.saveBitmap("cccc/"+l+"ee.png", mBitmap);
-            Matrix matrix = new Matrix();
-            //matrix.postRotate((float)90);
-            matrix.postScale(0.4f, 0.3125f); //照片的大小使 1280*960 屏幕的大小使 1024*600 这里需要注意换算比例
-            // Logger.v("MyCameraManager faceCheckFlag");
-            //synchronized (this) {
-            //Logger.v("MyCameraManager synchronized");
-            //if(faceCheckFlag){
-            //setFaceCheckFlag(false);
-            //Logger.v("MyCameraManager synchronized" + errornum + mBitmap.getWidth() + "dd " + mBitmap.getHeight());
-            Bitmap bitmap = Bitmap.createBitmap(mBitmap, 0, 0, mBitmap.getWidth(), mBitmap.getHeight(), matrix, false);
-            FaceDetector mFaceDetector = new FaceDetector(width, height, 5);
-            FaceDetector.Face[] mFace = new FaceDetector.Face[5];
-            int faceResult = mFaceDetector.findFaces(mBitmap, mFace);
+//    private void checkFace(byte[] yuv, int width, int height) {
+//        YuvImage image = new YuvImage(yuv, ImageFormat.NV21, width, height, null);
+//        if (yuv != null) {
+//            ByteArrayOutputStream out = new ByteArrayOutputStream();
+//            image.compressToJpeg(new Rect(0, 0, width, height), 50, out);
+//            byte[] datas = out.toByteArray();
+//            BitmapFactory.Options options = new BitmapFactory.Options();
+//            options.inPreferredConfig = Bitmap.Config.RGB_565;
+//            Bitmap mBitmap = BitmapFactory.decodeByteArray(datas, 0, datas.length, options);
+//            //FileUtil.saveBitmap("cccc/"+l+"ee.png", mBitmap);
+//            Matrix matrix = new Matrix();
+//            //matrix.postRotate((float)90);
+//            matrix.postScale(0.4f, 0.3125f); //照片的大小使 1280*960 屏幕的大小使 1024*600 这里需要注意换算比例
+//            // Logger.v("MyCameraManager faceCheckFlag");
+//            //synchronized (this) {
+//            //Logger.v("MyCameraManager synchronized");
+//            //if(faceCheckFlag){
+//            //setFaceCheckFlag(false);
+//            //Logger.v("MyCameraManager synchronized" + errornum + mBitmap.getWidth() + "dd " + mBitmap.getHeight());
+//            Bitmap bitmap = Bitmap.createBitmap(mBitmap, 0, 0, mBitmap.getWidth(), mBitmap.getHeight(), matrix, false);
+//            FaceDetector mFaceDetector = new FaceDetector(width, height, 5);
+//            FaceDetector.Face[] mFace = new FaceDetector.Face[5];
+//            int faceResult = mFaceDetector.findFaces(mBitmap, mFace);
+//
+////            if (faceResult != 0) {
+//            Log.d(TAG, "findFace:" + new Gson().toJson(mFace));
+////            }
+//            mBitmap.recycle();
+//            bitmap.recycle();
+//        }
+//    }
 
-//            if (faceResult != 0) {
-            Log.d(TAG, "findFace:" + new Gson().toJson(mFace));
-//            }
-            mBitmap.recycle();
-            bitmap.recycle();
+
+    private void initMicroPhone() {
+        audioGathererManager = new AudioRecoderManager();
+        audioGathererManager.setAudioDataListener(new AudioRecoderManager.AudioDataListener() {
+            @Override
+            public void audioData(byte[] data) {
+//                Log.d(TAG,"audioData data size:"+data.length);
+                if (recording) {
+                    notifyEncoderAudio(data);
+                    notifyUIWave(data);
+                }
+            }
+        });
+        audioGathererManager.startAudioIn();
+    }
+
+
+    private void initCamera() {
+        if (useCameraOne) {
+            camera1Helper = new Camera1Helper(this, widthIN, heightIN);
+            camera1Helper.setOnRealFrameListener(new Camera1Helper.OnRealFrameListener() {
+                @Override
+                public void onRealFrame(byte[] bytes) {
+                    if (recording) {
+                        notifyEncoderVideo(bytes);
+                    }
+                }
+            });
+            if (useSurfaceview) {
+                surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
+                    @Override
+                    public void surfaceCreated(SurfaceHolder surfaceHolder) {
+                        camera1Helper.openCamera(surfaceHolder);
+                    }
+
+                    @Override
+                    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+
+                    }
+
+                    @Override
+                    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+                    }
+                });
+            } else {
+                textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+                    @Override
+                    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
+                        camera1Helper.openCamera(surfaceTexture);
+                    }
+
+                    @Override
+                    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
+
+                    }
+
+                    @Override
+                    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+                        return false;
+                    }
+
+                    @Override
+                    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
+
+                    }
+                });
+            }
+        } else {
+            if (useSurfaceview) {
+                Toast.makeText(this, "Camera2 not support for now", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            camera2Helper = Camera2Helper.getInstance(MainActivity_EncoderController.this, textureView, null);
+            camera2Helper.setOnRealFrameListener(new Camera2Helper.OnRealFrameListener() {
+                @Override
+                public void onRealFrame(Image image) {
+//                    Log.d(TAG, "onRealFrame image w:" + image.getWidth() + " h:" + image.getHeight() + " time:" + image.getTimestamp());
+
+                    if (recording) {
+                        long start = System.currentTimeMillis();
+//            Log.d(TAG, "onRealFrame: isMainThread:" + (Looper.myLooper() == Looper.getMainLooper()));
+
+                        notifyEncoderVideo(getByte(image.getPlanes()[0].getBuffer(),
+                                image.getPlanes()[1].getBuffer(),
+                                image.getPlanes()[2].getBuffer()));
+//                        Log.d(TAG, "recording time:" + (System.currentTimeMillis() - start));
+
+                    }
+                }
+            });
+            camera2Helper.setRealTimeFrameSize(widthIN, heightIN);
+            camera2Helper.startCameraPreView();
         }
+    }
+
+
+    private byte[] getByte(ByteBuffer yb, ByteBuffer ub, ByteBuffer vb) {
+//        long start = System.currentTimeMillis();
+        byte[] ret = new byte[yb.remaining() + ub.remaining() + vb.remaining()];
+        int position = 0;
+        while (yb.hasRemaining()) {
+//            Log.d(TAG, "bb.remaining():" + bb.remaining());
+            byte[] t = new byte[yb.remaining()];
+            yb.get(t);
+            System.arraycopy(t, 0, ret, position, t.length);
+            position += t.length;
+        }
+
+        while (ub.hasRemaining()) {
+//            Log.d(TAG, "bb.remaining():" + bb.remaining());
+            byte[] t = new byte[ub.remaining()];
+            ub.get(t);
+            System.arraycopy(t, 0, ret, position, t.length);
+            position += t.length;
+        }
+
+        while (vb.hasRemaining()) {
+//            Log.d(TAG, "bb.remaining():" + bb.remaining());
+            byte[] t = new byte[vb.remaining()];
+            vb.get(t);
+            System.arraycopy(t, 0, ret, position, t.length);
+            position += t.length;
+        }
+//        Log.d(TAG, "getByte time:" + (System.currentTimeMillis() - start));
+        return ret;
     }
 }

@@ -1,4 +1,4 @@
-package com.kedacom.demo.appcameratoh264.media.api;
+package com.kedacom.demo.appcameratoh264.media.encoder.api;
 
 /**
  * Created by yuhanxun

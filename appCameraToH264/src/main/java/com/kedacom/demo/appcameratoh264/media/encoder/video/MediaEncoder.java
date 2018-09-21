@@ -1,30 +1,20 @@
-package com.kedacom.demo.appcameratoh264.media.video;
+package com.kedacom.demo.appcameratoh264.media.encoder.video;
 
 
-import android.media.MediaCodec;
-import android.media.MediaCodecInfo;
-import android.media.MediaCodecList;
-import android.media.MediaFormat;
-import android.os.Bundle;
 import android.util.Log;
 
 import com.kedacom.demo.appcameratoh264.jni.FFmpegjni;
-import com.kedacom.demo.appcameratoh264.jni.X264Param;
 import com.kedacom.demo.appcameratoh264.media.FileManager;
-import com.kedacom.demo.appcameratoh264.media.audio.AudioData;
-import com.kedacom.demo.appcameratoh264.media.audio.Contacts;
+import com.kedacom.demo.appcameratoh264.media.encoder.audio.AudioData;
+import com.kedacom.demo.appcameratoh264.media.encoder.audio.Contacts;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingQueue;
-
 
 /**
  * 编码类MediaEncoder，主要是把视频流YUV420P格式编码为h264格式,把PCM裸音频转化为AAC格式
  */
-public class MediaEncoder2Codec extends MediaEncoder{
-    private final String TAG = getClass().getSimpleName() + "_xunxun";
+public class MediaEncoder {
+    private static final String TAG = "MediaEncoder_xunxun";
 
     private Thread videoEncoderThread, audioEncoderThread;
 
@@ -45,20 +35,30 @@ public class MediaEncoder2Codec extends MediaEncoder{
     private FileManager video_LenFileManager;
     private FileManager audioFileManager;
     private static final boolean SAVE_FILE_FOR_TEST = true;
+    private int fps = 0;
     private int audioEncodeBuffer;
 
-    private MediaEncoder.MediaEncoderCallback sMediaEncoderCallback;
+    private MediaEncoderCallback sMediaEncoderCallback;
 
     FFmpegjni ffmpegjni;
-    private MediaCodec mMediaCodec;
 
 
+    public interface MediaEncoderCallback {
+        /**
+         * @param videoData   总字节
+         * @param totalLength 总长度
+         * @param segment     每个nalu的大小
+         */
+        void receiveEncoderVideoData(byte[] videoData, int totalLength, int[] segment);
 
-    public void setsMediaEncoderCallback(MediaEncoder.MediaEncoderCallback callback) {
+        void receiveEncoderAudioData(byte[] audioData, int size);
+    }
+
+    public void setsMediaEncoderCallback(MediaEncoderCallback callback) {
         sMediaEncoderCallback = callback;
     }
 
-    public MediaEncoder2Codec() {
+    public MediaEncoder() {
         if (SAVE_FILE_FOR_TEST) {
             videoFileManager = new FileManager(FileManager.TEST_H264_FILE);
             video_LenFileManager = new FileManager(FileManager.TEST_H264_LEN_FILE);
@@ -85,7 +85,9 @@ public class MediaEncoder2Codec extends MediaEncoder{
             ffmpegjni.release();
         }
         ffmpegjni = new FFmpegjni();
-        initMediaCodec(param);
+        ffmpegjni.encoderVideoinit(param);
+
+        //这里我们初始化音频数据，为什么要初始化音频数据呢？音频数据里面我们做了什么事情？
         audioEncodeBuffer = ffmpegjni.encoderAudioInit(Contacts.SAMPLE_RATE,
                 Contacts.CHANNELS, Contacts.BIT_RATE);
 
@@ -114,8 +116,13 @@ public class MediaEncoder2Codec extends MediaEncoder{
         refreshState();
     }
 
+    public void setBitrate(int byteRate) {
 
+    }
     public void release() {
+        if (ffmpegjni != null) {
+            ffmpegjni.release();
+        }
     }
 
     private long firstInputTime = 0;
@@ -124,7 +131,6 @@ public class MediaEncoder2Codec extends MediaEncoder{
     YuvData lastPuttedVideoData;
 
     public synchronized void putVideoData(YuvData videoData) {
-//        Log.d(TAG,"putVideoData queueSize:"+videoQueue.size()+ " takeYUVCount:"+takeYUVCount);
         if (firstInputTime == 0)
             firstInputTime = System.currentTimeMillis();
 
@@ -209,83 +215,15 @@ public class MediaEncoder2Codec extends MediaEncoder{
             audioEncoderThread.interrupt();
     }
 
-    private static final String VCODEC_MIME = "video/avc";
-
-    private void initMediaCodec(X264Param param) {
-        int bitrate = 5 * 1024 * 1024;
-        try {
-            MediaCodecInfo mediaCodecInfo = selectCodec(VCODEC_MIME);
-            if (mediaCodecInfo == null) {
-                throw new RuntimeException("mediaCodecInfo is Empty");
-            }
-            Log.w(TAG, "MediaCodecInfo " + mediaCodecInfo.getName());
-            mMediaCodec = MediaCodec.createByCodecName(mediaCodecInfo.getName());
-            MediaFormat mediaFormat = MediaFormat.createVideoFormat(VCODEC_MIME, param.getWidthOUT(), param.getHeightOUT());
-
-            MediaCodecInfo.CodecCapabilities codecCapabilities = mediaCodecInfo.getCapabilitiesForType(VCODEC_MIME);
-            MediaCodecInfo.VideoCapabilities videoCapabilities = codecCapabilities.getVideoCapabilities();
-            MediaCodecInfo.EncoderCapabilities encoderCapabilities = codecCapabilities.getEncoderCapabilities();
-            Log.d(TAG,"codec:"+Arrays.toString(codecCapabilities.colorFormats));
-            Log.d(TAG,"video widths:"+videoCapabilities.getSupportedWidths());
-            Log.d(TAG,"video heights:"+videoCapabilities.getSupportedHeights());
-
-            Log.d(TAG,"video rate:"+videoCapabilities.getBitrateRange().toString());
-            Log.d(TAG,"video fps:"+videoCapabilities.getSupportedFrameRates().toString());
-
-
-            mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitrate);
-            mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, param.getFps());
-
-            //p2 支持 COLOR_FormatSurface COLOR_FormatYUV420Flexible  COLOR_FormatYUV420SemiPlanar
-            mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT,
-                    MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar);
-            mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
-            Log.d(TAG,"mediaFormat:"+mediaFormat);
-
-            mMediaCodec.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            mMediaCodec.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private MediaCodecInfo selectCodec(String mimeType) {
-        int numCodecs = MediaCodecList.getCodecCount();
-        for (int i = 0; i < numCodecs; i++) {
-            MediaCodecInfo codecInfo = MediaCodecList.getCodecInfoAt(i);
-            //是否是编码器
-            if (!codecInfo.isEncoder()) {
-                continue;
-            }
-            String[] types = codecInfo.getSupportedTypes();
-            Log.w(TAG, Arrays.toString(types));
-            for (String type : types) {
-                if (mimeType.equalsIgnoreCase(type)) {
-                    return codecInfo;
-                }
-            }
-        }
-        return null;
-    }
-
-    public void setBitrate(int byteRate) {
-        Bundle params = new Bundle();
-        params.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE,byteRate);
-        mMediaCodec.setParameters(params);
-    }
-
-
     public void startVideoEncode() {
         if (videoEncoderLoop) {
             throw new RuntimeException("必须先停止");
         }
-
         videoEncoderThread = new Thread() {
+            byte[] outbuffer;
             int[] buffLength;
             int[] segment;
             byte[] encodeData;
-            byte[] finalData;
-            byte[] spsppsData;
             int totalLength;
             int numNals;
             YuvData videoData;
@@ -301,93 +239,65 @@ public class MediaEncoder2Codec extends MediaEncoder{
 
                 //视频消费者模型，不断从队列中取出视频流来进行h264编码
 
-                ByteBuffer inputBuffer;
-                ByteBuffer outputBuffer;
                 while (videoQueue.size() != 0 || videoEncoderLoop || putYUVCount != takeYUVCount) {
 //                        Log.d(TAG,"taking video");
-                    start = System.currentTimeMillis();
-                    //队列中取视频数据
                     try {
-                        videoData = videoQueue.take();
-
-                        takeYUVCount++;
-
-                        int bufferIndex = mMediaCodec.dequeueInputBuffer(-1);
                         start = System.currentTimeMillis();
-                        Log.d(TAG,"start IF bufferIndex:"+bufferIndex +" -------------------------------------");
+                        //队列中取视频数据
+                        videoData = videoQueue.take();
+                        takeYUVCount++;
+//                        byte[] outbuffer = new byte[videoData.width * videoData.height];
+                        outbuffer = new byte[videoData.videoData.length];
+                        buffLength = new int[20];
 
-                        if (videoData != null && bufferIndex >= 0) {
-                            inputBuffer = mMediaCodec.getInputBuffer(bufferIndex);
-                            inputBuffer.clear();
-                            inputBuffer.put(videoData.videoData, 0, videoData.videoData.length);
-                            mMediaCodec.queueInputBuffer(bufferIndex, 0,
-                                    inputBuffer.position(),
-                                    System.nanoTime() / 1000, 0);
-                            MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+                        //计算pts
+//                        if (lastFrameTimestamp == 0) {
+//                            fps++;
+//                        } else {
+//                            long interval = videoData.timestamp - lastFrameTimestamp;
+////                            int fps_unit = (int) ((interval / 1000d) * 25);
+//                            int fps_unit = (int) interval;
+//                            fps += fps_unit;
+//                            Log.d(TAG, "interval:" + interval + " fps_increment:" + fps_unit + " pts:" + fps);
+//                        }
+//                        lastFrameTimestamp = videoData.timestamp;
 
-                            int outputBufferIndex = mMediaCodec.dequeueOutputBuffer(bufferInfo, 40);
-                            while (outputBufferIndex >= 0) {
-                                outputBuffer = mMediaCodec.getOutputBuffer(outputBufferIndex);
-                                outputBuffer.position(bufferInfo.offset);
-                                outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
-                                encodeData = new byte[outputBuffer.remaining()];
-                                outputBuffer.get(encodeData);
-                                //进行处理
-                                //...
-                                //存储sps,pps
-                                if(spsppsData == null) {
-                                    ByteBuffer bb = ByteBuffer.wrap(encodeData);
-                                    if(bb.getInt() == 0x00000001 && bb.get() == 0x67) {
-                                        spsppsData = new byte[encodeData.length];
-                                        System.arraycopy(encodeData,0,spsppsData,0,encodeData.length);
-                                    }
-                                } else {
-                                    //i帧前插入sps,pps
-                                    ByteBuffer bb = ByteBuffer.wrap(encodeData);
-                                    if(bb.getInt() == 0x00000001 && bb.get() == 0x65) {
-                                        finalData = new byte[encodeData.length+spsppsData.length];
-                                        System.arraycopy(spsppsData,0,finalData,0,spsppsData.length);
-                                        System.arraycopy(encodeData,0,finalData,spsppsData.length,encodeData.length);
-                                        encodeData = null;
-                                    } else {
-                                        finalData = encodeData;
-                                    }
+                        fps++;
 
-
-                                    //对YUV420P进行h264编码，返回一个数据大小，里面是编码出来的h264数据
-                                    //编码后的h264数据
-//                                encodeData = new byte[bytes.length];
-//                                System.arraycopy(bytes, 0, encodeData, 0, encodeData.length);
-                                    h264TotalSize += finalData.length;
-                                    recvH264Count++;
-                                    if (sMediaEncoderCallback != null) {
-                                        sMediaEncoderCallback.receiveEncoderVideoData(finalData, finalData.length, segment);
-                                    }
-                                    //我们可以把数据在java层保存到文件中，看看我们编码的h264数据是否能播放，h264裸数据可以在VLC播放器中播放
-                                    if (SAVE_FILE_FOR_TEST) {
-                                        videoFileManager.writeFileData(finalData);
-                                        video_LenFileManager.writeFileData((String.valueOf(finalData.length) + "\n").getBytes());
-                                    }
-                                    //Log.d(TAG,"encoding out size:"+encodeData.length);
-                                    end = System.currentTimeMillis();
-//                        Log.d(TAG, "encodeTime:" + (end - start));
-
-                                }
-                                refreshFPS();
-                                System.gc();
-                                mMediaCodec.releaseOutputBuffer(outputBufferIndex, false);
-                                outputBufferIndex = mMediaCodec.dequeueOutputBuffer(bufferInfo, 40);
+                        //对YUV420P进行h264编码，返回一个数据大小，里面是编码出来的h264数据
+                        numNals = ffmpegjni.encoderVideoEncode(videoData.videoData, videoData.videoData.length, fps, outbuffer, buffLength);
+//                        Log.e("RiemannLee", "data.length " +  videoData.videoData.length + " h264 encode length " + buffLength[0]);
+                        if (numNals > 0) {
+                            segment = new int[numNals];
+                            System.arraycopy(buffLength, 0, segment, 0, numNals);
+                            totalLength = 0;
+                            for (int i = 0; i < segment.length; i++) {
+                                totalLength += segment[i];
                             }
-                            Log.d(TAG,"end while recvH264Count:"+recvH264Count);
+                            //Log.i("RiemannLee", "###############totalLength " + totalLength);
+                            //编码后的h264数据
+                            encodeData = new byte[totalLength];
+                            System.arraycopy(outbuffer, 0, encodeData, 0, encodeData.length);
+                            h264TotalSize += encodeData.length;
+                            recvH264Count++;
+                            if (sMediaEncoderCallback != null) {
+                                sMediaEncoderCallback.receiveEncoderVideoData(encodeData, encodeData.length, segment);
+                            }
+                            //我们可以把数据在java层保存到文件中，看看我们编码的h264数据是否能播放，h264裸数据可以在VLC播放器中播放
+                            if (SAVE_FILE_FOR_TEST) {
+                                videoFileManager.writeFileData(encodeData);
+                                video_LenFileManager.writeFileData((String.valueOf(encodeData.length) + "\n").getBytes());
+                            }
                         }
                         end = System.currentTimeMillis();
-                        Log.d(TAG,"end IF bufferIndex:"+bufferIndex +" time:"+(end-start)+" -------------------------------------");
-
+//                        Log.d(TAG, "encodeTime:" + (end - start));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-
+                    refreshFPS();
+                    System.gc();
                 }
+
                 videoFileManager.closeFile();
                 video_LenFileManager.closeFile();
                 isVideoEncoderThreadStop = true;
@@ -439,7 +349,6 @@ public class MediaEncoder2Codec extends MediaEncoder{
                                 if (VALID_LENGTH > 0) {
                                     byte[] encodeData = new byte[VALID_LENGTH];
                                     System.arraycopy(outbuffer, 0, encodeData, 0, VALID_LENGTH);
-
                                     recvAACCount++;
                                     aacTotalSize += validLength;
                                     if (sMediaEncoderCallback != null) {
@@ -467,7 +376,6 @@ public class MediaEncoder2Codec extends MediaEncoder{
         audioEncoderLoop = true;
         audioEncoderThread.start();
     }
-
 //
 //    private void saveFileForTest() {
 //        if (SAVE_FILE_FOR_TEST) {
@@ -477,11 +385,50 @@ public class MediaEncoder2Codec extends MediaEncoder{
 //    }
 
 
+    public enum MuxType {
+        mp4,mkv
+    }
 
-    MediaEncoder.OnMuxerListener onMuxerListener;
+    OnMuxerListener onMuxerListener;
 
-    public void setOnMuxerListener(MediaEncoder.OnMuxerListener onMuxerListener) {
+    public void setOnMuxerListener(OnMuxerListener onMuxerListener) {
         this.onMuxerListener = onMuxerListener;
+    }
+
+    public interface OnMuxerListener {
+        void onSuccess(MuxType type, String path);
+
+        void onError(String error);
+    }
+
+
+    public void mux(final MuxType type) {
+        isMuxing = true;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int ret = 0;
+                String outputPath;
+                if (type == MuxType.mp4 || type == MuxType.mkv) {
+                    outputPath = "/sdcard/264/123." + type.name();
+                    ret = ffmpegjni.muxMp4(FileManager.TEST_H264_FILE,
+                            FileManager.TEST_AAC_FILE, outputPath);
+                } else {
+                    if (onMuxerListener != null)
+                        onMuxerListener.onError("not support mux type");
+                    isMuxing = false;
+                    return;
+                }
+                if (ret < 0) {
+                    if (onMuxerListener != null)
+                        onMuxerListener.onError("ret:" + ret);
+                } else {
+                    if (onMuxerListener != null)
+                        onMuxerListener.onSuccess(type, outputPath);
+                }
+                isMuxing = false;
+            }
+        }).start();
     }
 
     //编码后的总大小
@@ -605,6 +552,10 @@ public class MediaEncoder2Codec extends MediaEncoder{
         return h264FPS;
     }
 
+    public static String getTAG() {
+        return TAG;
+    }
+
     public int getPcmFPS() {
         return pcmFPS;
     }
@@ -617,34 +568,34 @@ public class MediaEncoder2Codec extends MediaEncoder{
         return camFPS;
     }
 
-    MediaEncoder.EncoderState cacheState = new MediaEncoder.EncoderState();
+    EncoderState cacheState = new EncoderState();
 
     private void refreshState() {
         if (videoEncoderLoop && isVideoEncoderThreadStop) {
-            cacheState.videoEncoderState = MediaEncoder.State.Starting;
+            cacheState.videoEncoderState = State.Starting;
         } else if (videoEncoderLoop && !isVideoEncoderThreadStop) {
-            cacheState.videoEncoderState = MediaEncoder.State.Encoding;
+            cacheState.videoEncoderState = State.Encoding;
         } else if (!videoEncoderLoop && !isVideoEncoderThreadStop) {
-            cacheState.videoEncoderState = MediaEncoder.State.EncodeStoping;
+            cacheState.videoEncoderState = State.EncodeStoping;
         } else {
-            cacheState.videoEncoderState = MediaEncoder.State.IDLE;
+            cacheState.videoEncoderState = State.IDLE;
         }
 
         if (audioEncoderLoop && isAudioEncoderThreadStop) {
-            cacheState.audioEncoderState = MediaEncoder.State.Starting;
+            cacheState.audioEncoderState = State.Starting;
         } else if (audioEncoderLoop && !isAudioEncoderThreadStop) {
-            cacheState.audioEncoderState = MediaEncoder.State.Encoding;
+            cacheState.audioEncoderState = State.Encoding;
         } else if (!audioEncoderLoop && !isAudioEncoderThreadStop) {
-            cacheState.audioEncoderState = MediaEncoder.State.EncodeStoping;
+            cacheState.audioEncoderState = State.EncodeStoping;
         } else {
-            cacheState.audioEncoderState = MediaEncoder.State.IDLE;
+            cacheState.audioEncoderState = State.IDLE;
         }
 
         if (isMuxing)
-            cacheState.muxEncoderState = MediaEncoder.State.Encoding;
+            cacheState.muxEncoderState = State.Encoding;
         else
-            cacheState.muxEncoderState = MediaEncoder.State.IDLE;
-        MediaEncoder.EncoderState cur = getState();
+            cacheState.muxEncoderState = State.IDLE;
+        EncoderState cur = getState();
         if (cur.audioEncoderState != cacheState.audioEncoderState
                 || cur.videoEncoderState != cacheState.videoEncoderState
                 || cur.muxEncoderState != cacheState.muxEncoderState) {
@@ -652,11 +603,56 @@ public class MediaEncoder2Codec extends MediaEncoder{
         }
     }
 
-    private MediaEncoder.EncoderState ENCODER_STATE = new MediaEncoder.EncoderState();
+    public enum State {
+        IDLE,
+        Starting,
+        Encoding,
+        EncodeStoping,
+    }
+
+    private EncoderState ENCODER_STATE = new EncoderState();
+
+    public static class EncoderState {
+        State videoEncoderState = State.IDLE;
+        State audioEncoderState = State.IDLE;
+        State muxEncoderState = State.IDLE;
+
+        public State getVideoEncoderState() {
+            return videoEncoderState;
+        }
+
+        public void setVideoEncoderState(State videoEncoderState) {
+            this.videoEncoderState = videoEncoderState;
+        }
+
+        public State getAudioEncoderState() {
+            return audioEncoderState;
+        }
+
+        public void setAudioEncoderState(State audioEncoderState) {
+            this.audioEncoderState = audioEncoderState;
+        }
+
+        public State getMuxEncoderState() {
+            return muxEncoderState;
+        }
+
+        public void setMuxEncoderState(State muxEncoderState) {
+            this.muxEncoderState = muxEncoderState;
+        }
+
+        @Override
+        public String toString() {
+            return "EncoderState{" +
+                    "videoEncoderState=" + videoEncoderState +
+                    ", audioEncoderState=" + audioEncoderState +
+                    ", muxEncoderState=" + muxEncoderState +
+                    '}';
+        }
+    }
 
 
-
-    private synchronized void setState(MediaEncoder.EncoderState state) {
+    private synchronized void setState(EncoderState state) {
         Log.d(TAG, "setState :" + state);
         this.ENCODER_STATE.muxEncoderState = state.muxEncoderState;
         this.ENCODER_STATE.videoEncoderState = state.videoEncoderState;
@@ -666,42 +662,19 @@ public class MediaEncoder2Codec extends MediaEncoder{
             onEncoderChangedListener.onChanged(ENCODER_STATE);
     }
 
-    private synchronized MediaEncoder.EncoderState getState() {
+    private synchronized EncoderState getState() {
         return this.ENCODER_STATE;
     }
 
-    public void setOnEncoderChangedListener(MediaEncoder.OnEncoderChangedListener onEncoderChangedListener) {
+    public void setOnEncoderChangedListener(OnEncoderChangedListener onEncoderChangedListener) {
         this.onEncoderChangedListener = onEncoderChangedListener;
 
     }
-    public void mux(final MediaEncoder.MuxType type) {
-        isMuxing = true;
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                int ret = 0;
-                String outputPath;
-                if (type == MediaEncoder.MuxType.mp4 || type == MediaEncoder.MuxType.mkv) {
-                    outputPath = "/sdcard/264/123." + type.name();
-                    ret = ffmpegjni.muxMp4(FileManager.TEST_H264_FILE,
-                            FileManager.TEST_AAC_FILE, outputPath);
-                } else {
-                    if (onMuxerListener != null)
-                        onMuxerListener.onError("not support mux type");
-                    isMuxing = false;
-                    return;
-                }
-                if (ret < 0) {
-                    if (onMuxerListener != null)
-                        onMuxerListener.onError("ret:" + ret);
-                } else {
-                    if (onMuxerListener != null)
-                        onMuxerListener.onSuccess(type, outputPath);
-                }
-                isMuxing = false;
-            }
-        }).start();
+
+    OnEncoderChangedListener onEncoderChangedListener;
+
+    public interface OnEncoderChangedListener {
+        void onChanged(EncoderState state);
     }
 
-    MediaEncoder.OnEncoderChangedListener onEncoderChangedListener;
 }

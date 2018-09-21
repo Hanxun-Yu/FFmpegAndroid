@@ -1,4 +1,4 @@
-package com.kedacom.demo.appcameratoh264.media.video;
+package com.kedacom.demo.appcameratoh264.media.encoder.video;
 
 public class YuvData {
     public byte[] videoData;
@@ -11,5 +11,9 @@ public class YuvData {
         this.width = width;
         this.height = height;
         this.timestamp = timestamp;
+    }
+
+    public interface haha {
+
     }
 }

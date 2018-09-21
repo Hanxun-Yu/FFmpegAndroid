@@ -1,9 +1,11 @@
-package com.kedacom.demo.appcameratoh264.jni;
+package com.kedacom.demo.appcameratoh264.media.encoder.video;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class X264Param implements Parcelable {
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IEncoderParam;
+
+public class X264Param implements Parcelable,IEncoderParam{
     public X264Param() {
     }
 
