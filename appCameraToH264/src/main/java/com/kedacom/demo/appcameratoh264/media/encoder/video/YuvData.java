@@ -1,19 +1,18 @@
 package com.kedacom.demo.appcameratoh264.media.encoder.video;
 
-public class YuvData {
-    public byte[] videoData;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.PacketData;
+
+public class YuvData extends PacketData{
     public int width;
     public int height;
-    public long timestamp;
 
-    public YuvData(byte[] videoData, int width, int height, long timestamp) {
-        this.videoData = videoData;
+    public YuvData(byte[] videoData,int length, int width, int height, long timestamp) {
+        setData(videoData);
+        setLenght(length);
         this.width = width;
         this.height = height;
-        this.timestamp = timestamp;
+        setTimestampMilliSec(timestamp);
     }
 
-    public interface haha {
 
-    }
 }

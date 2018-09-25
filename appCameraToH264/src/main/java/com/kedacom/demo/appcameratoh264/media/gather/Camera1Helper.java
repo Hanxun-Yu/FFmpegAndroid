@@ -107,7 +107,7 @@ public class Camera1Helper implements Camera.PreviewCallback {
                 degrees = 270;
                 break;
         }
-        Log.d(TAG,"degree:"+degrees);
+        Log.d(TAG,"degree:"+degrees+" info.orientation:"+info.orientation);
         int displayDegree;
         if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
             displayDegree = (info.orientation + degrees) % 360;

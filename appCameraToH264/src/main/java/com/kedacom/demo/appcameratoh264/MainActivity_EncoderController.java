@@ -3,16 +3,8 @@ package com.kedacom.demo.appcameratoh264;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.pm.ActivityInfo;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.ImageFormat;
-import android.graphics.Matrix;
-import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
-import android.graphics.YuvImage;
-import android.media.FaceDetector;
 import android.media.Image;
-import android.media.MediaCodec;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -28,18 +20,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.widget.AudioWaveView;
-import com.google.gson.Gson;
 import com.kedacom.demo.appcameratoh264.jni.YuvUtil;
 import com.kedacom.demo.appcameratoh264.media.encoder.EncoderConfig;
 import com.kedacom.demo.appcameratoh264.media.encoder.EncoderManager;
 import com.kedacom.demo.appcameratoh264.media.encoder.EncoderType;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.IEncoderParam;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.EncodedData;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IMediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.VideoEncoderParam;
-import com.kedacom.demo.appcameratoh264.media.encoder.audio.AudioData;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.MediaEncoder;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.MediaEncoder2Codec;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.X264Param;
+import com.kedacom.demo.appcameratoh264.media.encoder.audio.PCMData;
 import com.kedacom.demo.appcameratoh264.media.encoder.video.YuvData;
 import com.kedacom.demo.appcameratoh264.media.gather.AudioRecoderManager;
 import com.kedacom.demo.appcameratoh264.media.gather.Camera1Helper;
@@ -64,26 +52,28 @@ public class MainActivity_EncoderController extends AppCompatActivity {
     private TextView paramText;
     private TextView timeText;
 
-    final String TAG = "MainActivity_xunxun";
+    final String TAG = getClass().getSimpleName() + "_xunxun";
     private Camera2Helper camera2Helper;
     private Camera1Helper camera1Helper;
     private AudioWaveView audioWaveView;
     boolean useCameraOne = false;
     boolean useSurfaceview = false;
     boolean usePortrait = false;
-    int widthIN = 1280;
-    int heightIN = 720;
-    int widthOUT = 1280;
-    int heightOUT = 720;
+    int cameraWidth = 1280;
+    int cameraHeight = 720;
 
     private AudioRecoderManager audioGathererManager;
 
     String muxerFormat;
     int codec;
 
+    Handler mainHandler = new Handler();
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.e(TAG,"onCreate");
         setContentView(R.layout.activity_main);
         int camera = getIntent().getIntExtra("camera", 0);
         int render = getIntent().getIntExtra("render", 0);
@@ -100,10 +90,10 @@ public class MainActivity_EncoderController extends AppCompatActivity {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         param = getIntent().getParcelableExtra("param");
-        widthIN = param.getWidthIN();
-        heightIN = param.getHeightIN();
-        widthOUT = param.getWidthOUT();
-        heightOUT = param.getHeightOUT();
+        cameraWidth = param.getWidthIN();
+        cameraHeight = param.getHeightIN();
+
+        Log.d(TAG, "param:" + param);
         if (codec == 0) {
             //x264
 
@@ -118,6 +108,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
 
         configEncoder();
         initEncoderPutThread();
+
     }
 
     VideoEncoderParam param;
@@ -144,15 +135,8 @@ public class MainActivity_EncoderController extends AppCompatActivity {
         recordBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.e(TAG, "camera degree:" + camera1Helper.getDisplayOrientation());
-                if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
-                    int temp = param.getWidthIN();
-                    param.setWidthIN(param.getHeightIN());
-                    param.setHeightIN(temp);
-                    temp = param.getWidthOUT();
-                    param.setWidthOUT(param.getHeightOUT());
-                    param.setHeightOUT(temp);
-                }
+
+                audioGathererManager.startAudioIn();
                 encoderManager.start();
                 recording = true;
                 startTime = System.currentTimeMillis();
@@ -174,6 +158,13 @@ public class MainActivity_EncoderController extends AppCompatActivity {
     EncoderManager encoderManager = new EncoderManager();
 
     private void configEncoder() {
+        if (usePortrait) {
+            //如果是竖屏,camera采集的还是横屏,经过yuv处理变成了竖屏,所以进编码器也是竖屏
+            int temp = param.getWidthOUT();
+            param.setWidthOUT(param.getHeightOUT());
+            param.setHeightOUT(temp);
+        }
+        //判断方向
         encoderManager.config(new EncoderConfig.Build()
                 .setVideo(codec == 0 ? EncoderType.Video.X264 : EncoderType.Video.MediaCodec)
                 .setVideoParam(param)
@@ -181,6 +172,27 @@ public class MainActivity_EncoderController extends AppCompatActivity {
                 .setAudio(EncoderType.Audio.AAC)
                 .setAudioSavePath("/sdcard/264/123.aac")
                 .build());
+
+        encoderManager.setVideoEncoderCB(new IMediaEncoder.Callback() {
+            int count = 0;
+            int frequence = 25;
+
+            @Override
+            public void onDataEncoded(EncodedData encodedData) {
+                if (count % frequence == 0) {
+                    mainHandler.post(runnable);
+                    count = 0;
+                }
+                count++;
+            }
+        });
+
+        encoderManager.setAudioEncoderCB(new IMediaEncoder.Callback() {
+            @Override
+            public void onDataEncoded(EncodedData encodedData) {
+
+            }
+        });
     }
 
     HandlerThread handlerThread;
@@ -206,37 +218,38 @@ public class MainActivity_EncoderController extends AppCompatActivity {
                             byte[] yuv420sp = (byte[]) msg.obj;
                             byte[] yuv420p = new byte[yuv420sp.length];
                             //就算是竖屏,这里拿到的还是横屏图像,所以要旋转
+                            //这里传入的输出尺寸没什么用,只是格式转换,和根据角度旋转
                             if (codec == 0) {
                                 //nv21 转 yuv420p
-                                YuvUtil.compressYUV(yuv420sp, widthIN, heightIN,
-                                        yuv420p, widthOUT, heightOUT, 0, camera1Helper.getDisplayOrientation(), false);
+                                YuvUtil.compressYUV(yuv420sp, cameraWidth, cameraHeight,
+                                        yuv420p, cameraWidth, cameraHeight, 0, camera1Helper.getDisplayOrientation(), false);
                             } else {
                                 //nv21 转 nv12
-                                long start = System.currentTimeMillis();
-                                YuvUtil.compressNV12(yuv420sp, widthIN, heightIN,
-                                        yuv420p, widthOUT, heightOUT, 0, camera1Helper.getDisplayOrientation(), false);
+                                YuvUtil.compressNV12(yuv420sp, cameraWidth, cameraHeight,
+                                        yuv420p, cameraWidth, cameraHeight, 0, camera1Helper.getDisplayOrientation(), false);
 //                                Log.d(TAG,"compressNV12 time:"+(System.currentTimeMillis()-start));
 
                             }
-                            if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
-                                vd420Temp = new YuvData(yuv420p, heightOUT, widthOUT, System.currentTimeMillis());
-                            } else {
-                                vd420Temp = new YuvData(yuv420p, widthOUT, heightOUT, System.currentTimeMillis());
-                            }
+//                            if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
+//                                vd420Temp = new YuvData(yuv420p, yuv420p.length, param.getHeightOUT(), param.getWidthOUT(), System.currentTimeMillis());
+//                            } else {
+                            vd420Temp = new YuvData(yuv420p, yuv420p.length, param.getWidthOUT(), param.getHeightOUT(), System.currentTimeMillis());
+//                            }
 //                            Log.d(TAG, "yuv size:" + yuv420p.length + " w:" + widthOUT + " h:" + heightOUT);
 //                            vd420Temp = new YuvData(yuv420sp, widthOUT, heightOUT, System.currentTimeMillis());
-                            mediaEncoder.putVideoData(vd420Temp);
+                            encoderManager.encodeVideo(vd420Temp);
                         } else {
+                            byte[] yuv420p = (byte[]) msg.obj;
                             //收到420p
-                            vd420Temp = new YuvData((byte[]) msg.obj, widthOUT, heightOUT, System.currentTimeMillis());
-                            mediaEncoder.putVideoData(vd420Temp);
+                            vd420Temp = new YuvData(yuv420p, yuv420p.length, param.getWidthOUT(), param.getHeightOUT(), System.currentTimeMillis());
+                            encoderManager.encodeVideo(vd420Temp);
                         }
                         break;
 
                     case HANDLE_AUDIO_MSG:
                         byte[] pcm = (byte[]) msg.obj;
-                        AudioData audioData = new AudioData(pcm);
-                        mediaEncoder.putAudioData(audioData);
+                        PCMData audioData = new PCMData(pcm, pcm.length);
+                        encoderManager.encodeAudio(audioData);
                         break;
                 }
             }
@@ -247,7 +260,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
     ByteArrayOutputStream audioTmpByteOut = new ByteArrayOutputStream();
 
     private void notifyEncoderVideo(byte[] bytes) {
-        if(!recording)
+        if (!recording)
             return;
 
         videoTmpByteOut.reset();
@@ -287,7 +300,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
     }
 
     private void notifyEncoderAudio(byte[] bytes) {
-        if(!recording)
+        if (!recording)
             return;
         audioTmpByteOut.reset();
         try {
@@ -333,52 +346,11 @@ public class MainActivity_EncoderController extends AppCompatActivity {
         buffer.append("\n");
         buffer.append((useSurfaceview ? "SurfaceView" : "TextureView"));
         buffer.append("\n");
+        buffer.append(encoderManager.getVideoEncoderInfo());
+        buffer.append("\n");
+        buffer.append(encoderManager.getAudioEncoderInfo());
 
-        buffer.append("----------SIZE----------\n");
-        buffer.append("h264:");
-        buffer.append(mediaEncoder.getVideoEncodedSize());
-        buffer.append(" aac:");
-        buffer.append(mediaEncoder.getAudioEncodedSize());
-        buffer.append("\n");
-        //----------------输入输出数--------------------------
-        buffer.append("-----------IO------------\n");
-        buffer.append("pcm Put:");
-        buffer.append(mediaEncoder.getPutPCMCount());
-        buffer.append(" Take:");
-        buffer.append(mediaEncoder.getTakePCMCount());
-        buffer.append("\n");
-        buffer.append("yuv Put:");
-        buffer.append(mediaEncoder.getPutYUVCount());
-        buffer.append(" Take:");
-        buffer.append(mediaEncoder.getTakeYUVCount());
-        buffer.append("\n");
-        buffer.append("aacOUT:");
-        buffer.append(mediaEncoder.getRecvAACCount());
-        buffer.append("\n");
-        buffer.append("h264OUT:");
-        buffer.append(mediaEncoder.getRecvH264Count());
-        buffer.append("\n");
-        buffer.append("queue v:");
-        buffer.append(mediaEncoder.getWaitVideoEncodedQueueSize());
-        buffer.append(" a:");
-        buffer.append(mediaEncoder.getWaitAudioEncodedQueueSize());
-        buffer.append("\n");
-        //---------------帧率--------------------------------
-        buffer.append("-----------FPS-----------\n");
-        buffer.append("camera:");
-        buffer.append(mediaEncoder.getCamFPS());
-        buffer.append("\n");
-        buffer.append("yuv:");
-        buffer.append(mediaEncoder.getYuvFPS());
-        buffer.append("\n");
-        buffer.append("h264:");
-        buffer.append(mediaEncoder.getH264FPS());
-        buffer.append("\n");
-        buffer.append("pcm:");
-        buffer.append(mediaEncoder.getPcmFPS());
-        buffer.append("\n");
-        buffer.append("aac:");
-        buffer.append(mediaEncoder.getAacFPS());
+
         return buffer.toString();
     }
 
@@ -413,31 +385,31 @@ public class MainActivity_EncoderController extends AppCompatActivity {
         sb.append("x");
         sb.append(param.getHeightOUT());
         sb.append("\n");
-        sb.append("bitrate:");
-        sb.append(param.getBitrate());
-        sb.append("Kbit\n");
-        sb.append("bitrateCtrl:");
-        sb.append(param.getBitrateCtrl());
-        sb.append("\n");
-        sb.append("fps:");
-        sb.append(param.getFps());
-        sb.append("\n");
-        sb.append("GOP:");
-        sb.append(param.getGop());
-        sb.append("\n");
-        sb.append("B帧:");
-        sb.append(param.getbFrameCount());
-        sb.append("\n");
-        sb.append("profile:");
-        sb.append(param.getProfile());
-        sb.append("\n");
-        sb.append("preset:");
-        sb.append(param.getPreset());
-        sb.append("\n");
-        sb.append("tune:");
-        sb.append(param.getTune());
-        sb.append("\n");
-        paramText.setText(sb.toString());
+//        sb.append("bitrate:");
+//        sb.append(param.getBitrate());
+//        sb.append("Kbit\n");
+//        sb.append("bitrateCtrl:");
+//        sb.append(param.getBitrateCtrl());
+//        sb.append("\n");
+//        sb.append("fps:");
+//        sb.append(param.getFps());
+//        sb.append("\n");
+//        sb.append("GOP:");
+//        sb.append(param.getGop());
+//        sb.append("\n");
+//        sb.append("B帧:");
+//        sb.append(param.getbFrameCount());
+//        sb.append("\n");
+//        sb.append("profile:");
+//        sb.append(param.getProfile());
+//        sb.append("\n");
+//        sb.append("preset:");
+//        sb.append(param.getPreset());
+//        sb.append("\n");
+//        sb.append("tune:");
+//        sb.append(param.getTune());
+//        sb.append("\n");
+//        paramText.setText(sb.toString());
     }
 
     private float[] getMemory() {
@@ -465,15 +437,15 @@ public class MainActivity_EncoderController extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        Log.e(TAG,"onDestroy");
         releaseCamera();
         releaseMediaEncoder();
         releaseMicroPhone();
     }
 
     private void releaseMediaEncoder() {
-        if (!encoderManager.isStop())
-            mediaEncoder.stop();
-        mediaEncoder.release();
+        encoderManager.stop();
+        encoderManager.release();
     }
 
     private void releaseCamera() {
@@ -494,46 +466,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
 
     private void notifyWaveView(final short val) {
         audioWaveView.putData(val);
-//        runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                ampList.add((int) val);
-//                simpleWaveform.refresh();
-//            }
-//        });
     }
-
-//    private void checkFace(byte[] yuv, int width, int height) {
-//        YuvImage image = new YuvImage(yuv, ImageFormat.NV21, width, height, null);
-//        if (yuv != null) {
-//            ByteArrayOutputStream out = new ByteArrayOutputStream();
-//            image.compressToJpeg(new Rect(0, 0, width, height), 50, out);
-//            byte[] datas = out.toByteArray();
-//            BitmapFactory.Options options = new BitmapFactory.Options();
-//            options.inPreferredConfig = Bitmap.Config.RGB_565;
-//            Bitmap mBitmap = BitmapFactory.decodeByteArray(datas, 0, datas.length, options);
-//            //FileUtil.saveBitmap("cccc/"+l+"ee.png", mBitmap);
-//            Matrix matrix = new Matrix();
-//            //matrix.postRotate((float)90);
-//            matrix.postScale(0.4f, 0.3125f); //照片的大小使 1280*960 屏幕的大小使 1024*600 这里需要注意换算比例
-//            // Logger.v("MyCameraManager faceCheckFlag");
-//            //synchronized (this) {
-//            //Logger.v("MyCameraManager synchronized");
-//            //if(faceCheckFlag){
-//            //setFaceCheckFlag(false);
-//            //Logger.v("MyCameraManager synchronized" + errornum + mBitmap.getWidth() + "dd " + mBitmap.getHeight());
-//            Bitmap bitmap = Bitmap.createBitmap(mBitmap, 0, 0, mBitmap.getWidth(), mBitmap.getHeight(), matrix, false);
-//            FaceDetector mFaceDetector = new FaceDetector(width, height, 5);
-//            FaceDetector.Face[] mFace = new FaceDetector.Face[5];
-//            int faceResult = mFaceDetector.findFaces(mBitmap, mFace);
-//
-////            if (faceResult != 0) {
-//            Log.d(TAG, "findFace:" + new Gson().toJson(mFace));
-////            }
-//            mBitmap.recycle();
-//            bitmap.recycle();
-//        }
-//    }
 
 
     private void initMicroPhone() {
@@ -548,13 +481,12 @@ public class MainActivity_EncoderController extends AppCompatActivity {
                 }
             }
         });
-        audioGathererManager.startAudioIn();
     }
 
 
     private void initCamera() {
         if (useCameraOne) {
-            camera1Helper = new Camera1Helper(this, widthIN, heightIN);
+            camera1Helper = new Camera1Helper(this, cameraWidth, cameraHeight);
             camera1Helper.setOnRealFrameListener(new Camera1Helper.OnRealFrameListener() {
                 @Override
                 public void onRealFrame(byte[] bytes) {
@@ -625,7 +557,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
                     }
                 }
             });
-            camera2Helper.setRealTimeFrameSize(widthIN, heightIN);
+            camera2Helper.setRealTimeFrameSize(cameraWidth, cameraHeight);
             camera2Helper.startCameraPreView();
         }
     }

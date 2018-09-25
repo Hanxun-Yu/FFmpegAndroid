@@ -5,28 +5,30 @@
 #include "Mp4Muxer.h"
 #include "JniHelper.h"
 
-VideoEncoder *frameEncoder;
-AudioEncoder *audioEncoder;
-Mp4Muxer *mp4Muxer = new Mp4Muxer();
 extern "C" {
 
 }
-
+VideoEncoder *frameEncoder;
+AudioEncoder *audioEncoder;
+Mp4Muxer *mp4Muxer = new Mp4Muxer();
 X264Param *switchX264Param(JNIEnv *jniEnv, jobject obj);
 
 JNIEXPORT jint JNICALL init
         (JNIEnv *env, jclass clazz) {
+    LOGE("init");
 
     return 0;
 }
 
 JNIEXPORT jint JNICALL release
         (JNIEnv *env, jclass clazz) {
+    LOGE("release");
+
 //    free(temp_i420_data);
 //    free(temp_i420_data_scale);
 //    free(temp_i420_data_rotate);
     frameEncoder->close();
-    free(frameEncoder);
+    delete frameEncoder;
 //    free(audioEncoder);
 //    free(rtmpLivePublish);
     return 0;
@@ -35,6 +37,8 @@ JNIEXPORT jint JNICALL release
 
 JNIEXPORT jint JNICALL encoderVideoinit
         (JNIEnv *env, jclass clazz, jobject params) {
+    LOGE("encoderVideoinit");
+
     frameEncoder = new VideoEncoder();
     frameEncoder->setParams(switchX264Param(env, params));
 //    frameEncoder->setInWidth(in_width);
@@ -43,6 +47,7 @@ JNIEXPORT jint JNICALL encoderVideoinit
 //    frameEncoder->setOutHeight(out_height);
 //    frameEncoder->setBitrate(bitrate);
     frameEncoder->open();
+    frameEncoder->getParams()->printSelf();
     return 0;
 }
 
@@ -82,13 +87,15 @@ std::string getStringFromJString(JNIEnv *jniEnv, jstring str) {
 }
 
 X264Param *switchX264Param(JNIEnv *jniEnv, jobject obj) {
+    LOGE("switchX264Param");
+
     X264Param *x264Param = new X264Param();
 
     jint widthIN = getIntField(jniEnv, obj, "widthIN");
     jint heightIN = getIntField(jniEnv, obj, "heightIN");
     jint widthOUT = getIntField(jniEnv, obj, "widthOUT");
     jint heightOUT = getIntField(jniEnv, obj, "heightOUT");
-    jint bitrate = getIntField(jniEnv, obj, "bitrate");
+    jint bitrate = getIntField(jniEnv, obj, "byterate");
     jint fps = getIntField(jniEnv, obj, "fps");
     jint gop = getIntField(jniEnv, obj, "gop");
     jint bFrameCount = getIntField(jniEnv, obj, "bFrameCount");
@@ -119,13 +126,16 @@ JNIEXPORT jint JNICALL encoderVideoEncode
         (JNIEnv *env, jclass clazz, jbyteArray srcFrame, jint frameSize, jint fps,
          jbyteArray dstFrame, jintArray outFramewSize) {
 
+    LOGE("encoderVideoEncode");
     jbyte *Src_data = env->GetByteArrayElements(srcFrame, NULL);
     jbyte *Dst_data = env->GetByteArrayElements(dstFrame, NULL);
     jint *dstFrameSize = env->GetIntArrayElements(outFramewSize, NULL);
+    frameEncoder->getParams()->printSelf();
+
 
     int numNals = frameEncoder->encodeFrame((char *) Src_data, frameSize, fps, (char *) Dst_data,
                                             dstFrameSize);
-
+//    int numNals = -1;
     env->ReleaseByteArrayElements(dstFrame, Dst_data, 0);
     env->ReleaseByteArrayElements(srcFrame, Src_data, 0);
     env->ReleaseIntArrayElements(outFramewSize, dstFrameSize, 0);
@@ -134,6 +144,8 @@ JNIEXPORT jint JNICALL encoderVideoEncode
 
 JNIEXPORT jint JNICALL
 encoderAudioInit(JNIEnv *env, jclass clazz, jint sampleRate, jint channels, jint bitRate) {
+    LOGE("encoderAudioInit");
+
     audioEncoder = new AudioEncoder(channels, sampleRate, bitRate);
     int value = audioEncoder->init();
     return value;
@@ -157,6 +169,7 @@ JNIEXPORT jint JNICALL encoderAudioEncode(JNIEnv *env, jclass clazz, jbyteArray 
 JNIEXPORT jint JNICALL muxMp4(JNIEnv *env, jclass clazz,
                               jstring inputH264FileName, jstring inputAacFileName,
                               jstring outMP4FileName) {
+    LOGE("muxMp4");
 
     const char *h264FilePath = env->GetStringUTFChars(inputH264FileName, NULL);
     const char *aacFilePath = env->GetStringUTFChars(inputAacFileName, NULL);

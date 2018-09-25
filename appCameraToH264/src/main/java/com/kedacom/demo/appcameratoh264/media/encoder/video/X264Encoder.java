@@ -1,5 +1,7 @@
 package com.kedacom.demo.appcameratoh264.media.encoder.video;
 
+import android.util.Log;
+
 import com.kedacom.demo.appcameratoh264.jni.FFmpegjni;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.AbstractEncoder;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.EncodedData;
@@ -16,6 +18,7 @@ public class X264Encoder extends AbstractEncoder {
 
     @Override
     public void config(IEncoderParam param) {
+        Log.d(TAG,"config param:"+param);
         if (param instanceof X264Param) {
             if (ffmpegjni != null) {
                 ffmpegjni.release();
@@ -47,6 +50,9 @@ public class X264Encoder extends AbstractEncoder {
             int[] outbufferLens = new int[20];
             int numNals = ffmpegjni.encoderVideoEncode(t.getData(), t.getLenght(),
                     fpsIndex++, outbuffer, outbufferLens);
+            if(numNals <= 0) {
+                return null;
+            }
             int[] segment = new int[numNals];
             System.arraycopy(outbufferLens, 0, segment, 0, numNals);
             int totalLength = 0;

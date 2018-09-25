@@ -17,6 +17,8 @@ import android.widget.Toast;
 
 import com.kedacom.demo.appcameratoh264.data.SizeParamUtil;
 import com.kedacom.demo.appcameratoh264.fragment.X264ParamFragment;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.VideoEncoderParam;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.AndroidCodecParam;
 import com.kedacom.demo.appcameratoh264.media.encoder.video.X264Param;
 import com.kedacom.demo.appcameratoh264.widget.pick.ResolutionSrcDialogFragment;
 import com.kedacom.demo.appcameratoh264.widget.pick.ResolutionTargetDialogFragment;
@@ -27,6 +29,7 @@ import com.kedacom.demo.appcameratoh264.widget.pick.ResolutionTargetDialogFragme
  * description:
  */
 public class InitActivity extends AppCompatActivity {
+    final String TAG = getClass().getSimpleName()+"_xunxun";
     private TextView resolutionSrcText;
     private TextView resolutionTargetText;
     private TextView deviceText;
@@ -189,18 +192,22 @@ public class InitActivity extends AppCompatActivity {
 
     SizeParamUtil sizeParamUtil;
     private void startMain() {
-        Intent intent = new Intent(this, MainActivity.class);
+//        Intent intent = new Intent(this, MainActivity.class);
+        Intent intent = new Intent(this, MainActivity_EncoderController.class);
         intent.putExtra("camera", camera);
         intent.putExtra("render", render);
         intent.putExtra("orientation", orientation);
         intent.putExtra("codec", codec);
         intent.putExtra("muxer",muxer);
-        X264Param param;
-//        if(codec == 0) {
+        Log.d(TAG,"codec:"+codec);
+        VideoEncoderParam param;
+        if(codec == 0) {
             param = x264ParamFragment.getParams();
-//        } else {
-//            param = new X264Param();
-//        }
+        } else {
+            param = new AndroidCodecParam();
+            param.setByterate(2048);
+            param.setFps(25);
+        }
 
         if(sizeParamUtil.getWH_IN().equals("1280x720")) {
             param.setWidthIN(1280);

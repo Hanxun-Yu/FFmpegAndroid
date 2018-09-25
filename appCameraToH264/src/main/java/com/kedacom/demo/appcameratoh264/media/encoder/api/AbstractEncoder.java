@@ -147,6 +147,11 @@ public abstract class AbstractEncoder implements IMediaEncoder {
         }
     }
 
+    @Override
+    public int getQueueSize() {
+        return queue.size();
+    }
+
     private class EncoderRunn implements Runnable {
         @Override
         public void run() {

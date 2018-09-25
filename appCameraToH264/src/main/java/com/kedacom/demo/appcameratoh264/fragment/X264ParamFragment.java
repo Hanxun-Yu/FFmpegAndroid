@@ -118,7 +118,7 @@ public class X264ParamFragment extends Fragment {
         ret.setPreset(presetText.getText().toString());
         ret.setTune(tuneText.getText().toString());
         ret.setBitrateCtrl(bitrateCtrlText.getText().toString());
-        ret.setBitrate(Integer.parseInt(bitrateText.getText().toString()));
+        ret.setByterate(Integer.parseInt(bitrateText.getText().toString()));
         ret.setUseSlice(Boolean.parseBoolean(doSliceText.getText().toString()));
         ret.setFps(Integer.parseInt(fpsText.getText().toString()));
         ret.setGop(Integer.parseInt(gopText.getText().toString()));

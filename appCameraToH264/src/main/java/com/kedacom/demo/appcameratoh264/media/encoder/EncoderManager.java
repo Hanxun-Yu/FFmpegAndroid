@@ -26,7 +26,13 @@ public class EncoderManager {
     private FileManager videoLenSaver;
     private FileManager audioSaver;
 
+
+
+    private IMediaEncoder.Callback videoEncoderCB;
+    private IMediaEncoder.Callback audioEncoderCB;
+
     public void config(EncoderConfig config) {
+        Log.e(TAG,"config");
         this.config = config;
         if (config.getVideo() != null) {
             switch (config.getVideo()) {
@@ -37,6 +43,7 @@ public class EncoderManager {
                     videoEncoder = new AndroidCodecEncoder();
                     break;
             }
+            videoEncoder.init();
             videoEncoder.config(config.getVideoParam());
             videoEncoder.setCallback(new IMediaEncoder.Callback() {
                 @Override
@@ -44,6 +51,8 @@ public class EncoderManager {
                     if (videoSaver != null) {
                         videoSaver.writeFileData(encodedData.getData());
                         videoLenSaver.writeFileData((String.valueOf(encodedData.getLength()) + "\n").getBytes());
+                        if(videoEncoderCB != null)
+                            videoEncoderCB.onDataEncoded(encodedData);
                     }
                 }
             });
@@ -63,46 +72,52 @@ public class EncoderManager {
         }
 
 
-        if (config.getAudio() != null) {
-            switch (config.getAudio()) {
-                case AAC:
-                    audioEncoder = new AACEncoder();
-                    break;
-            }
-            audioEncoder.config(config.getAudioParam());
-            audioEncoder.setCallback(new IMediaEncoder.Callback() {
-                @Override
-                public void onDataEncoded(EncodedData encodedData) {
-                    if (audioSaver != null)
-                        audioSaver.writeFileData(encodedData.getData());
-                }
-            });
-            audioEncoder.setOnStateChangedListener(new IMediaEncoder.OnStateChangedListener() {
-                @Override
-                public void onState(IMediaEncoder.State state) {
-                    Log.d(TAG, "audioEncoder onState:" + state);
-                }
-            });
-            if (config.getAudioSavePath() != null) {
-                audioSaver = new FileManager(config.getAudioSavePath());
-                audioSaver.openFile();
-            }
-        }
+//        if (config.getAudio() != null) {
+//            switch (config.getAudio()) {
+//                case AAC:
+//                    audioEncoder = new AACEncoder();
+//                    break;
+//            }
+//            audioEncoder.init();
+//            audioEncoder.config(config.getAudioParam());
+//            audioEncoder.setCallback(new IMediaEncoder.Callback() {
+//                @Override
+//                public void onDataEncoded(EncodedData encodedData) {
+//                    if (audioSaver != null)
+//                        audioSaver.writeFileData(encodedData.getData());
+//                    if(audioEncoderCB != null)
+//                        audioEncoderCB.onDataEncoded(encodedData);
+//                }
+//            });
+//            audioEncoder.setOnStateChangedListener(new IMediaEncoder.OnStateChangedListener() {
+//                @Override
+//                public void onState(IMediaEncoder.State state) {
+//                    Log.d(TAG, "audioEncoder onState:" + state);
+//
+//                }
+//            });
+//            if (config.getAudioSavePath() != null) {
+//                audioSaver = new FileManager(config.getAudioSavePath());
+//                audioSaver.openFile();
+//            }
+//        }
 
     }
 
     public void encodeVideo(PacketData data) {
-        if(videoEncoder != null)
+        if (videoEncoder != null)
             videoEncoder.putPacket(data);
     }
 
     public void encodeAudio(PacketData data) {
-        if(audioEncoder != null)
+        if (audioEncoder != null)
             audioEncoder.putPacket(data);
     }
 
 
     public void start() {
+        Log.e(TAG,"start");
+
         if (videoEncoder != null)
             videoEncoder.start();
         if (audioEncoder != null)
@@ -110,6 +125,8 @@ public class EncoderManager {
     }
 
     public void stop() {
+        Log.e(TAG,"stop");
+
         if (videoEncoder != null)
             videoEncoder.stop();
         if (audioEncoder != null)
@@ -117,9 +134,74 @@ public class EncoderManager {
     }
 
     public void release() {
+        Log.e(TAG,"release");
+
         if (videoEncoder != null)
             videoEncoder.release();
         if (audioEncoder != null)
             audioEncoder.release();
     }
+
+    private String getEncodeInfo(IMediaEncoder encoder) {
+        if (encoder == null)
+            return null;
+        StringBuffer buffer = new StringBuffer();
+        buffer.append("intput:");
+        buffer.append(encoder.getRTInputRate());
+        buffer.append("\n");
+        buffer.append("output:");
+        buffer.append(encoder.getRTOutputRate());
+        buffer.append("\n");
+        buffer.append("bitrate:");
+        buffer.append(getSize(encoder.getRTBitrate()));
+        buffer.append("\n");
+        buffer.append("queue:");
+        buffer.append(encoder.getQueueSize());
+        buffer.append("\n");
+        buffer.append("encoded:");
+        buffer.append(getSize(encoder.getLengthEncoded()));
+        return buffer.toString();
+    }
+
+    public String getVideoEncoderInfo() {
+        return "--------video--------\n" + getEncodeInfo(videoEncoder);
+    }
+
+    public String getVideoEncoderParam() {
+        String ret = null;
+        return ret;
+    }
+
+    public String getAudioEncoderInfo() {
+        return "--------audio--------\n" + getEncodeInfo(audioEncoder);
+    }
+
+    public String getAudioEncoderParam() {
+        String ret = null;
+        return ret;
+    }
+
+    private String getSize(long sizel) {
+        String ret = null;
+        String unit = null;
+        if (sizel < 1024) {
+            unit = "B";
+        } else if (sizel < 1024 * 1024) {
+            unit = "KB";
+            sizel = sizel / 1024;
+        } else if (sizel < 1024 * 1024 * 1024) {
+            unit = "MB";
+            sizel = sizel / 1024 / 1024;
+        }
+        return sizel + unit;
+    }
+
+    public void setVideoEncoderCB(IMediaEncoder.Callback videoEncoderCB) {
+        this.videoEncoderCB = videoEncoderCB;
+    }
+
+    public void setAudioEncoderCB(IMediaEncoder.Callback audioEncoderCB) {
+        this.audioEncoderCB = audioEncoderCB;
+    }
+
 }

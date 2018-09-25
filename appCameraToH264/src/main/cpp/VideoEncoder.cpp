@@ -8,10 +8,11 @@ VideoEncoder::VideoEncoder() : encoder(NULL), num_nals(0) {
 //    AMediaCodec* mMediaCodec =  AMediaCodec_createEncoderByType();
 //    AMediaFormat* videoFormat = AMediaFormat_new();
 //    AMediaCodec_setParameters();
+
 }
 
 VideoEncoder::~VideoEncoder() {
-
+    free(x264Param);
 }
 
 bool VideoEncoder::open() {
@@ -34,6 +35,12 @@ bool VideoEncoder::open() {
     //按照色度空间分配内存，即为图像结构体x264_picture_t分配内存，并返回内存的首地址作为指针
     //i_csp(图像颜色空间参数，目前只支持I420/YUV420)为X264_CSP_I420
 //    x264_picture_alloc(&pic_in, params.i_csp, params.i_width, params.i_height);
+    LOGE("x264Param:%p",x264Param);
+    LOGE("getWidthIN:%d",x264Param->getWidthIN());
+    LOGE("getWidthOUT:%d",x264Param->getWidthOUT());
+    LOGE("gethIN:%d",x264Param->getHeightIN());
+    LOGE("gethOUT:%d",x264Param->getHeightOUT());
+
     x264_picture_alloc(&pic_in, params.i_csp,x264Param->getWidthIN(),x264Param->getHeightIN());
 
     //create the encoder using our params 打开编码器
@@ -57,6 +64,13 @@ bool VideoEncoder::open() {
 
 int VideoEncoder::encodeFrame(char *inBytes, int frameSize, int pts, char *outBytes,
                               int *outFrameSize) {
+    LOGE("encodeFrame");
+    this->x264Param->printSelf();
+//    LOGE("x264Param:%p",x264Param);
+//    LOGE("getWidthIN:%d",x264Param->getWidthIN());
+//    LOGE("getWidthOUT:%d",x264Param->getWidthOUT());
+//    LOGE("gethIN:%d",x264Param->getHeightIN());
+//    LOGE("gethOUT:%d",x264Param->getHeightOUT());
     //YUV420P数据转化为h264
     int i420_y_size = x264Param->getWidthIN() * x264Param->getHeightIN();
     int i420_u_size = (x264Param->getWidthIN() >> 1) * (x264Param->getHeightIN() >> 1);
@@ -66,6 +80,10 @@ int VideoEncoder::encodeFrame(char *inBytes, int frameSize, int pts, char *outBy
     uint8_t *i420_u_data = (uint8_t *) inBytes + i420_y_size;
     uint8_t *i420_v_data = (uint8_t *) inBytes + i420_y_size + i420_u_size;
     //将Y,U,V数据保存到pic_in.img的对应的分量中，还有一种方法是用AV_fillPicture和sws_scale来进行变换
+            LOGE("inBytes:%p",inBytes);
+
+
+
     memcpy(pic_in.img.plane[0], i420_y_data, i420_y_size);
     memcpy(pic_in.img.plane[1], i420_u_data, i420_u_size);
     memcpy(pic_in.img.plane[2], i420_v_data, i420_v_size);

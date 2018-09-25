@@ -10,7 +10,7 @@ import android.util.Log;
 
 import com.kedacom.demo.appcameratoh264.jni.FFmpegjni;
 import com.kedacom.demo.appcameratoh264.media.FileManager;
-import com.kedacom.demo.appcameratoh264.media.encoder.audio.AudioData;
+import com.kedacom.demo.appcameratoh264.media.encoder.audio.PCMData;
 import com.kedacom.demo.appcameratoh264.media.encoder.audio.Contacts;
 
 import java.io.IOException;
@@ -38,7 +38,7 @@ public class MediaEncoder2Codec extends MediaEncoder{
     //视频流队列
     private LinkedBlockingQueue<YuvData> videoQueue;
     //音频流队列
-    private LinkedBlockingQueue<AudioData> audioQueue;
+    private LinkedBlockingQueue<PCMData> audioQueue;
 
     private FileManager videoFileManager;
     private FileManager video_LenFileManager;
@@ -158,7 +158,7 @@ public class MediaEncoder2Codec extends MediaEncoder{
         if (lastPuttedVideoData == null)
             return true;
         //当前帧与上一帧间隔
-        int interval = (int) (videoData.timestamp - lastPuttedVideoData.timestamp);
+        int interval = (int) (videoData.getTimestampMilliSec() - lastPuttedVideoData.getTimestampMilliSec());
         //间隔与正常间隔差
         fpsOffset += interval - normalInterval;
 
@@ -168,8 +168,8 @@ public class MediaEncoder2Codec extends MediaEncoder{
             //采集慢,可能需要插帧
             while (Math.abs(fpsOffset) >= normalInterval) {
                 //间隔差累计到一帧间隔，插帧
-                YuvData insertVideo = new YuvData(lastPuttedVideoData.videoData,
-                        lastPuttedVideoData.width, lastPuttedVideoData.height, lastPuttedVideoData.timestamp + normalInterval);
+                YuvData insertVideo = new YuvData(lastPuttedVideoData.getData(),lastPuttedVideoData.getLenght(),
+                        lastPuttedVideoData.width, lastPuttedVideoData.height, lastPuttedVideoData.getTimestampMilliSec() + normalInterval);
                 doPutVideoData(insertVideo);
                 fpsOffset -= normalInterval;
 //                Log.d(TAG, "++insert_video_fpsOffset:" + fpsOffset);
@@ -187,7 +187,7 @@ public class MediaEncoder2Codec extends MediaEncoder{
     }
 
     //麦克风PCM音频数据，put到队列中，生产者模型
-    public void putAudioData(AudioData audioData) {
+    public void putAudioData(PCMData audioData) {
         putPCMCount++;
         try {
             audioQueue.put(audioData);
@@ -318,7 +318,7 @@ public class MediaEncoder2Codec extends MediaEncoder{
                         if (videoData != null && bufferIndex >= 0) {
                             inputBuffer = mMediaCodec.getInputBuffer(bufferIndex);
                             inputBuffer.clear();
-                            inputBuffer.put(videoData.videoData, 0, videoData.videoData.length);
+                            inputBuffer.put(videoData.getData(), 0, videoData.getLenght());
                             mMediaCodec.queueInputBuffer(bufferIndex, 0,
                                     inputBuffer.position(),
                                     System.nanoTime() / 1000, 0);
@@ -419,15 +419,15 @@ public class MediaEncoder2Codec extends MediaEncoder{
 
                 while ((audioQueue.size() != 0 || audioEncoderLoop || recvAACCount != putPCMCount) && !Thread.interrupted()) {
                     try {
-                        AudioData audio = audioQueue.take();
+                        PCMData audio = audioQueue.take();
                         takePCMCount++;
                         //我们通过fdk-aac接口获取到了audioEncodeBuffer的数据，即每次编码多少数据为最优
                         //这里我这边的手机每次都是返回的4096即4K的数据，其实为了简单点，我们每次可以让
                         //MIC录取4K大小的数据，然后把录取的数据传递到AudioEncoder.cpp中取编码
 //                        Log.e(TAG, " audio.audioData.length " + audio.audioData.length + " audioEncodeBuffer " + audioEncodeBuffer);
-                        final int audioGetLength = audio.audioData.length;
+                        final int audioGetLength = audio.getLenght();
                         if (haveCopyLength < audioEncodeBuffer) {
-                            System.arraycopy(audio.audioData, 0, inbuffer, haveCopyLength, audioGetLength);
+                            System.arraycopy(audio.getData(), 0, inbuffer, haveCopyLength, audioGetLength);
                             haveCopyLength += audioGetLength;
                             int remain = audioEncodeBuffer - haveCopyLength;
                             if (remain == 0) {

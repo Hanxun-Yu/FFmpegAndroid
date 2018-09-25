@@ -97,7 +97,8 @@ public class AudioRecoderManager {
 
     public synchronized void stopAudioIn() {
         loop = false;
-        workThread.interrupt();
+        if (workThread != null)
+            workThread.interrupt();
         mAudioRecord.stop();
         if (SAVE_FILE_FOR_TEST) {
             fileManager.closeFile();

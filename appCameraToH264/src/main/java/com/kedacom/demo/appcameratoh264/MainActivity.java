@@ -32,7 +32,7 @@ import com.kedacom.demo.appcameratoh264.media.encoder.video.X264Param;
 import com.kedacom.demo.appcameratoh264.jni.YuvUtil;
 import com.kedacom.demo.appcameratoh264.media.gather.Camera1Helper;
 import com.kedacom.demo.appcameratoh264.media.gather.Camera2Helper;
-import com.kedacom.demo.appcameratoh264.media.encoder.audio.AudioData;
+import com.kedacom.demo.appcameratoh264.media.encoder.audio.PCMData;
 import com.kedacom.demo.appcameratoh264.media.gather.AudioRecoderManager;
 import com.kedacom.demo.appcameratoh264.media.encoder.video.MediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.encoder.video.MediaEncoder2Codec;
@@ -162,9 +162,9 @@ public class MainActivity extends AppCompatActivity implements
                 view.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        mediaEncoder.setBitrate(10*1024*1024);
+                        mediaEncoder.setBitrate(10 * 1024 * 1024);
                     }
-                },10000);
+                }, 10000);
             }
         });
 
@@ -401,23 +401,24 @@ public class MainActivity extends AppCompatActivity implements
 
                             }
                             if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
-                                vd420Temp = new YuvData(yuv420p, heightOUT, widthOUT, System.currentTimeMillis());
+                                vd420Temp = new YuvData(yuv420p, yuv420p.length, heightOUT, widthOUT, System.currentTimeMillis());
                             } else {
-                                vd420Temp = new YuvData(yuv420p, widthOUT, heightOUT, System.currentTimeMillis());
+                                vd420Temp = new YuvData(yuv420p, yuv420p.length, widthOUT, heightOUT, System.currentTimeMillis());
                             }
 //                            Log.d(TAG, "yuv size:" + yuv420p.length + " w:" + widthOUT + " h:" + heightOUT);
 //                            vd420Temp = new YuvData(yuv420sp, widthOUT, heightOUT, System.currentTimeMillis());
                             mediaEncoder.putVideoData(vd420Temp);
                         } else {
                             //收到420p
-                            vd420Temp = new YuvData((byte[]) msg.obj, widthOUT, heightOUT, System.currentTimeMillis());
+                            byte[] yuv420p = (byte[]) msg.obj;
+                            vd420Temp = new YuvData(yuv420p, yuv420p.length, widthOUT, heightOUT, System.currentTimeMillis());
                             mediaEncoder.putVideoData(vd420Temp);
                         }
                         break;
 
                     case HANDLE_AUDIO_MSG:
                         byte[] pcm = (byte[]) msg.obj;
-                        AudioData audioData = new AudioData(pcm);
+                        PCMData audioData = new PCMData(pcm,pcm.length);
                         mediaEncoder.putAudioData(audioData);
                         break;
                 }
@@ -705,7 +706,7 @@ public class MainActivity extends AppCompatActivity implements
         sb.append(param.getHeightOUT());
         sb.append("\n");
         sb.append("bitrate:");
-        sb.append(param.getBitrate());
+        sb.append(param.getByterate());
         sb.append("Kbit\n");
         sb.append("bitrateCtrl:");
         sb.append(param.getBitrateCtrl());

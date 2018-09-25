@@ -1,17 +1,61 @@
 package com.kedacom.demo.appcameratoh264.media.encoder.api;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 /**
  * Created by yuhanxun
  * 2018/9/21
  * description:
  */
-public class VideoEncoderParam implements IEncoderParam {
+public class VideoEncoderParam implements IEncoderParam,Parcelable {
     private int widthIN;
     private int heightIN;
     private int widthOUT;
     private int heightOUT;
     private int byterate;//bitrate 字节
     private int fps;
+
+    public VideoEncoderParam() {
+    }
+
+    protected VideoEncoderParam(Parcel in) {
+        widthIN = in.readInt();
+        heightIN = in.readInt();
+        widthOUT = in.readInt();
+        heightOUT = in.readInt();
+        byterate = in.readInt();
+        fps = in.readInt();
+        gop = in.readInt();
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(widthIN);
+        dest.writeInt(heightIN);
+        dest.writeInt(widthOUT);
+        dest.writeInt(heightOUT);
+        dest.writeInt(byterate);
+        dest.writeInt(fps);
+        dest.writeInt(gop);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<VideoEncoderParam> CREATOR = new Creator<VideoEncoderParam>() {
+        @Override
+        public VideoEncoderParam createFromParcel(Parcel in) {
+            return new VideoEncoderParam(in);
+        }
+
+        @Override
+        public VideoEncoderParam[] newArray(int size) {
+            return new VideoEncoderParam[size];
+        }
+    };
 
     public int getGop() {
         return gop;

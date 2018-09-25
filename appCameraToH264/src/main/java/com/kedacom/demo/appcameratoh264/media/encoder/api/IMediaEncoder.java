@@ -22,6 +22,8 @@ public interface IMediaEncoder {
     int getRTInputRate();
     int getRTOutputRate();
 
+    int getQueueSize();
+
     void setCallback(Callback callback);
     void setOnStateChangedListener(OnStateChangedListener onStateChangedListener);
 
