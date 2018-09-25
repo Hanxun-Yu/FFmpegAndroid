@@ -41,7 +41,8 @@ bool VideoEncoder::open() {
     LOGE("gethIN:%d",x264Param->getHeightIN());
     LOGE("gethOUT:%d",x264Param->getHeightOUT());
 
-    x264_picture_alloc(&pic_in, params.i_csp,x264Param->getWidthIN(),x264Param->getHeightIN());
+    //这里宽高如果与传入的yuv宽高不匹配,则会导致花屏
+    x264_picture_alloc(&pic_in, params.i_csp,x264Param->getWidthOUT(),x264Param->getHeightOUT());
 
     //create the encoder using our params 打开编码器
     encoder = x264_encoder_open(&params);
@@ -72,8 +73,8 @@ int VideoEncoder::encodeFrame(char *inBytes, int frameSize, int pts, char *outBy
 //    LOGE("gethIN:%d",x264Param->getHeightIN());
 //    LOGE("gethOUT:%d",x264Param->getHeightOUT());
     //YUV420P数据转化为h264
-    int i420_y_size = x264Param->getWidthIN() * x264Param->getHeightIN();
-    int i420_u_size = (x264Param->getWidthIN() >> 1) * (x264Param->getHeightIN() >> 1);
+    int i420_y_size = x264Param->getWidthOUT() * x264Param->getHeightOUT();
+    int i420_u_size = (x264Param->getWidthOUT() >> 1) * (x264Param->getHeightOUT() >> 1);
     int i420_v_size = i420_u_size;
 
     uint8_t *i420_y_data = (uint8_t *) inBytes;
@@ -226,7 +227,12 @@ void VideoEncoder::setParams(X264Param *x264Param) {
 //    params.i_keyint_max = 3;
     params.i_keyint_min = 1;
     params.b_intra_refresh = 1;
-    params.rc.i_bitrate = x264Param->getBitrate();
+
+
+    params.rc.i_bitrate = x264Param->getBitrate()/1024;
+    // For streaming:
+    //* 码率(比特率,单位Kbps)x264使用的bitrate需要/1000
+    LOGD("params.rc.i_bitrate:%d", params.rc.i_bitrate);
 
     //参数i_rc_method表示码率控制，CQP(恒定质量)，CRF(恒定码率)，ABR(平均码率)
     if (strcmp(x264Param->getBitrateCtrl().c_str(), "CRF") == 0) {
@@ -247,9 +253,7 @@ void VideoEncoder::setParams(X264Param *x264Param) {
     }
 
 
-    // For streaming:
-    //* 码率(比特率,单位Kbps)x264使用的bitrate需要/1000
-    LOGD("params.rc.i_bitrate:%d", params.rc.i_bitrate);
+
 
     params.b_annexb = true;
     //是否把SPS和PPS放入每一个关键帧

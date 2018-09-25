@@ -7,9 +7,9 @@ import com.kedacom.demo.appcameratoh264.media.encoder.video.X264Param;
  * 2018/8/1
  * description:
  */
-public class FFmpegjni {
+public class X264EncoderJni {
     static {
-        System.loadLibrary("ffmpegjni");
+        System.loadLibrary("x264encoderjni");
     }
 
     public native int init();
@@ -40,18 +40,6 @@ public class FFmpegjni {
      */
     public native int encoderVideoEncode(byte[] srcFrame, int frameSize, int fps, byte[] dstFrame, int[] outFramewSize);
 
-
-    /**
-     * @param sampleRate 音频采样频率
-     * @param channels   音频通道
-     * @param bitRate    音频bitRate
-     * @return
-     */
-    public native int encoderAudioInit(int sampleRate, int channels, int bitRate);
-
-    public native int encoderAudioEncode(byte[] srcFrame, int frameSize, byte[] dstFrame, int dstSize);
-
-    public native int muxMp4(String h264, String aac, String outMp4);
 
 
 

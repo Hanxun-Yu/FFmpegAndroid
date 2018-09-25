@@ -2,7 +2,7 @@ package com.kedacom.demo.appcameratoh264.media.encoder.video;
 
 import android.util.Log;
 
-import com.kedacom.demo.appcameratoh264.jni.FFmpegjni;
+import com.kedacom.demo.appcameratoh264.jni.X264EncoderJni;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.AbstractEncoder;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.EncodedData;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IEncoderParam;
@@ -14,17 +14,17 @@ import com.kedacom.demo.appcameratoh264.media.encoder.api.PacketData;
  * description:
  */
 public class X264Encoder extends AbstractEncoder {
-    private FFmpegjni ffmpegjni;
+    private X264EncoderJni x264EncoderJni;
 
     @Override
     public void config(IEncoderParam param) {
         Log.d(TAG,"config param:"+param);
         if (param instanceof X264Param) {
-            if (ffmpegjni != null) {
-                ffmpegjni.release();
+            if (x264EncoderJni != null) {
+                x264EncoderJni.release();
             }
-            ffmpegjni = new FFmpegjni();
-            ffmpegjni.encoderVideoinit((X264Param) param);
+            x264EncoderJni = new X264EncoderJni();
+            x264EncoderJni.encoderVideoinit((X264Param) param);
         } else {
             throw new IllegalArgumentException("param is not a X264Param!");
         }
@@ -32,7 +32,8 @@ public class X264Encoder extends AbstractEncoder {
 
     @Override
     public void release() {
-        ffmpegjni.release();
+        super.release();
+        x264EncoderJni.release();
     }
 
     @Override
@@ -48,7 +49,7 @@ public class X264Encoder extends AbstractEncoder {
         if(t != null && t.getData()!=null && t.getLenght() != 0) {
             byte[] outbuffer = new byte[t.getLenght()];
             int[] outbufferLens = new int[20];
-            int numNals = ffmpegjni.encoderVideoEncode(t.getData(), t.getLenght(),
+            int numNals = x264EncoderJni.encoderVideoEncode(t.getData(), t.getLenght(),
                     fpsIndex++, outbuffer, outbufferLens);
             if(numNals <= 0) {
                 return null;

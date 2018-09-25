@@ -14,6 +14,7 @@ public interface IMediaEncoder {
     void putPacket(PacketData packetData);
     void changeBitrate(int byterate);
 
+    State getState();
 
     long getLengthEncoded();
 
@@ -31,7 +32,7 @@ public interface IMediaEncoder {
         void onDataEncoded(EncodedData encodedData);
     }
     interface OnStateChangedListener {
-        void onState(State state);
+        void onState(IMediaEncoder encoder, State state);
     }
 
     enum State {

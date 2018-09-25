@@ -107,7 +107,7 @@ public class AndroidCodecEncoder extends AbstractEncoder {
     protected EncodedData getEncodedData(PacketData t) {
         AndroidCodecEncodedData ret = null;
         int bufferIndex = mMediaCodec.dequeueInputBuffer(-1);
-        Log.d(TAG, "start IF bufferIndex:" + bufferIndex + " -------------------------------------");
+//        Log.d(TAG, "start IF bufferIndex:" + bufferIndex + " -------------------------------------");
 
         int totalLenght = 0;
         if (t != null && bufferIndex >= 0) {

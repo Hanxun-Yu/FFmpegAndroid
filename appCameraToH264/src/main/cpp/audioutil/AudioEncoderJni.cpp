@@ -22,13 +22,6 @@ JNIEXPORT jint JNICALL release
         (JNIEnv *env, jclass clazz) {
     LOGE("release");
 
-//    free(temp_i420_data);
-//    free(temp_i420_data_scale);
-//    free(temp_i420_data_rotate);
-    frameEncoder->close();
-    delete frameEncoder;
-//    free(audioEncoder);
-//    free(rtmpLivePublish);
     return 0;
 }
 JNIEXPORT jint JNICALL
@@ -63,7 +56,7 @@ JNINativeMethod nativeMethod[] = {
 };
 
 
-std::string myClassName = "com/kedacom/demo/appcameratoh264/jni/FFmpegjni";
+std::string myClassName = "com/kedacom/demo/appcameratoh264/jni/AudioEncoderJni";
 
 JNIEXPORT jint
 JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {

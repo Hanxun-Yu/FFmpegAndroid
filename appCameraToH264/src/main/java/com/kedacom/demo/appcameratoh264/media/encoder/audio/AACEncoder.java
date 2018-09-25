@@ -1,10 +1,10 @@
 package com.kedacom.demo.appcameratoh264.media.encoder.audio;
 
-import com.kedacom.demo.appcameratoh264.jni.FFmpegjni;
+import com.kedacom.demo.appcameratoh264.jni.AudioEncoderJni;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.AbstractEncoder;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.EncodedData;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IEncoderParam;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.PacketData;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.AbstractEncoder;
 import com.kedacom.demo.appcameratoh264.media.encoder.video.X264EncodedData;
 
 /**
@@ -13,23 +13,24 @@ import com.kedacom.demo.appcameratoh264.media.encoder.video.X264EncodedData;
  * description:
  */
 public class AACEncoder extends AbstractEncoder{
-    FFmpegjni ffmpegjni;
+    AudioEncoderJni audioEncoderJni;
     private int audioEncodeBuffer;
 
     @Override
     public void config(IEncoderParam param) {
-        if (ffmpegjni != null) {
-            ffmpegjni.release();
+        if (audioEncoderJni != null) {
+            audioEncoderJni.release();
         }
-        ffmpegjni = new FFmpegjni();
-        audioEncodeBuffer = ffmpegjni.encoderAudioInit(Contacts.SAMPLE_RATE,
+        audioEncoderJni = new AudioEncoderJni();
+        audioEncodeBuffer = audioEncoderJni.encoderAudioInit(Contacts.SAMPLE_RATE,
                 Contacts.CHANNELS, Contacts.BIT_RATE);
         inbuffer = new byte[audioEncodeBuffer];
     }
 
     @Override
     public void release() {
-        ffmpegjni.release();
+        super.release();
+        audioEncoderJni.release();
     }
 
     @Override
@@ -54,7 +55,7 @@ public class AACEncoder extends AbstractEncoder{
             int remain = audioEncodeBuffer - haveCopyLength;
             if (remain == 0) {
                 //fdk-aac编码PCM裸音频数据，返回可用长度的有效字段
-                int validLength = ffmpegjni.encoderAudioEncode(inbuffer, audioEncodeBuffer, outbuffer, outbuffer.length);
+                int validLength = audioEncoderJni.encoderAudioEncode(inbuffer, audioEncodeBuffer, outbuffer, outbuffer.length);
                 //Log.e("lihuzi", " validLength " + validLength);
                 final int VALID_LENGTH = validLength;
                 if (VALID_LENGTH > 0) {

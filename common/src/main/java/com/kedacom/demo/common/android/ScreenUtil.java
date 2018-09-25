@@ -6,7 +6,4 @@ package com.kedacom.demo.common.android;
  * description:
  */
 public class ScreenUtil {
-    int getScreenDegree() {
-
-    }
 }

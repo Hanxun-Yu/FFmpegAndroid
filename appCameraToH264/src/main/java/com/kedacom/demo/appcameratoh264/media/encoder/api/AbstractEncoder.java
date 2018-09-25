@@ -81,8 +81,18 @@ public abstract class AbstractEncoder implements IMediaEncoder {
         if (encoderThread != null)
             encoderThread.interrupt();
 
+
+    }
+
+    @Override
+    public void release() {
         if (checkStatusRunn != null)
             checkStatusRunn.setStop(true);
+    }
+
+    @Override
+    public State getState() {
+        return curState;
     }
 
     @Override
@@ -140,7 +150,7 @@ public abstract class AbstractEncoder implements IMediaEncoder {
                 mainLoop.post(new Runnable() {
                     @Override
                     public void run() {
-                        onStateChangedListener.onState(state);
+                        onStateChangedListener.onState(AbstractEncoder.this,state);
                     }
                 });
             }
@@ -177,6 +187,7 @@ public abstract class AbstractEncoder implements IMediaEncoder {
                     e.printStackTrace();
                 }
             }
+            isThreadLoopStoped = true;
         }
     }
 

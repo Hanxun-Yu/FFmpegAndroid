@@ -203,10 +203,12 @@ public class InitActivity extends AppCompatActivity {
         VideoEncoderParam param;
         if(codec == 0) {
             param = x264ParamFragment.getParams();
+            Log.d(TAG,"++++++++++++++param:"+param.getByterate());
         } else {
             param = new AndroidCodecParam();
-            param.setByterate(2048);
+            param.setByterate(4 * 1024 * 1024);
             param.setFps(25);
+            param.setGop(1);
         }
 
         if(sizeParamUtil.getWH_IN().equals("1280x720")) {

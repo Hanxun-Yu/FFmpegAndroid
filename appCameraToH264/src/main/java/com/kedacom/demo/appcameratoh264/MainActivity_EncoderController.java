@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -136,8 +137,9 @@ public class MainActivity_EncoderController extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                audioGathererManager.startAudioIn();
                 encoderManager.start();
+                audioGathererManager.startAudioIn();
+
                 recording = true;
                 startTime = System.currentTimeMillis();
             }
@@ -147,8 +149,8 @@ public class MainActivity_EncoderController extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 recording = false;
-                encoderManager.stop();
                 audioGathererManager.stopAudioIn();
+                encoderManager.stop();
 //                camera2Helper.stopCallbackFrame();
             }
         });
@@ -180,7 +182,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
             @Override
             public void onDataEncoded(EncodedData encodedData) {
                 if (count % frequence == 0) {
-                    mainHandler.post(runnable);
+                    refreshInfo();
                     count = 0;
                 }
                 count++;
@@ -193,6 +195,18 @@ public class MainActivity_EncoderController extends AppCompatActivity {
 
             }
         });
+
+        encoderManager.setOnStateChangedListener(new IMediaEncoder.OnStateChangedListener() {
+
+            @Override
+            public void onState(IMediaEncoder encoder, IMediaEncoder.State state) {
+                refreshInfo();
+            }
+        });
+    }
+
+    private void refreshInfo() {
+        mainHandler.post(runnable);
     }
 
     HandlerThread handlerThread;
@@ -322,7 +336,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
         @SuppressLint("SetTextI18n")
         @Override
         public void run() {
-            infoText.setText(getDisplayData());
+            infoText.setText(Html.fromHtml(getDisplayData().replaceAll("\n","<br>")));
             memoryText.setText(getMemoryInfo());
             timeText.setText(getTimeData());
         }
