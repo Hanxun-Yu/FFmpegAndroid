@@ -7,6 +7,7 @@
 FFmpegRtsp::FFmpegRtsp(JavaVM *javaVM, jobject obj) {
     this->javaVM = javaVM;
     this->obj = obj;
+    this->pPacket = NULL;
 }
 
 FFmpegRtsp::~FFmpegRtsp() {
@@ -33,7 +34,7 @@ void FFmpegRtsp::run() {
     LOGD("FFmpegRtsp::run()");
     try {
         this->javaVM->AttachCurrentThread(&this->jniEnv, NULL);
-        pAvFrame = av_frame_alloc();
+        this->pAvFrame = av_frame_alloc();
 //        pFrameBGR = av_frame_alloc();
 
         //初始化
@@ -94,11 +95,13 @@ void FFmpegRtsp::run() {
             }
             av_packet_unref(pPacket);
         }
+        av_free(pPacket);
+        avformat_close_input(&pFormatCtx);
+
     } catch (...) {
         LOGE("catch exception");
     }
-    av_free(pPacket);
+
 //    av_free(pFrameBGR);
 //    avcodec_close(pCodecCtx);
-    avformat_close_input(&pFormatCtx);
 }

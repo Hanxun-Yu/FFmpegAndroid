@@ -4,11 +4,13 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.Surface;
 
 import com.example.apph264render.api.IMediaCodec;
+import com.example.apph264render.jni.YuvPlayerJni;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -20,13 +22,13 @@ import java.util.ArrayList;
  * @desc
  */
 
-public class MediaCodecDecoder implements IMediaCodec {
+public class MediaCodecDecoderYuv implements IMediaCodec {
 
-    private final String TAG = MediaCodecDecoder.class.getSimpleName() + "_xunxun";
+    private final String TAG = MediaCodecDecoderYuv.class.getSimpleName() + "_xunxun";
 
     //设置解码分辨率
-    private final int VIDEO_WIDTH = 1920;//2592
-    private final int VIDEO_HEIGHT = 1080;//1520
+    private int VIDEO_WIDTH = 1280;//2592
+    private int VIDEO_HEIGHT = 720;//1520
 
     //解码帧率 1s解码30帧
     private final int FRAME_RATE = 25;
@@ -51,8 +53,6 @@ public class MediaCodecDecoder implements IMediaCodec {
     private DecodeThread mDecodeThread;
 
 
-    private int mVideoWidth;
-    private int mVideoHeight;
 
     private boolean isStop = true;
 
@@ -71,17 +71,23 @@ public class MediaCodecDecoder implements IMediaCodec {
         }
         mFrmList.clear();
         initMediaFormat();
-
+        yuvPlayerJni.init();
     }
+
+    YuvPlayerJni yuvPlayerJni = new YuvPlayerJni();
+    Surface obj;
 
     @Override
     public void setRenderView(Object obj) {
         if (isStop) {
             //crypto:数据加密 flags:编码器/编码器
-            mMediaCodec.configure(mediaformat, (Surface) obj, null, 0);
+//            mMediaCodec.configure(mediaformat, (Surface) obj, null, 0);
+            mMediaCodec.configure(mediaformat, null, null, 0);
             mMediaCodec.start();
             startDecoderThread();
             isStop = false;
+            yuvPlayerJni.setRender(obj);
+            yuvPlayerJni.start();
         } else {
             mMediaCodec.setOutputSurface((Surface) obj);
         }
@@ -115,6 +121,8 @@ public class MediaCodecDecoder implements IMediaCodec {
         mediaformat = MediaFormat.createVideoFormat(mMimeType, VIDEO_WIDTH, VIDEO_HEIGHT);
         //设置帧率
         mediaformat.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
+        mediaformat.setInteger(MediaFormat.KEY_COLOR_FORMAT,
+                MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible);
     }
 
     public boolean isStop() {
@@ -131,14 +139,6 @@ public class MediaCodecDecoder implements IMediaCodec {
         } catch (IllegalStateException e) {
             e.printStackTrace();
         }
-    }
-
-    public int getVideoWidth() {
-        return mVideoWidth;
-    }
-
-    public int getVideoHeight() {
-        return mVideoHeight;
     }
 
 
@@ -162,20 +162,37 @@ public class MediaCodecDecoder implements IMediaCodec {
 
     boolean hasIFrame = false;
 
+
     @Override
     public void putEncodeData(byte[] frames, int size) {
         if (!isStop) {
-            if (!hasIFrame) {
-                if (frames[0] == 0
-                        && frames[1] == 0
-                        && frames[2] == 0
-                        && frames[3] == 1
-                        && frames[4] == 0x67
-                        ) {
-                    hasIFrame = true;
-                } else {
-                    return;
+
+            if (frames[0] == 0
+                    && frames[1] == 0
+                    && frames[2] == 0
+                    && frames[3] == 1
+                    && frames[4] == 0x67
+                    ) {
+                byte[] sps = new byte[frames.length - 4];
+                System.arraycopy(frames, 4, sps, 0, frames.length - 4);
+                int wh[] = new int[2];
+                yuvPlayerJni.getSPSWH(sps,wh);
+                int width = wh[0];
+                int height = wh[1];
+                if (width != VIDEO_WIDTH || height != VIDEO_HEIGHT) {
+                    Log.e(TAG, "MediaCodec size changed width:" + width + " height:" + height);
+                    VIDEO_WIDTH = width;
+                    VIDEO_HEIGHT = height;
+                    Bundle bundle = new Bundle();
+                    bundle.putInt(MediaFormat.KEY_WIDTH, VIDEO_WIDTH);
+                    bundle.putInt(MediaFormat.KEY_HEIGHT, VIDEO_HEIGHT);
+                    mMediaCodec.setParameters(bundle);
                 }
+                hasIFrame = true;
+            }
+
+            if (!hasIFrame) {
+                return;
             }
 //            Log.d(TAG, "putEncodeData data len:" + frames.length);
             DataInfo dataInfo = new DataInfo();
@@ -285,10 +302,10 @@ public class MediaCodecDecoder implements IMediaCodec {
 
                     //循环解码，直到数据全部解码完成
                     while (outIndex >= 0) {
-                        Log.d(TAG,"outIndex:"+outIndex);
-                        Log.d(TAG,"info:"+info.offset);
-                        Log.d(TAG,"info:"+info.size);
-                        Log.d(TAG,"info:"+info.presentationTimeUs);
+                        Log.d(TAG, "outIndex:" + outIndex);
+                        Log.d(TAG, "info:" + info.offset);
+                        Log.d(TAG, "info:" + info.size);
+                        Log.d(TAG, "info:" + info.presentationTimeUs);
 
 
                         //logger.d("outputBufferIndex = " + outputBufferIndex);
@@ -299,8 +316,10 @@ public class MediaCodecDecoder implements IMediaCodec {
                         byte[] encodeData = new byte[outBuffer.remaining()];
                         outBuffer.get(encodeData);
 
+
+                        yuvPlayerJni.putYuv(encodeData, VIDEO_WIDTH, VIDEO_HEIGHT, encodeData.length);
                         if (mOnDecodeListener != null) {
-                            mOnDecodeListener.decodeResult(encodeData, encodeData.length, mVideoWidth, mVideoHeight);
+                            mOnDecodeListener.decodeResult(encodeData, encodeData.length, VIDEO_WIDTH, VIDEO_HEIGHT);
                         }
 
                         mMediaCodec.releaseOutputBuffer(outIndex, info.presentationTimeUs);

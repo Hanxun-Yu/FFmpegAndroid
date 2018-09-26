@@ -11,6 +11,7 @@ extern "C" {
 VideoDecoder *videoDecoder;
 RGBRender *render;
 
+
 class MyOnDecoderListener : public VideoDecoder::OnDecoderListener {
 public:
     virtual void onRGB(JNIEnv *jniEnv, jobject jobject, YuvData *data) override {

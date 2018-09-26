@@ -17,7 +17,7 @@ public class RtspHelperJni {
     public native void play(String url);
 
     public void onDataCallback(byte[] data, int size) {
-        Log.e(TAG,"onDataCallback data len:"+data.length+" size:"+size);
+//        Log.e(TAG,"onDataCallback data len:"+data.length+" size:"+size);
         if(onDataCallbackListener != null)
             onDataCallbackListener.onDataCallback(data,size);
     }

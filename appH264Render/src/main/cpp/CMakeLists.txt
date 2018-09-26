@@ -11,6 +11,7 @@ set(INCLUDE_PATH ${PROJECT_SOURCE_DIR}/../../../../libffmpeg/src/main/cpp/includ
 
 cmake_minimum_required(VERSION 3.4.1)
 ADD_SUBDIRECTORY(yuvutil)
+ADD_SUBDIRECTORY(yuvplayer)
 ADD_SUBDIRECTORY(rtsp)
 
 

@@ -8,6 +8,6 @@ package com.example.apph264render.mediacodec;
 
 public interface OnDecodeListener {
 
-	void decodeResult(int w, int h);
+	void decodeResult(byte[]data,int length,int w, int h);
 
 }

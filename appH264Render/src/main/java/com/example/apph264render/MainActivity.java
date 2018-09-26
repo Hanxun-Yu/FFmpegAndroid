@@ -16,13 +16,16 @@ import com.example.apph264render.data.file.H264FileGenerator;
 import com.example.apph264render.data.rtsp.RtspGenerator;
 import com.example.apph264render.ffmpegcodec.FFmpegCodec;
 import com.example.apph264render.mediacodec.MediaCodecDecoder;
+import com.example.apph264render.mediacodec.MediaCodecDecoderYuv;
+import com.example.apph264render.mediacodec.OnDecodeListener;
 
 public class MainActivity extends AppCompatActivity {
     final String TAG = "MainActivity_xunxun";
     TextureView textureView;
     boolean isRenderViewEnable = false;
 
-    IMediaCodec videoCodec = new MediaCodecDecoder();
+//    IMediaCodec videoCodec = new MediaCodecDecoder();
+    IMediaCodec videoCodec = new MediaCodecDecoderYuv();
 //    IMediaCodec videoCodec = new FFmpegCodec();
 
 //        IDataGenerator dataGenerator
@@ -70,12 +73,19 @@ public class MainActivity extends AppCompatActivity {
         dataGenerator.setOnDataListener(new IDataGenerator.OnDataReceiverListener() {
             @Override
             public void onReceiveData(byte[] data, int size) {
+//                Log.d(TAG,"onReceiveData data size:"+size);
                 if (!videoCodec.isStop() && isRenderViewEnable) {
                     videoCodec.putEncodeData(data, size);
                 }
             }
         });
         videoCodec.init();
+        videoCodec.setOnDecodeListener(new OnDecodeListener() {
+            @Override
+            public void decodeResult(byte[] data, int length, int w, int h) {
+                Log.d(TAG,"yuv data size:"+data.length+" w:"+w+" h:"+h);
+            }
+        });
         dataGenerator.start();
 
     }

@@ -22,6 +22,11 @@ public:
     SyncQueue(int maxSize) : m_maxSize(maxSize) {
     }
 
+    void clear() {
+        std::lock_guard<std::mutex> locker(m_mutex);
+        m_queue.clear();
+    }
+
     void put(T *x) {
         int tempCount = putCount++;
 

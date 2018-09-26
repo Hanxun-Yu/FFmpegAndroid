@@ -2,6 +2,8 @@ package com.example.apph264render.api;
 
 import android.view.Surface;
 
+import com.example.apph264render.mediacodec.OnDecodeListener;
+
 /**
  * Created by yuhanxun
  * 2018/8/14
@@ -13,5 +15,6 @@ public interface IMediaCodec {
     void release();
     boolean isStop();
     void putEncodeData(byte[] frames,int size);
+    void setOnDecodeListener(OnDecodeListener listener);
 
 }

@@ -16,7 +16,7 @@ class RtspCallback : public FFmpegRtsp::OnDataCallbackListener {
 public:
     void onDataCallback(JNIEnv *jniEnv, jobject obj, uint8_t *data, int32_t size) override {
 
-//        LOGE("FFmpegRtsp::OnDataCallback data:%p size:%d", data, size);
+        LOGE("FFmpegRtsp::OnDataCallback data:%p size:%d", data, size);
 //        char * aaa = malloc(size);
         if(size <= 0)
             return;
@@ -26,7 +26,6 @@ public:
 
 
         free(data);
-
 //        jniEnv->ReleaseByteArrayElements(ret, reinterpret_cast<jbyte *>(data), 0);
         //不加这句一会就crash
         jniEnv->DeleteLocalRef(ret);
@@ -49,8 +48,9 @@ JNIEXPORT void JNICALL init(JNIEnv *env, jobject obj) {
 
 JNIEXPORT void JNICALL release(JNIEnv *env, jobject clazz) {
     LOGD("release");
-    env->DeleteGlobalRef(globalObj);
+    fFmpegRtsp->setOnDataCallbackListener(NULL);
     fFmpegRtsp->stopPlay();
+    env->DeleteGlobalRef(globalObj);
 }
 
 

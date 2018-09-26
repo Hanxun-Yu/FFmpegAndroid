@@ -2,6 +2,7 @@ package com.example.apph264render.ffmpegcodec;
 
 import com.example.apph264render.api.IMediaCodec;
 import com.example.apph264render.jni.VideoPlayerJni;
+import com.example.apph264render.mediacodec.OnDecodeListener;
 
 /**
  * Created by yuhanxun
@@ -35,6 +36,11 @@ public class FFmpegCodec implements IMediaCodec {
     @Override
     public void putEncodeData(byte[] frames, int size) {
         videoPlayerJni.putFrame(frames, size);
+    }
+
+    @Override
+    public void setOnDecodeListener(OnDecodeListener listener) {
+
     }
 
 }
