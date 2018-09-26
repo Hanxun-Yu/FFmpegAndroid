@@ -122,7 +122,7 @@ public class MediaCodecDecoderYuv implements IMediaCodec {
         //设置帧率
         mediaformat.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
         mediaformat.setInteger(MediaFormat.KEY_COLOR_FORMAT,
-                MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible);
+                MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar);//COLOR_FormatYUV420Flexible,用这个p2接奇蛙720码流顶部有绿条
     }
 
     public boolean isStop() {
