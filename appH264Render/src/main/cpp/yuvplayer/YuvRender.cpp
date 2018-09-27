@@ -74,7 +74,7 @@ void *runnable2(void *threadargs) {
         free(bean->getP_data());
         bean->setP_data(buffer_dest);
 
-        if(width != bean->getWidth() || height != bean->getWidth()) {
+        if(width != bean->getWidth() || height != bean->getHeight()) {
             // 设置native window的buffer大小,可自动拉伸
             ANativeWindow_setBuffersGeometry(nativeWindow, bean->getWidth(), bean->getHeight(),
                                              WINDOW_FORMAT_RGBA_8888);
