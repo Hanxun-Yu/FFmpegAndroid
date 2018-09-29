@@ -6,36 +6,37 @@
 
     <LinearLayout
         android:id="@+id/model_parent"
-        android:orientation="horizontal"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
         <TextView
-            android:text="设备:"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:text="设备:" />
 
         <TextView
             android:id="@+id/deviceText"
-            android:text=""
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:text="" />
 
     </LinearLayout>
 
 
     <RadioGroup
         android:id="@+id/group1"
-        android:layout_marginTop="10dp"
-        android:layout_below="@id/model_parent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/model_parent"
+        android:layout_marginTop="10dp"
         android:checkedButton="@id/camera"
         android:orientation="horizontal">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="获取码流组件：" />
+            android:text="采集：" />
 
         <RadioButton
             android:id="@+id/camera"
@@ -58,7 +59,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/group1"
-        android:layout_marginTop="10dp"
         android:checkedButton="@id/surfaceview"
         android:orientation="horizontal">
 
@@ -87,7 +87,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/group2"
-        android:layout_marginTop="10dp"
         android:checkedButton="@id/portrait"
         android:orientation="horizontal">
 
@@ -116,7 +115,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/group3"
-        android:layout_marginTop="10dp"
         android:checkedButton="@id/x264"
         android:orientation="horizontal">
 
@@ -139,12 +137,12 @@
             android:text="MediaCodec" />
 
     </RadioGroup>
+
     <RadioGroup
         android:id="@+id/group5"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/group4"
-        android:layout_marginTop="10dp"
         android:checkedButton="@id/MP4"
         android:orientation="horizontal">
 
@@ -169,57 +167,42 @@
     </RadioGroup>
 
     <LinearLayout
-        android:clickable="true"
-        android:id="@+id/resolution_src_parent"
+        android:id="@+id/resolution_parent"
         android:layout_width="wrap_content"
-        android:gravity="center_vertical"
         android:layout_height="30dp"
         android:layout_below="@id/group5"
-        android:layout_marginTop="10dp"
+        android:clickable="true"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="源    分辨率:"
-            />
+            android:text="输入输出:" />
 
         <TextView
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
             android:id="@+id/resolution_src_text"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:clickable="true"
-        android:id="@+id/resolution_target_parent"
-        android:layout_width="wrap_content"
-        android:layout_height="30dp"
-        android:gravity="center_vertical"
-        android:layout_below="@id/resolution_src_parent"
-        android:layout_marginTop="10dp"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="编码分辨率:"
-            />
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp" />
+
         <TextView
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
             android:id="@+id/resolution_target_text"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp" />
     </LinearLayout>
+
+
+
 
     <ImageView
         android:id="@+id/separate"
         android:layout_width="match_parent"
         android:layout_height="1px"
-        android:layout_below="@id/resolution_target_parent"
+        android:layout_below="@id/resolution_parent"
         android:layout_marginTop="5dp"
         android:src="@color/init_separate" />
 

@@ -68,7 +68,7 @@ public class X264ParamUtil {
 
     public String[] getBitrateList() {
         if (BitrateList == null) {
-            BitrateList = context.getResources().getStringArray(R.array.Bitrate);
+            BitrateList = context.getResources().getStringArray(R.array.VideoBitrate);
         }
         return BitrateList;
     }

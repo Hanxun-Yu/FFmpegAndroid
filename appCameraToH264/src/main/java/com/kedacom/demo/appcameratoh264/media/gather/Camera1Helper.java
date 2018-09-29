@@ -41,7 +41,6 @@ public class Camera1Helper implements Camera.PreviewCallback {
         releaseCamera(); // release Camera, if not release camera before call camera, it will be locked
         mCamera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
         mParams = mCamera.getParameters();
-
         setCameraDisplayOrientation((Activity) context, Camera.CameraInfo.CAMERA_FACING_BACK, mCamera);
         mParams.setPreviewSize(previewW, previewH);
         mParams.setPreviewFormat(IMAGE_FORMAT); // setting preview format：YV12

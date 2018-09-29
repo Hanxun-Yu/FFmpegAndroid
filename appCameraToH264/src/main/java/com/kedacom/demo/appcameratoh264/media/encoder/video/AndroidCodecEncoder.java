@@ -23,6 +23,8 @@ import java.util.Arrays;
 public class AndroidCodecEncoder extends AbstractEncoder {
     private MediaCodec mMediaCodec;
     private static final String VCODEC_MIME = "video/avc";
+//    private static final String VCODEC_MIME = "video/hevc";
+
 
     private AndroidCodecParam param;
 
@@ -120,6 +122,8 @@ public class AndroidCodecEncoder extends AbstractEncoder {
             MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
 
             int outputBufferIndex = mMediaCodec.dequeueOutputBuffer(bufferInfo, 40);
+            Log.d(TAG,"outputBufferIndex:"+outputBufferIndex);
+
             while (outputBufferIndex >= 0) {
                 if (ret == null)
                     ret = new AndroidCodecEncodedData();
@@ -135,6 +139,7 @@ public class AndroidCodecEncoder extends AbstractEncoder {
                 if (spsppsData == null) {
                     ByteBuffer bb = ByteBuffer.wrap(encodeData);
                     if (bb.getInt() == 0x00000001 && bb.get() == 0x67) {
+//                    if (bb.getInt() == 0x00000001 && bb.get() == 0x40) {
                         spsppsData = new byte[encodeData.length];
                         System.arraycopy(encodeData, 0, spsppsData, 0, encodeData.length);
                     }
@@ -142,6 +147,7 @@ public class AndroidCodecEncoder extends AbstractEncoder {
                     //i帧前插入sps,pps
                     ByteBuffer bb = ByteBuffer.wrap(encodeData);
                     if (bb.getInt() == 0x00000001 && bb.get() == 0x65) {
+//                    if (bb.getInt() == 0x00000001 && bb.get() == 0x26) {
                         finalData = new byte[encodeData.length + spsppsData.length];
                         System.arraycopy(spsppsData, 0, finalData, 0, spsppsData.length);
                         System.arraycopy(encodeData, 0, finalData, spsppsData.length, encodeData.length);
@@ -159,6 +165,7 @@ public class AndroidCodecEncoder extends AbstractEncoder {
 
                     ret.getBytes().add(finalData);
                 }
+                Log.d(TAG,"spsppsData:"+spsppsData);
                 mMediaCodec.releaseOutputBuffer(outputBufferIndex, false);
                 outputBufferIndex = mMediaCodec.dequeueOutputBuffer(bufferInfo, 40);
             }

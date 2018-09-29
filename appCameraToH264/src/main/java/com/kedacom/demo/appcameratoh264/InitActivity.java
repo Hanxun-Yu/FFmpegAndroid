@@ -7,6 +7,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -22,6 +24,13 @@ import com.kedacom.demo.appcameratoh264.media.encoder.video.AndroidCodecParam;
 import com.kedacom.demo.appcameratoh264.media.encoder.video.X264Param;
 import com.kedacom.demo.appcameratoh264.widget.pick.ResolutionSrcDialogFragment;
 import com.kedacom.demo.appcameratoh264.widget.pick.ResolutionTargetDialogFragment;
+import com.ycuwq.datepicker.CommonPicker.MultiplePickerFragment;
+import com.ycuwq.datepicker.CommonPicker.ParentPicker;
+import com.ycuwq.datepicker.CommonPicker.PickerData;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by yuhanxun
@@ -144,32 +153,49 @@ public class InitActivity extends AppCompatActivity {
             }
         });
 
-        findViewById(R.id.resolution_src_parent).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.resolution_parent).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ResolutionSrcDialogFragment fragment = new ResolutionSrcDialogFragment();
-                fragment.setOnDateChooseListener(new ResolutionSrcDialogFragment.OnDateChooseListener() {
+//                ResolutionSrcDialogFragment fragment = new ResolutionSrcDialogFragment();
+//                fragment.setOnDateChooseListener(new ResolutionSrcDialogFragment.OnDateChooseListener() {
+//                    @Override
+//                    public void onDateChoose(String... data) {
+//                        refreshData();
+//                    }
+//                });
+//                fragment.show(getSupportFragmentManager(), "ResolutionSrcDialogFragment");
+                List<PickerData> param = new ArrayList<>();
+                List<String> sizeList = Arrays.asList(sizeParamUtil.getWH_IN_List());
+                param.add(new PickerData(sizeList,"a",sizeList.indexOf(sizeParamUtil.getWH_IN())));
+                sizeList = Arrays.asList(sizeParamUtil.getWH_OUTList());
+                param.add(new PickerData(sizeList,"bbb",sizeList.indexOf(sizeParamUtil.getWH_OUT())));
+                MultiplePickerFragment fragment = MultiplePickerFragment.getInstance(param);
+                fragment.setOnDateChooseListener(new MultiplePickerFragment.OnDateChooseListener() {
                     @Override
                     public void onDateChoose(String... data) {
+                        sizeParamUtil.setWH_IN(data[0]);
+                        sizeParamUtil.setWH_OUT(data[1]);
                         refreshData();
+
                     }
                 });
-                fragment.show(getSupportFragmentManager(), "ResolutionSrcDialogFragment");
+                fragment.show(getSupportFragmentManager(), "MultiplePickerFragment");
+
             }
         });
-        findViewById(R.id.resolution_target_parent).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                ResolutionTargetDialogFragment fragment = new ResolutionTargetDialogFragment();
-                fragment.setOnDateChooseListener(new ResolutionTargetDialogFragment.OnDateChooseListener() {
-                    @Override
-                    public void onDateChoose(String... data) {
-                        refreshData();
-                    }
-                });
-                fragment.show(getSupportFragmentManager(), "ResolutionTargetDialogFragment");
-            }
-        });
+//        findViewById(R.id.resolution_target_parent).setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                ResolutionTargetDialogFragment fragment = new ResolutionTargetDialogFragment();
+//                fragment.setOnDateChooseListener(new ResolutionTargetDialogFragment.OnDateChooseListener() {
+//                    @Override
+//                    public void onDateChoose(String... data) {
+//                        refreshData();
+//                    }
+//                });
+//                fragment.show(getSupportFragmentManager(), "ResolutionTargetDialogFragment");
+//            }
+//        });
         switchX264();
         refreshData();
     }

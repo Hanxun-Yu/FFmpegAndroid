@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">CamH264</string>
+
+
     <string name="preset_default">ultrafast</string>
     <string name="tune_default">zerolatency</string>
     <string name="profile_default">baseline</string>
@@ -13,6 +15,79 @@
     <string name="width_height_in_default">1280x720</string>
     <string name="width_height_out_default">1280x720</string>
 
+    <!-- 视频参数 ++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- 视频采集组件-->
+    <string-array name="VideoGather">
+        <item>Camera</item>
+        <item>Camera2</item>
+    </string-array>
+
+    <!-- 视频渲染组件-->
+    <string-array name="VideoRender">
+        <item>SurfaceView</item>
+        <item>TextureView</item>
+    </string-array>
+
+    <!-- 视频编码前分辨率-->
+    <string-array name="WidthHeight_IN">
+        <item>1280x720</item>
+        <item>1920x1080</item>
+    </string-array>
+
+    <!-- 视频编码后分辨率-->
+    <string-array name="WidthHeight_OUT">
+        <item>1280x720</item>
+        <item>1920x1080</item>
+    </string-array>
+
+    <!-- 视频码率 -->
+    <string-array name="VideoBitrate">
+        <item>512</item>
+        <item>1024</item>
+        <item>2048</item>
+        <item>3072</item>
+        <item>4096</item>
+        <item>5120</item>
+    </string-array>
+
+    <!-- 视频帧率 -->
+    <string-array name="Fps">
+        <item>24</item>
+        <item>25</item>
+        <item>30</item>
+    </string-array>
+
+    <string-array name="Gop">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+
+    <!-- 音频参数 ++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- 音频采集组件-->
+    <string-array name="AudioGather">
+        <item>mic</item>
+    </string-array>
+    <string-array name="AudioSampleRate">
+        <item>44100</item>
+    </string-array>
+    <string-array name="AudioChannel">
+        <item>mono</item>
+        <item>stereo</item>
+    </string-array>
+    <string-array name="AudioBitrate">
+        <item>32</item>
+        <item>64</item>
+        <item>96</item>
+        <item>128</item>
+        <item>192</item>
+    </string-array>
+
+
+
+    <!-- X264Param ++++++++++++++++++++++++++++++++++++++++++++++++++ -->
 
     <string-array name="Preset">
         <item>ultrafast</item>
@@ -48,33 +123,7 @@
         <item>ABR</item>
         <item>CRF</item>
     </string-array>
-    <string-array name="WidthHeight_IN">
-        <item>1280x720</item>
-        <item>1920x1080</item>
-    </string-array>
-    <string-array name="WidthHeight_OUT">
-        <item>1280x720</item>
-        <item>1920x1080</item>
-    </string-array>
-    <string-array name="Bitrate">
-        <item>512</item>
-        <item>1024</item>
-        <item>2048</item>
-        <item>3072</item>
-        <item>4096</item>
-        <item>5120</item>
-    </string-array>
-    <string-array name="Fps">
-        <item>25</item>
-    </string-array>
 
-    <string-array name="Gop">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
-    </string-array>
 
     <string-array name="DoSlice">
         <item>true</item>
