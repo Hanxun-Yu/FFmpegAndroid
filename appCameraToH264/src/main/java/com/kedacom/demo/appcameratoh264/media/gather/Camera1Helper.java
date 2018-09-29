@@ -5,7 +5,6 @@ import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.media.Image;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
