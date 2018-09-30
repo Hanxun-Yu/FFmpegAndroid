@@ -11,7 +11,7 @@ public interface IMediaEncoder {
     void start();
     void stop();
     void release();
-    void putPacket(PacketData packetData);
+    void putPacket(IPacketData packetData);
     void changeBitrate(int byterate);
 
     State getState();
@@ -29,7 +29,7 @@ public interface IMediaEncoder {
     void setOnStateChangedListener(OnStateChangedListener onStateChangedListener);
 
     interface Callback{
-        void onDataEncoded(EncodedData encodedData);
+        void onDataEncoded(IFrameData encodedData);
     }
     interface OnStateChangedListener {
         void onState(IMediaEncoder encoder, State state);

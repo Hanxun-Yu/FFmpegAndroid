@@ -7,10 +7,7 @@ set(SO_IMPORT_PATH ${PROJECT_SOURCE_DIR}/../../../../libffmpeg/libs/${ANDROID_AB
 set(INCLUDE_PATH ${PROJECT_SOURCE_DIR}/../../../../libffmpeg/src/main/cpp/include)
 
 cmake_minimum_required(VERSION 3.4.1)
-ADD_SUBDIRECTORY(yuvutil)
-ADD_SUBDIRECTORY(audioutil)
-ADD_SUBDIRECTORY(video)
-ADD_SUBDIRECTORY(muxer)
+
 
 
 
@@ -18,67 +15,62 @@ ADD_SUBDIRECTORY(muxer)
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
-#include_directories(
-#        .
-#        include
-#        ${INCLUDE_PATH}
-#)
-#
-#add_library( # Sets the name of the library.
-#        ffmpegjni
-#
-#        # Sets the library as a shared library.
-#        SHARED
-#
-#        # Provides a relative path to your source file(s).
-#        muxer/Mp4Muxer.cpp
-#       )
-#add_library(
-#        ffmpeg
-#        SHARED
-#        IMPORTED
-#)
-#add_library(
-#        jnihelper
-#        SHARED
-#        IMPORTED
-#)
-#set_target_properties(
-#        jnihelper
-#        PROPERTIES IMPORTED_LOCATION
-#        ${SO_IMPORT_PATH}/libjnihelper.so)
-#set_target_properties(
-#        ffmpeg
-#        PROPERTIES IMPORTED_LOCATION
-#        ${SO_IMPORT_PATH}/libffmpeg.so)
-#
-#
-#
-#
-## Searches for a specified prebuilt library and stores the path as a
-## variable. Because CMake includes system libraries in the search path by
-## default, you only need to specify the name of the public NDK library
-## you want to add. CMake verifies that the library exists before
-## completing its build.
-#
-#find_library( # Sets the name of the path variable.
-#        log-lib
-#
-#        # Specifies the name of the NDK library that
-#        # you want CMake to locate.
-#        log)
-#
-#
-## Specifies libraries CMake should link to your target library. You
-## can link multiple libraries, such as libraries you define in this
-## build script, prebuilt third-party libraries, or system libraries.
-#
-#target_link_libraries( # Specifies the target library.
-#        ffmpegjni
-#
-#        ffmpeg
-#        jnihelper
-#        # Links the target library to the log library
-#        # included in the NDK.
-#        ${log-lib}
-#        )
+include_directories(
+        .
+       include
+        ${INCLUDE_PATH}
+)
+
+add_library(
+        ffmpeg
+        SHARED
+        IMPORTED
+)
+add_library(
+        jnihelper
+        SHARED
+        IMPORTED
+)
+set_target_properties(
+        jnihelper
+        PROPERTIES IMPORTED_LOCATION
+        ${SO_IMPORT_PATH}/libjnihelper.so)
+set_target_properties(
+        ffmpeg
+        PROPERTIES IMPORTED_LOCATION
+        ${SO_IMPORT_PATH}/libffmpeg.so)
+
+ add_library(
+                libyuv
+                STATIC
+                IMPORTED
+        )
+        set_target_properties(
+                libyuv
+                PROPERTIES IMPORTED_LOCATION
+                ${SO_IMPORT_PATH}/libyuv_static.a)
+
+
+# Searches for a specified prebuilt library and stores the path as a
+# variable. Because CMake includes system libraries in the search path by
+# default, you only need to specify the name of the public NDK library
+# you want to add. CMake verifies that the library exists before
+# completing its build.
+
+find_library( # Sets the name of the path variable.
+        log-lib
+
+        # Specifies the name of the NDK library that
+        # you want CMake to locate.
+        log)
+
+
+# Specifies libraries CMake should link to your target library. You
+# can link multiple libraries, such as libraries you define in this
+# build script, prebuilt third-party libraries, or system libraries.
+
+#ADD_SUBDIRECTORY(yuvutil)
+ADD_SUBDIRECTORY(yuvjni)
+ADD_SUBDIRECTORY(audioutil)
+ADD_SUBDIRECTORY(video)
+ADD_SUBDIRECTORY(muxer)

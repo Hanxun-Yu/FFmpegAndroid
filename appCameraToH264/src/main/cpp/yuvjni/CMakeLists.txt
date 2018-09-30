@@ -20,21 +20,17 @@ include_directories(
 )
 
 add_library( # Sets the name of the library.
-        yuvutiljni
+        yuvjni
 
         # Sets the library as a shared library.
         SHARED
 
         # Provides a relative path to your source file(s).
-        yuvutil.cpp)
+        YuvJni.cpp)
 
-
-# Specifies libraries CMake should link to your target library. You
-# can link multiple libraries, such as libraries you define in this
-# build script, prebuilt third-party libraries, or system libraries.
 
 target_link_libraries( # Specifies the target library.
-        yuvutiljni
+        yuvjni
         jnihelper
         ffmpeg
         libyuv

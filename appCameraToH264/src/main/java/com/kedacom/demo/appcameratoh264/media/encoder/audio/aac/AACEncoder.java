@@ -1,11 +1,13 @@
-package com.kedacom.demo.appcameratoh264.media.encoder.audio;
+package com.kedacom.demo.appcameratoh264.media.encoder.audio.aac;
 
 import com.kedacom.demo.appcameratoh264.jni.AudioEncoderJni;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.AbstractEncoder;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.EncodedData;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IEncoderParam;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.PacketData;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.X264EncodedData;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IFrameData;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IPacketData;
+import com.kedacom.demo.appcameratoh264.media.encoder.audio.AudioFrameData;
+import com.kedacom.demo.appcameratoh264.media.encoder.audio.Contacts;
+import com.kedacom.demo.appcameratoh264.media.encoder.audio.PCMData;
 
 /**
  * Created by yuhanxun
@@ -47,11 +49,13 @@ public class AACEncoder extends AbstractEncoder{
     byte[] outbuffer = new byte[2048];
     byte[] inbuffer;
     @Override
-    protected EncodedData getEncodedData(PacketData t) {
-        EncodedData ret = null;
+    protected IFrameData getEncodedData(IPacketData packetData) {
+        PCMData t = (PCMData) packetData;
+
+        AudioFrameData ret = null;
         if (haveCopyLength < audioEncodeBuffer) {
-            System.arraycopy(t.getData(), 0, inbuffer, haveCopyLength, t.getLenght());
-            haveCopyLength += t.getLenght();
+            System.arraycopy(t.getData(), 0, inbuffer, haveCopyLength, t.getData().length);
+            haveCopyLength += t.getData().length;
             int remain = audioEncodeBuffer - haveCopyLength;
             if (remain == 0) {
                 //fdk-aac编码PCM裸音频数据，返回可用长度的有效字段
@@ -61,9 +65,7 @@ public class AACEncoder extends AbstractEncoder{
                 if (VALID_LENGTH > 0) {
                     byte[] encodeData = new byte[VALID_LENGTH];
                     System.arraycopy(outbuffer, 0, encodeData, 0, VALID_LENGTH);
-                    ret = new X264EncodedData();
-                    ret.setLength(validLength);
-                    ret.setData(encodeData);
+                    ret = new AudioFrameData(encodeData);
                 }
                 haveCopyLength = 0;
 

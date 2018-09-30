@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 
 import com.kedacom.demo.appcameratoh264.R;
 import com.kedacom.demo.appcameratoh264.data.X264ParamUtil;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.X264Param;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.x264.X264Param;
 import com.kedacom.demo.appcameratoh264.widget.pick.BitCtrlDoSliceDialogFragment;
 import com.kedacom.demo.appcameratoh264.widget.pick.FpsGopBFrDialogFragment;
 import com.kedacom.demo.appcameratoh264.widget.pick.ProPreTuneDialogFragment;

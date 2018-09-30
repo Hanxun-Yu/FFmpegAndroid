@@ -1,6 +1,6 @@
 package com.kedacom.demo.appcameratoh264.media.gather.video;
 
-import com.kedacom.demo.appcameratoh264.media.YuvFormat;
+import com.kedacom.demo.appcameratoh264.media.base.YuvFormat;
 import com.kedacom.demo.appcameratoh264.media.gather.api.IGatherParam;
 
 /**
@@ -61,4 +61,14 @@ public class VideoGatherParam implements IGatherParam{
         this.constantFps = constantFps;
     }
 
+    @Override
+    public String toString() {
+        return "VideoGatherParam{" +
+                "width=" + width +
+                ", height=" + height +
+                ", fps=" + fps +
+                ", format=" + format +
+                ", constantFps=" + constantFps +
+                '}';
+    }
 }

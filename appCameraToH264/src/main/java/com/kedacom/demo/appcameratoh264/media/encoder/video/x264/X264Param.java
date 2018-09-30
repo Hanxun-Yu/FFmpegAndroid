@@ -1,10 +1,9 @@
-package com.kedacom.demo.appcameratoh264.media.encoder.video;
+package com.kedacom.demo.appcameratoh264.media.encoder.video.x264;
 
 
 import android.os.Parcel;
-import android.os.Parcelable;
 
-import com.kedacom.demo.appcameratoh264.media.encoder.api.VideoEncoderParam;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.VideoEncoderParam;
 
 public class X264Param extends VideoEncoderParam {
 

@@ -1,4 +1,4 @@
-package com.kedacom.demo.appcameratoh264.media.encoder.video;
+package com.kedacom.demo.appcameratoh264.media.encoder.video.mediacodec;
 
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
@@ -7,9 +7,10 @@ import android.media.MediaFormat;
 import android.util.Log;
 
 import com.kedacom.demo.appcameratoh264.media.encoder.api.AbstractEncoder;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.EncodedData;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IEncoderParam;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.PacketData;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IFrameData;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IPacketData;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.VideoPacketData;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -106,8 +107,9 @@ public class AndroidCodecEncoder extends AbstractEncoder {
     private byte[] spsppsData;
 
     @Override
-    protected EncodedData getEncodedData(PacketData t) {
-        AndroidCodecEncodedData ret = null;
+    protected IFrameData getEncodedData(IPacketData packetData) {
+        AndroidCodecFrameData ret = null;
+        VideoPacketData t = (VideoPacketData)packetData;
         int bufferIndex = mMediaCodec.dequeueInputBuffer(-1);
 //        Log.d(TAG, "start IF bufferIndex:" + bufferIndex + " -------------------------------------");
 
@@ -115,7 +117,7 @@ public class AndroidCodecEncoder extends AbstractEncoder {
         if (t != null && bufferIndex >= 0) {
             inputBuffer = mMediaCodec.getInputBuffer(bufferIndex);
             inputBuffer.clear();
-            inputBuffer.put(t.getData(), 0, t.getLenght());
+            inputBuffer.put(t.getYuvData().getData(), 0, t.getYuvData().getLength());
             mMediaCodec.queueInputBuffer(bufferIndex, 0,
                     inputBuffer.position(),
                     System.nanoTime() / 1000, 0);
@@ -126,7 +128,7 @@ public class AndroidCodecEncoder extends AbstractEncoder {
 
             while (outputBufferIndex >= 0) {
                 if (ret == null)
-                    ret = new AndroidCodecEncodedData();
+                    ret = new AndroidCodecFrameData();
 
                 outputBuffer = mMediaCodec.getOutputBuffer(outputBufferIndex);
                 outputBuffer.position(bufferInfo.offset);
@@ -169,9 +171,6 @@ public class AndroidCodecEncoder extends AbstractEncoder {
                 mMediaCodec.releaseOutputBuffer(outputBufferIndex, false);
                 outputBufferIndex = mMediaCodec.dequeueOutputBuffer(bufferInfo, 40);
             }
-            if (ret != null)
-                ret.setLength(totalLenght);
-
         }
 
         return ret;

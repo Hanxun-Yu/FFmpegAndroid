@@ -3,16 +3,15 @@ package com.kedacom.demo.appcameratoh264.media.encoder;
 import android.util.Log;
 
 import com.kedacom.demo.appcameratoh264.media.FileManager;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.EncodedData;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IFrameData;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IMediaEncoder;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.PacketData;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.VideoEncoderParam;
-import com.kedacom.demo.appcameratoh264.media.encoder.audio.AACEncoder;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.AndroidCodecEncodedData;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.AndroidCodecEncoder;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.X264Encoder;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.YuvData;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.YuvInserter;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IPacketData;
+import com.kedacom.demo.appcameratoh264.media.encoder.audio.AudioFrameData;
+import com.kedacom.demo.appcameratoh264.media.encoder.audio.aac.AACEncoder;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.mediacodec.AndroidCodecFrameData;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.mediacodec.AndroidCodecEncoder;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.x264.X264Encoder;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.x264.X264FrameData;
 
 /**
  * Created by yuhanxun
@@ -53,16 +52,15 @@ public class EncoderManager {
             videoEncoder.config(config.getVideoParam());
             videoEncoder.setCallback(new IMediaEncoder.Callback() {
                 @Override
-                public void onDataEncoded(EncodedData encodedData) {
+                public void onDataEncoded(IFrameData encodedData) {
                     if (videoSaver != null) {
-                        if (encodedData instanceof AndroidCodecEncodedData) {
-
-                            for (byte[] bytes : ((AndroidCodecEncodedData) encodedData).getBytes()) {
+                        if (encodedData instanceof AndroidCodecFrameData) {
+                            for (byte[] bytes : ((AndroidCodecFrameData) encodedData).getBytes()) {
                                 videoSaver.writeFileData(bytes);
                                 videoLenSaver.writeFileData((String.valueOf(bytes.length) + "\n").getBytes());
                             }
-                        } else {
-                            videoSaver.writeFileData(encodedData.getData());
+                        } else  if (encodedData instanceof X264FrameData) {
+                            videoSaver.writeFileData(((X264FrameData) encodedData).getData());
                             videoLenSaver.writeFileData((String.valueOf(encodedData.getLength()) + "\n").getBytes());
                         }
                     }
@@ -82,7 +80,6 @@ public class EncoderManager {
 
             });
 
-            inserter = new YuvInserter(videoEncoder, ((VideoEncoderParam) config.getVideoParam()).getFps());
 
             if (config.getVideoSavePath() != null) {
                 videoSaver = new FileManager(config.getVideoSavePath());
@@ -101,11 +98,15 @@ public class EncoderManager {
             audioEncoder.config(config.getAudioParam());
             audioEncoder.setCallback(new IMediaEncoder.Callback() {
                 @Override
-                public void onDataEncoded(EncodedData encodedData) {
-                    if (audioSaver != null)
-                        audioSaver.writeFileData(encodedData.getData());
-                    if (audioEncoderCB != null)
-                        audioEncoderCB.onDataEncoded(encodedData);
+                public void onDataEncoded(IFrameData encodedData) {
+                    if(encodedData instanceof AudioFrameData) {
+                        if (audioSaver != null)
+                            audioSaver.writeFileData(((AudioFrameData) encodedData).getData());
+                        if (audioEncoderCB != null)
+                            audioEncoderCB.onDataEncoded(encodedData);
+                    } else {
+                        throw new IllegalArgumentException("stub");
+                    }
                 }
             });
             audioEncoder.setOnStateChangedListener(new IMediaEncoder.OnStateChangedListener() {
@@ -125,19 +126,12 @@ public class EncoderManager {
 
     }
 
-    YuvInserter inserter;
 
-    public void encodeVideo(PacketData data) {
-        if (videoEncoder != null) {
-            if (inserter != null) {
-                inserter.putVideoData((YuvData) data);
-            } else {
-                videoEncoder.putPacket(data);
-            }
-        }
+    public void encodeVideo(IPacketData data) {
+        videoEncoder.putPacket(data);
     }
 
-    public void encodeAudio(PacketData data) {
+    public void encodeAudio(IPacketData data) {
         if (audioEncoder != null)
             audioEncoder.putPacket(data);
     }

@@ -9,6 +9,7 @@
 
     <application
         tools:replace="android:icon"
+        android:name=".App"
         android:allowBackup="true"
         android:icon="@mipmap/ic_h264"
         android:label="@string/app_name"

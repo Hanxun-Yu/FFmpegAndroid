@@ -7,8 +7,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -19,13 +17,9 @@ import android.widget.Toast;
 
 import com.kedacom.demo.appcameratoh264.data.SizeParamUtil;
 import com.kedacom.demo.appcameratoh264.fragment.X264ParamFragment;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.VideoEncoderParam;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.AndroidCodecParam;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.X264Param;
-import com.kedacom.demo.appcameratoh264.widget.pick.ResolutionSrcDialogFragment;
-import com.kedacom.demo.appcameratoh264.widget.pick.ResolutionTargetDialogFragment;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.VideoEncoderParam;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.mediacodec.AndroidCodecParam;
 import com.ycuwq.datepicker.CommonPicker.MultiplePickerFragment;
-import com.ycuwq.datepicker.CommonPicker.ParentPicker;
 import com.ycuwq.datepicker.CommonPicker.PickerData;
 
 import java.util.ArrayList;

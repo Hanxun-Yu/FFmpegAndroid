@@ -2,18 +2,11 @@ package com.kedacom.demo.appcameratoh264.media.gather.video;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
-
-import com.kedacom.demo.appcameratoh264.media.YuvFormat;
-import com.kedacom.demo.appcameratoh264.media.gather.api.AbstractVideoGather;
-import com.kedacom.demo.appcameratoh264.media.gather.api.GatherData;
-import com.kedacom.demo.appcameratoh264.media.gather.api.IGatherParam;
-import com.kedacom.demo.appcameratoh264.media.util.YuvData;
 
 import java.io.IOException;
 
@@ -29,7 +22,7 @@ public class CameraGather extends AbstractVideoGather {
 
 
     public CameraGather(Context context) {
-      super(context);
+        super(context);
     }
 
     @Override
@@ -50,49 +43,25 @@ public class CameraGather extends AbstractVideoGather {
     }
 
     @Override
-    public void config(IGatherParam param) {
-        super.config(param);
-        if (param instanceof VideoGatherParam) {
-            VideoGatherParam vParam = (VideoGatherParam) param;
-            mParams = mCamera.getParameters();
-            setCameraDisplayOrientation((Activity) context, Camera.CameraInfo.CAMERA_FACING_BACK, mCamera);
-            mParams.setPreviewSize(vParam.getWidth(), vParam.getHeight());
-            mParams.setPreviewFormat(getFormat(vParam));
-            mParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-            mParams.setPreviewFpsRange(0, vParam.getFps());
-            if (vParam.isConstantFps()) {
-                packetDataInserter = new PacketDataInserter(vParam.getFps());
-                packetDataInserter.setInserterListener(new PacketDataInserter.InserterListener() {
-                    @Override
-                    public void onInsertData(GatherData data) {
-                        //..额外插帧
-                        if (callback != null)
-                            callback.onGatherData(data);
-                    }
+    protected void _config(VideoGatherParam param) {
+        mParams = mCamera.getParameters();
+        setCameraDisplayOrientation((Activity) context, Camera.CameraInfo.CAMERA_FACING_BACK, mCamera);
+        mParams.setPreviewSize(param.getWidth(), param.getHeight());
+        mParams.setPreviewFormat(getFormat(param));
+        mParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+        mParams.setPreviewFpsRange(param.getFps() * 1000, param.getFps() * 1000);
 
-                    @Override
-                    public void onNormalData(GatherData data) {
-                        // 正常帧
-                        if (callback != null)
-                            callback.onGatherData(data);
-                    }
+//        List<int[]> supportRange =mParams.getSupportedPreviewFpsRange();
+//        for(int i=0;i<supportRange.size();i++){
+//            int[] item = supportRange.get(i);
+//            Log.d(TAG,"getSupportedPreviewFpsRange:"+Arrays.toString(item));
+//        }
 
-                    @Override
-                    public void onLoseData(GatherData data) {
-                        //..丢帧
-                    }
-                });
-            }
-            mCamera.setParameters(mParams); // setting camera parameters
-            mCamera.addCallbackBuffer(getCallbackBuffer(vParam));
-        } else {
-            throw new IllegalArgumentException(param + " is not supported");
-        }
+        mCamera.setParameters(mParams); // setting camera parameters
+        mCamera.addCallbackBuffer(getCallbackBuffer(param));
 
         mCamera.setPreviewCallback(new Camera.PreviewCallback() {
-            GatherData ret = null;
             byte[] finalData = null;
-            YuvData yuvData;
 
             @Override
             public void onPreviewFrame(byte[] data, Camera camera) {
@@ -100,50 +69,14 @@ public class CameraGather extends AbstractVideoGather {
                 finalData = new byte[data.length];
                 System.arraycopy(data, 0, finalData, 0, data.length);
 
-                notifyRTFrame(finalData,finalData.length,camera.getParameters().getPreviewSize().width,
+                notifyRTFrame(finalData, finalData.length, camera.getParameters().getPreviewSize().width,
                         camera.getParameters().getPreviewSize().height, realFormat);
 
+                camera.addCallbackBuffer(data);
             }
         });
-
     }
 
-
-    private int getFormat(VideoGatherParam param) {
-        expectFormat = param.getFormat();
-        int ret;
-        switch (expectFormat) {
-            case Yuv420p_YV12:
-                realFormat = YuvFormat.Yuv420p_YV12;
-                ret = ImageFormat.YV12;
-                break;
-            case Yuv420p_I420:
-            case Yuv420sp_NV12:
-            case Yuv420sp_NV21:
-                realFormat = YuvFormat.Yuv420sp_NV21;
-                ret = ImageFormat.NV21;
-                break;
-
-            default:
-                throw new IllegalArgumentException("Format " + expectFormat + " not support!");
-        }
-        return ret;
-    }
-
-    private byte[] getCallbackBuffer(VideoGatherParam param) {
-        byte[] ret;
-        switch (expectFormat) {
-            case Yuv420p_YV12:
-            case Yuv420p_I420:
-            case Yuv420sp_NV12:
-            case Yuv420sp_NV21:
-                ret = new byte[param.getWidth() * param.getHeight() * 3 >> 1];
-                break;
-            default:
-                throw new IllegalArgumentException("Format " + expectFormat + " not support!");
-        }
-        return ret;
-    }
 
     @Override
     public void start() {
@@ -152,7 +85,8 @@ public class CameraGather extends AbstractVideoGather {
 
     @Override
     public void stop() {
-        mCamera.stopPreview();
+        if (mCamera != null)
+            mCamera.stopPreview();
     }
 
     @Override
@@ -177,10 +111,6 @@ public class CameraGather extends AbstractVideoGather {
         }
     }
 
-    @Override
-    public void setCallback(Callback callback) {
-        this.callback = callback;
-    }
 
     /**
      * Android API: Display Orientation Setting

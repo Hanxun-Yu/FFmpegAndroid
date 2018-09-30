@@ -1,7 +1,5 @@
 package com.kedacom.demo.appcameratoh264.media.gather.video;
 
-import com.kedacom.demo.appcameratoh264.media.gather.api.GatherData;
-
 /**
  * Created by yuhanxun
  * 2018/9/25
@@ -11,7 +9,7 @@ public class PacketDataInserter {
 
     private long firstInputTime = 0;
 
-    private GatherData lastPuttedVideoData;
+    private VideoGatherData lastPuttedVideoData;
     private int fps;
     private int fpsOffset;//累计帧间隔偏差
     private int normalInterval;//根据帧率算出正常帧间隔
@@ -22,7 +20,7 @@ public class PacketDataInserter {
         this.normalInterval = 1000 / fps;
     }
 
-    public void handleData(GatherData videoData) {
+    public void handleData(VideoGatherData videoData) {
 //        Log.d(TAG,"putVideoData queueSize:"+videoQueue.size()+ " takeYUVCount:"+takeYUVCount);
         if (firstInputTime == 0)
             firstInputTime = System.currentTimeMillis();
@@ -50,12 +48,12 @@ public class PacketDataInserter {
      * @param videoData
      * @return
      */
-    private boolean checkData(GatherData videoData) {
+    private boolean checkData(VideoGatherData videoData) {
         if (lastPuttedVideoData == null)
             return true;
 
         //当前帧与上一帧间隔
-        int interval = (int) (videoData.getTimestampMilliSec() - lastPuttedVideoData.getTimestampMilliSec());
+        int interval = (int) (videoData.getTimestamp() - lastPuttedVideoData.getTimestamp());
         //间隔与正常间隔差
         fpsOffset += interval - normalInterval;
 
@@ -66,8 +64,8 @@ public class PacketDataInserter {
                 //采集慢,可能需要插帧
                 while (Math.abs(fpsOffset) >= normalInterval) {
                     //间隔差累计到一帧间隔，插帧
-                    GatherData insertVideo = lastPuttedVideoData.clone();
-                    insertVideo.setTimestampMilliSec(insertVideo.getTimestampMilliSec()+ + normalInterval);
+                    VideoGatherData insertVideo = lastPuttedVideoData.clone();
+                    insertVideo.setTimestamp(insertVideo.getTimestamp()+ normalInterval);
 
                     //多插入帧,来满足帧率
                     if (inserterListener != null) {
@@ -91,12 +89,12 @@ public class PacketDataInserter {
         return ret;
     }
 
-    interface InserterListener {
-        void onInsertData(GatherData data);
+    public interface InserterListener {
+        void onInsertData(VideoGatherData data);
 
-        void onNormalData(GatherData data);
+        void onNormalData(VideoGatherData data);
 
-        void onLoseData(GatherData data);
+        void onLoseData(VideoGatherData data);
     }
 
     private InserterListener inserterListener;

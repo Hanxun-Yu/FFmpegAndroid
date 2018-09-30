@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.pm.ActivityInfo;
 import android.graphics.SurfaceTexture;
-import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -18,21 +17,25 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.widget.AudioWaveView;
-import com.kedacom.demo.appcameratoh264.jni.YuvUtil;
+import com.kedacom.demo.appcameratoh264.media.base.YuvFormat;
 import com.kedacom.demo.appcameratoh264.media.encoder.EncoderConfig;
 import com.kedacom.demo.appcameratoh264.media.encoder.EncoderManager;
 import com.kedacom.demo.appcameratoh264.media.encoder.EncoderType;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.EncodedData;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IFrameData;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IMediaEncoder;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.VideoEncoderParam;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.VideoEncoderParam;
 import com.kedacom.demo.appcameratoh264.media.encoder.audio.PCMData;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.YuvData;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.VideoPacketData;
 import com.kedacom.demo.appcameratoh264.media.gather.AudioRecoderManager;
-import com.kedacom.demo.appcameratoh264.media.gather.Camera1Helper;
-import com.kedacom.demo.appcameratoh264.media.gather.Camera2Helper;
+import com.kedacom.demo.appcameratoh264.media.gather.api.IGatherData;
+import com.kedacom.demo.appcameratoh264.media.gather.api.IGatherParam;
+import com.kedacom.demo.appcameratoh264.media.gather.api.IMediaGather;
+import com.kedacom.demo.appcameratoh264.media.gather.api.IVideoGather;
+import com.kedacom.demo.appcameratoh264.media.gather.video.CameraGather;
+import com.kedacom.demo.appcameratoh264.media.gather.video.VideoGatherData;
+import com.kedacom.demo.appcameratoh264.media.gather.video.VideoGatherParam;
 import com.kedacom.demo.appcameratoh264.widget.AutoFitTextureView;
 
 import java.io.ByteArrayOutputStream;
@@ -54,8 +57,6 @@ public class MainActivity_EncoderController extends AppCompatActivity {
     private TextView timeText;
 
     final String TAG = getClass().getSimpleName() + "_xunxun";
-    private Camera2Helper camera2Helper;
-    private Camera1Helper camera1Helper;
     private AudioWaveView audioWaveView;
     boolean useCameraOne = false;
     boolean useSurfaceview = false;
@@ -104,6 +105,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
 
         init();
         initCamera();
+        initRender();
         initMicroPhone();
 //        initCheckFaceThread();
 
@@ -180,7 +182,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
             int frequence = 25;
 
             @Override
-            public void onDataEncoded(EncodedData encodedData) {
+            public void onDataEncoded(IFrameData encodedData) {
                 if (count % frequence == 0) {
                     refreshInfo();
                     count = 0;
@@ -191,7 +193,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
 
         encoderManager.setAudioEncoderCB(new IMediaEncoder.Callback() {
             @Override
-            public void onDataEncoded(EncodedData encodedData) {
+            public void onDataEncoded(IFrameData encodedData) {
 
             }
         });
@@ -220,49 +222,53 @@ public class MainActivity_EncoderController extends AppCompatActivity {
         handlerThread = new HandlerThread("putEncoderThread");
         handlerThread.start();
         putEncoderHandler = new Handler(handlerThread.getLooper()) {
-            YuvData vd420Temp;
 
             @Override
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
                 switch (msg.what) {
                     case HANDLE_VIDEO_MSG:
-                        if (useCameraOne) {
-                            //收到NV21
-                            byte[] yuv420sp = (byte[]) msg.obj;
-                            byte[] yuv420p = new byte[yuv420sp.length];
-                            //就算是竖屏,这里拿到的还是横屏图像,所以要旋转
-                            //这里传入的输出尺寸没什么用,只是格式转换,和根据角度旋转
-                            if (codec == 0) {
-                                //nv21 转 yuv420p
-                                YuvUtil.compressYUV(yuv420sp, cameraWidth, cameraHeight,
-                                        yuv420p, cameraWidth, cameraHeight, 0, camera1Helper.getDisplayOrientation(), false);
-                            } else {
-                                //nv21 转 nv12
-                                YuvUtil.compressNV12(yuv420sp, cameraWidth, cameraHeight,
-                                        yuv420p, cameraWidth, cameraHeight, 0, camera1Helper.getDisplayOrientation(), false);
-//                                Log.d(TAG,"compressNV12 time:"+(System.currentTimeMillis()-start));
-
-                            }
-//                            if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
-//                                vd420Temp = new YuvData(yuv420p, yuv420p.length, param.getHeightOUT(), param.getWidthOUT(), System.currentTimeMillis());
-//                            } else {
-                            vd420Temp = new YuvData(yuv420p, yuv420p.length, param.getWidthOUT(), param.getHeightOUT(), System.currentTimeMillis());
-//                            }
-//                            Log.d(TAG, "yuv size:" + yuv420p.length + " w:" + widthOUT + " h:" + heightOUT);
-//                            vd420Temp = new YuvData(yuv420sp, widthOUT, heightOUT, System.currentTimeMillis());
-                            encoderManager.encodeVideo(vd420Temp);
-                        } else {
-                            byte[] yuv420p = (byte[]) msg.obj;
-                            //收到420p
-                            vd420Temp = new YuvData(yuv420p, yuv420p.length, param.getWidthOUT(), param.getHeightOUT(), System.currentTimeMillis());
-                            encoderManager.encodeVideo(vd420Temp);
-                        }
+                        VideoGatherData data = (VideoGatherData) msg.obj;
+                        VideoPacketData temp = new VideoPacketData(data.getYuvData(),data.getTimestamp());
+                        encoderManager.encodeVideo(temp);
                         break;
+
+//                        if (useCameraOne) {
+//                            //收到NV21
+//                            byte[] yuv420sp = (byte[]) msg.obj;
+//                            byte[] yuv420p = new byte[yuv420sp.length];
+//                            //就算是竖屏,这里拿到的还是横屏图像,所以要旋转
+//                            //这里传入的输出尺寸没什么用,只是格式转换,和根据角度旋转
+//                            if (codec == 0) {
+//                                //nv21 转 yuv420p
+//                                YuvUtil.compressYUV(yuv420sp, cameraWidth, cameraHeight,
+//                                        yuv420p, cameraWidth, cameraHeight, 0, camera1Helper.getDisplayOrientation(), false);
+//                            } else {
+//                                //nv21 转 nv12
+//                                YuvUtil.compressNV12(yuv420sp, cameraWidth, cameraHeight,
+//                                        yuv420p, cameraWidth, cameraHeight, 0, camera1Helper.getDisplayOrientation(), false);
+////                                Log.d(TAG,"compressNV12 time:"+(System.currentTimeMillis()-start));
+//
+//                            }
+////                            if (camera1Helper.getDisplayOrientation() == 90 || camera1Helper.getDisplayOrientation() == 270) {
+////                                vd420Temp = new YuvData(yuv420p, yuv420p.length, param.getHeightOUT(), param.getWidthOUT(), System.currentTimeMillis());
+////                            } else {
+//                            vd420Temp = new YuvData(yuv420p, yuv420p.length, param.getWidthOUT(), param.getHeightOUT(), System.currentTimeMillis());
+////                            }
+////                            Log.d(TAG, "yuv size:" + yuv420p.length + " w:" + widthOUT + " h:" + heightOUT);
+////                            vd420Temp = new YuvData(yuv420sp, widthOUT, heightOUT, System.currentTimeMillis());
+//                            encoderManager.encodeVideo(vd420Temp);
+//                        } else {
+//                            byte[] yuv420p = (byte[]) msg.obj;
+//                            //收到420p
+//                            vd420Temp = new YuvData(yuv420p, yuv420p.length, param.getWidthOUT(), param.getHeightOUT(), System.currentTimeMillis());
+//                            encoderManager.encodeVideo(vd420Temp);
+//                        }
+//                        break;
 
                     case HANDLE_AUDIO_MSG:
                         byte[] pcm = (byte[]) msg.obj;
-                        PCMData audioData = new PCMData(pcm, pcm.length);
+                        PCMData audioData = new PCMData(pcm);
                         encoderManager.encodeAudio(audioData);
                         break;
                 }
@@ -270,23 +276,13 @@ public class MainActivity_EncoderController extends AppCompatActivity {
         };
     }
 
-    ByteArrayOutputStream videoTmpByteOut = new ByteArrayOutputStream();
     ByteArrayOutputStream audioTmpByteOut = new ByteArrayOutputStream();
 
-    private void notifyEncoderVideo(byte[] bytes) {
+    private void notifyEncoderVideo(IGatherData gatherData) {
         if (!recording)
             return;
-
-        videoTmpByteOut.reset();
-        try {
-            videoTmpByteOut.write(bytes);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-//        cpy = new byte[bytes.length];
-//        System.arraycopy(bytes, 0, cpy, 0, bytes.length);
         Message msg = putEncoderHandler.obtainMessage(HANDLE_VIDEO_MSG);
-        msg.obj = videoTmpByteOut.toByteArray();
+        msg.obj = gatherData;
         msg.sendToTarget();
     }
 
@@ -463,13 +459,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
     }
 
     private void releaseCamera() {
-        if (useCameraOne) {
-            if (camera1Helper != null)
-                camera1Helper.releaseCamera();
-        } else {
-            if (camera2Helper != null)
-                camera2Helper.onDestroyHelper();
-        }
+        camera.release();
     }
 
     private void releaseMicroPhone() {
@@ -497,82 +487,93 @@ public class MainActivity_EncoderController extends AppCompatActivity {
         });
     }
 
+    private void initRender() {
+        if (useSurfaceview) {
+            surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
+                @Override
+                public void surfaceCreated(SurfaceHolder surfaceHolder) {
+                    //这里需要判断camera是不是camera2,surface不支持
+                    camera.setRender(surfaceHolder);
+                    camera.start();
 
+                }
+
+                @Override
+                public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+
+                }
+
+                @Override
+                public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+                    camera.stop();
+                }
+            });
+        } else {
+            textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+                @Override
+                public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
+                    camera.setRender(surfaceTexture);
+                    camera.start();
+                }
+
+                @Override
+                public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
+
+                }
+
+                @Override
+                public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+                    camera.stop();
+                    return false;
+                }
+
+                @Override
+                public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
+                }
+            });
+        }
+    }
+
+    IVideoGather camera;
     private void initCamera() {
         if (useCameraOne) {
-            camera1Helper = new Camera1Helper(this, cameraWidth, cameraHeight);
-            camera1Helper.setOnRealFrameListener(new Camera1Helper.OnRealFrameListener() {
+            camera = new CameraGather(this);
+            camera.init();
+            VideoGatherParam param = new VideoGatherParam();
+            param.setWidth(cameraWidth);
+            param.setHeight(cameraHeight);
+            param.setFormat(YuvFormat.Yuv420p_I420);
+            param.setFps(24);
+            camera.config(param);
+            camera.setCallback(new IMediaGather.Callback() {
                 @Override
-                public void onRealFrame(byte[] bytes) {
+                public void onGatherData(IGatherData data) {
                     if (recording) {
-                        notifyEncoderVideo(bytes);
+                        notifyEncoderVideo(data);
                     }
                 }
             });
-            if (useSurfaceview) {
-                surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
-                    @Override
-                    public void surfaceCreated(SurfaceHolder surfaceHolder) {
-                        camera1Helper.openCamera(surfaceHolder);
-                    }
 
-                    @Override
-                    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-
-                    }
-
-                    @Override
-                    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-                    }
-                });
-            } else {
-                textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
-                    @Override
-                    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
-                        camera1Helper.openCamera(surfaceTexture);
-                    }
-
-                    @Override
-                    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
-
-                    }
-
-                    @Override
-                    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
-                        return false;
-                    }
-
-                    @Override
-                    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
-
-                    }
-                });
-            }
         } else {
-            if (useSurfaceview) {
-                Toast.makeText(this, "Camera2 not support for now", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            camera2Helper = Camera2Helper.getInstance(MainActivity_EncoderController.this, textureView, null);
-            camera2Helper.setOnRealFrameListener(new Camera2Helper.OnRealFrameListener() {
-                @Override
-                public void onRealFrame(Image image) {
-//                    Log.d(TAG, "onRealFrame image w:" + image.getWidth() + " h:" + image.getHeight() + " time:" + image.getTimestamp());
-
-                    if (recording) {
-                        long start = System.currentTimeMillis();
-//            Log.d(TAG, "onRealFrame: isMainThread:" + (Looper.myLooper() == Looper.getMainLooper()));
-
-                        notifyEncoderVideo(getByte(image.getPlanes()[0].getBuffer(),
-                                image.getPlanes()[1].getBuffer(),
-                                image.getPlanes()[2].getBuffer()));
-//                        Log.d(TAG, "recording time:" + (System.currentTimeMillis() - start));
-
-                    }
-                }
-            });
-            camera2Helper.setRealTimeFrameSize(cameraWidth, cameraHeight);
-            camera2Helper.startCameraPreView();
+//            camera2Helper.setOnRealFrameListener(new Camera2Helper.OnRealFrameListener() {
+//                @Override
+//                public void onRealFrame(Image image) {
+////                    Log.d(TAG, "onRealFrame image w:" + image.getWidth() + " h:" + image.getHeight() + " time:" + image.getTimestamp());
+//
+//                    if (recording) {
+//                        long start = System.currentTimeMillis();
+////            Log.d(TAG, "onRealFrame: isMainThread:" + (Looper.myLooper() == Looper.getMainLooper()));
+//
+//                        notifyEncoderVideo(getByte(image.getPlanes()[0].getBuffer(),
+//                                image.getPlanes()[1].getBuffer(),
+//                                image.getPlanes()[2].getBuffer()));
+////                        Log.d(TAG, "recording time:" + (System.currentTimeMillis() - start));
+//
+//                    }
+//                }
+//            });
+//            camera2Helper.setRealTimeFrameSize(cameraWidth, cameraHeight);
+//            camera2Helper.startCameraPreView();
         }
     }
 

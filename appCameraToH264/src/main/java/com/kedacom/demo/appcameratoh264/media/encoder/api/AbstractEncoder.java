@@ -4,11 +4,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.kedacom.demo.appcameratoh264.media.encoder.api.EncodedData;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.IEncoderParam;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.IMediaEncoder;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.PacketData;
-
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -27,7 +22,7 @@ public abstract class AbstractEncoder implements IMediaEncoder {
     private boolean allowThreadLoop = false;
 
     //采集流队列
-    private LinkedBlockingQueue<PacketData> queue;
+    private LinkedBlockingQueue<IPacketData> queue;
 
     private Callback callback;
     private OnStateChangedListener onStateChangedListener;
@@ -50,7 +45,7 @@ public abstract class AbstractEncoder implements IMediaEncoder {
     }
 
     @Override
-    public void putPacket(PacketData packetData) {
+    public void putPacket(IPacketData packetData) {
         try {
             queue.put(packetData);
             putQueueDataCount++;
@@ -98,7 +93,7 @@ public abstract class AbstractEncoder implements IMediaEncoder {
     @Override
     public abstract  void changeBitrate(int byterate);
 
-    protected abstract EncodedData getEncodedData(PacketData t);
+    protected abstract IFrameData getEncodedData(IPacketData t);
 
 
     @Override
@@ -167,8 +162,8 @@ public abstract class AbstractEncoder implements IMediaEncoder {
         public void run() {
             isThreadLoopStoped = false;
             refreshState();
-            PacketData queueData;
-            EncodedData encodedData;
+            IPacketData queueData;
+            IFrameData encodedData;
             while (queue.size() != 0 || allowThreadLoop
                     || putQueueDataCount != takeQueueDataCount) {
                 try {

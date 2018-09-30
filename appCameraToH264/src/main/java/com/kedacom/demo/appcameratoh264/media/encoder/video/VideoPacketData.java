@@ -1,18 +1,18 @@
-package com.kedacom.demo.appcameratoh264.media.gather.video;
+package com.kedacom.demo.appcameratoh264.media.encoder.video;
 
 import com.kedacom.demo.appcameratoh264.media.base.YuvData;
-import com.kedacom.demo.appcameratoh264.media.gather.api.IGatherData;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IPacketData;
 
 /**
  * Created by yuhanxun
- * 2018/9/29
+ * 2018/9/30
  * description:
  */
-public class VideoGatherData implements IGatherData, Cloneable{
+public class VideoPacketData implements IPacketData {
     private YuvData yuvData;
     private long timestamp;
 
-    public VideoGatherData(YuvData yuvData, long timestamp) {
+    public VideoPacketData(YuvData yuvData, long timestamp) {
         this.yuvData = yuvData;
         this.timestamp = timestamp;
     }
@@ -33,9 +33,9 @@ public class VideoGatherData implements IGatherData, Cloneable{
         this.timestamp = timestamp;
     }
 
-    public VideoGatherData clone() throws CloneNotSupportedException {
-        VideoGatherData ret = null;
-        ret = (VideoGatherData) super.clone();
+    public VideoPacketData clone() throws CloneNotSupportedException {
+        VideoPacketData ret = null;
+        ret = (VideoPacketData) super.clone();
         ret.setYuvData(yuvData.clone());
         return ret;
     }

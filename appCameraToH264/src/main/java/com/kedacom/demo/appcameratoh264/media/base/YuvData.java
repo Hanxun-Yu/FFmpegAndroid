@@ -1,14 +1,15 @@
-package com.kedacom.demo.appcameratoh264.media.util;
+package com.kedacom.demo.appcameratoh264.media.base;
 
-import com.kedacom.demo.appcameratoh264.media.YuvFormat;
-
-public class YuvData {
+public class YuvData implements Cloneable{
     private byte[] data;
     private int length;
 
     private int width;
     private int height;
     private YuvFormat format;
+
+    public YuvData() {
+    }
 
     public YuvData(byte[] data, int length, int width, int height, YuvFormat format) {
         this.data = data;
@@ -58,4 +59,7 @@ public class YuvData {
         this.length = length;
     }
 
+    public YuvData clone() throws CloneNotSupportedException {
+        return (YuvData) super.clone();
+    }
 }

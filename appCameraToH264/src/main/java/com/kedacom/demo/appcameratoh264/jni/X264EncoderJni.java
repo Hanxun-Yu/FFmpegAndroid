@@ -1,6 +1,6 @@
 package com.kedacom.demo.appcameratoh264.jni;
 
-import com.kedacom.demo.appcameratoh264.media.encoder.video.X264Param;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.x264.X264Param;
 
 /**
  * Created by yuhanxun

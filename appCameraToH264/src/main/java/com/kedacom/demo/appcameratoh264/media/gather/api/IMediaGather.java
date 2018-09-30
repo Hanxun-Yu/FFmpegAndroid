@@ -15,6 +15,6 @@ public interface IMediaGather {
     void setCallback(Callback callback);
 
     interface Callback {
-        void onGatherData(GatherData data);
+        void onGatherData(IGatherData data);
     }
 }

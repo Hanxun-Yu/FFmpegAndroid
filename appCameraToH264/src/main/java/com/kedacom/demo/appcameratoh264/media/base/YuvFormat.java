@@ -1,4 +1,4 @@
-package com.kedacom.demo.appcameratoh264.media;
+package com.kedacom.demo.appcameratoh264.media.base;
 
 public enum YuvFormat {
     Yuv420p_I420,//I420 YYYYYYYYuuvv

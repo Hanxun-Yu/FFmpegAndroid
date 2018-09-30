@@ -58,6 +58,8 @@ dependencies {
     implementation rootProject.ext.dependencies['appcompat-v7']
     implementation rootProject.ext.dependencies['gson']
     testImplementation rootProject.ext.dependencies['junit']
+    implementation rootProject.ext.dependencies['logger']
+
     androidTestImplementation rootProject.ext.dependencies['android-test']
 
     implementation project (':libffmpeg')

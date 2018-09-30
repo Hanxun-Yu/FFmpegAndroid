@@ -1,12 +1,13 @@
-package com.kedacom.demo.appcameratoh264.media.encoder.video;
+package com.kedacom.demo.appcameratoh264.media.encoder.video.x264;
 
 import android.util.Log;
 
 import com.kedacom.demo.appcameratoh264.jni.X264EncoderJni;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.AbstractEncoder;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.EncodedData;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IEncoderParam;
-import com.kedacom.demo.appcameratoh264.media.encoder.api.PacketData;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IFrameData;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IPacketData;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.VideoPacketData;
 
 /**
  * Created by yuhanxun
@@ -44,12 +45,13 @@ public class X264Encoder extends AbstractEncoder {
     private int fpsIndex = 0;
 
     @Override
-    protected EncodedData getEncodedData(PacketData t) {
-        X264EncodedData ret = null;
-        if(t != null && t.getData()!=null && t.getLenght() != 0) {
-            byte[] outbuffer = new byte[t.getLenght()];
+    protected IFrameData getEncodedData(IPacketData packetData) {
+        VideoPacketData t = (VideoPacketData) packetData;
+        X264FrameData ret = null;
+        if(t != null && t.getYuvData()!=null && t.getYuvData().getLength() != 0) {
+            byte[] outbuffer = new byte[t.getYuvData().getLength()];
             int[] outbufferLens = new int[20];
-            int numNals = x264EncoderJni.encoderVideoEncode(t.getData(), t.getLenght(),
+            int numNals = x264EncoderJni.encoderVideoEncode(t.getYuvData().getData(), t.getYuvData().getLength(),
                     fpsIndex++, outbuffer, outbufferLens);
             if(numNals <= 0) {
                 return null;
@@ -65,8 +67,7 @@ public class X264Encoder extends AbstractEncoder {
             byte[] encodecData = new byte[totalLength];
             System.arraycopy(outbuffer, 0, encodecData, 0, totalLength);
 
-            ret = new X264EncodedData();
-            ret.setLength(totalLength);
+            ret = new X264FrameData();
             ret.setSegment(segment);
             ret.setData(encodecData);
         }

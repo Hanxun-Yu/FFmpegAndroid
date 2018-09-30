@@ -143,7 +143,7 @@ JNIEXPORT jint JNICALL encoderVideoEncode
 JNINativeMethod nativeMethod[] = {
         {"init",               "()I",                                                       (void *) init},
         {"release",            "()I",                                                       (void *) release},
-        {"encoderVideoinit",   "(Lcom/kedacom/demo/appcameratoh264/media/encoder/video/X264Param;)I",                                     (void *) encoderVideoinit},
+        {"encoderVideoinit",   "(Lcom/kedacom/demo/appcameratoh264/media/encoder/video/x264/X264Param;)I",                                     (void *) encoderVideoinit},
         {"encoderVideoEncode", "([BII[B[I)I",                                               (void *) encoderVideoEncode},
 
 };

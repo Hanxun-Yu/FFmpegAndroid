@@ -1,7 +1,8 @@
 package com.kedacom.demo.appcameratoh264.media.util;
 
 
-import com.kedacom.demo.appcameratoh264.media.YuvFormat;
+import com.kedacom.demo.appcameratoh264.media.base.YuvData;
+import com.kedacom.demo.appcameratoh264.media.base.YuvFormat;
 
 /**
  * Created by yuhanxun

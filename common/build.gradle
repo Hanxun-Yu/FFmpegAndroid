@@ -32,6 +32,8 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation rootProject.ext.dependencies['appcompat-v7']
     implementation rootProject.ext.dependencies['gson']
+    implementation rootProject.ext.dependencies['logger']
+
     testImplementation rootProject.ext.dependencies['junit']
     androidTestImplementation rootProject.ext.dependencies['android-test']
 }

@@ -1,10 +1,19 @@
 package com.kedacom.demo.appcameratoh264.media.encoder.audio;
 
-import com.kedacom.demo.appcameratoh264.media.encoder.api.PacketData;
+import com.kedacom.demo.appcameratoh264.media.encoder.api.IPacketData;
 
-public class PCMData extends PacketData{
-    public PCMData(byte[] data,int length) {
-        setData(data);
-        setLenght(length);
+public class PCMData implements IPacketData {
+    private byte[] data;
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public void setData(byte[] data) {
+        this.data = data;
+    }
+
+    public PCMData(byte[] data) {
+        this.data = data;
     }
 }

@@ -1,9 +1,9 @@
-package com.kedacom.demo.appcameratoh264.media.encoder.video;
+package com.kedacom.demo.appcameratoh264.media.encoder.video.mediacodec;
 
 
 import android.os.Parcel;
 
-import com.kedacom.demo.appcameratoh264.media.encoder.api.VideoEncoderParam;
+import com.kedacom.demo.appcameratoh264.media.encoder.video.VideoEncoderParam;
 
 /**
  * Created by yuhanxun
