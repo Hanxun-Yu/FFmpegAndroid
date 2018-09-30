@@ -1,4 +1,4 @@
-package com.kedacom.demo.appcameratoh264.media.gather.video;
+package com.kedacom.demo.appcameratoh264.media.collecter.video;
 
 /**
  * Created by yuhanxun
@@ -9,7 +9,7 @@ public class PacketDataInserter {
 
     private long firstInputTime = 0;
 
-    private VideoGatherData lastPuttedVideoData;
+    private VideoCollectData lastPuttedVideoData;
     private int fps;
     private int fpsOffset;//累计帧间隔偏差
     private int normalInterval;//根据帧率算出正常帧间隔
@@ -20,7 +20,7 @@ public class PacketDataInserter {
         this.normalInterval = 1000 / fps;
     }
 
-    public void handleData(VideoGatherData videoData) {
+    public void handleData(VideoCollectData videoData) {
 //        Log.d(TAG,"putVideoData queueSize:"+videoQueue.size()+ " takeYUVCount:"+takeYUVCount);
         if (firstInputTime == 0)
             firstInputTime = System.currentTimeMillis();
@@ -48,7 +48,7 @@ public class PacketDataInserter {
      * @param videoData
      * @return
      */
-    private boolean checkData(VideoGatherData videoData) {
+    private boolean checkData(VideoCollectData videoData) {
         if (lastPuttedVideoData == null)
             return true;
 
@@ -64,7 +64,7 @@ public class PacketDataInserter {
                 //采集慢,可能需要插帧
                 while (Math.abs(fpsOffset) >= normalInterval) {
                     //间隔差累计到一帧间隔，插帧
-                    VideoGatherData insertVideo = lastPuttedVideoData.clone();
+                    VideoCollectData insertVideo = lastPuttedVideoData.clone();
                     insertVideo.setTimestamp(insertVideo.getTimestamp()+ normalInterval);
 
                     //多插入帧,来满足帧率
@@ -90,11 +90,11 @@ public class PacketDataInserter {
     }
 
     public interface InserterListener {
-        void onInsertData(VideoGatherData data);
+        void onInsertData(VideoCollectData data);
 
-        void onNormalData(VideoGatherData data);
+        void onNormalData(VideoCollectData data);
 
-        void onLoseData(VideoGatherData data);
+        void onLoseData(VideoCollectData data);
     }
 
     private InserterListener inserterListener;

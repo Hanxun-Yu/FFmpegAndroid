@@ -20,6 +20,7 @@ import android.widget.TextView;
 
 import com.example.widget.AudioWaveView;
 import com.kedacom.demo.appcameratoh264.media.base.YuvFormat;
+import com.kedacom.demo.appcameratoh264.media.collecter.video.VideoCollecterParam;
 import com.kedacom.demo.appcameratoh264.media.encoder.EncoderConfig;
 import com.kedacom.demo.appcameratoh264.media.encoder.EncoderManager;
 import com.kedacom.demo.appcameratoh264.media.encoder.EncoderType;
@@ -28,14 +29,12 @@ import com.kedacom.demo.appcameratoh264.media.encoder.api.IMediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.encoder.video.VideoEncoderParam;
 import com.kedacom.demo.appcameratoh264.media.encoder.audio.PCMData;
 import com.kedacom.demo.appcameratoh264.media.encoder.video.VideoPacketData;
-import com.kedacom.demo.appcameratoh264.media.gather.AudioRecoderManager;
-import com.kedacom.demo.appcameratoh264.media.gather.api.IGatherData;
-import com.kedacom.demo.appcameratoh264.media.gather.api.IGatherParam;
-import com.kedacom.demo.appcameratoh264.media.gather.api.IMediaGather;
-import com.kedacom.demo.appcameratoh264.media.gather.api.IVideoGather;
-import com.kedacom.demo.appcameratoh264.media.gather.video.CameraGather;
-import com.kedacom.demo.appcameratoh264.media.gather.video.VideoGatherData;
-import com.kedacom.demo.appcameratoh264.media.gather.video.VideoGatherParam;
+import com.kedacom.demo.appcameratoh264.media.collecter.AudioRecoderManager;
+import com.kedacom.demo.appcameratoh264.media.collecter.api.ICollectData;
+import com.kedacom.demo.appcameratoh264.media.collecter.api.IMediaCollecter;
+import com.kedacom.demo.appcameratoh264.media.collecter.api.IVideoCollecter;
+import com.kedacom.demo.appcameratoh264.media.collecter.video.camera1.CameraCollecter;
+import com.kedacom.demo.appcameratoh264.media.collecter.video.VideoCollectData;
 import com.kedacom.demo.appcameratoh264.widget.AutoFitTextureView;
 
 import java.io.ByteArrayOutputStream;
@@ -228,7 +227,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
                 super.handleMessage(msg);
                 switch (msg.what) {
                     case HANDLE_VIDEO_MSG:
-                        VideoGatherData data = (VideoGatherData) msg.obj;
+                        VideoCollectData data = (VideoCollectData) msg.obj;
                         VideoPacketData temp = new VideoPacketData(data.getYuvData(),data.getTimestamp());
                         encoderManager.encodeVideo(temp);
                         break;
@@ -278,7 +277,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
 
     ByteArrayOutputStream audioTmpByteOut = new ByteArrayOutputStream();
 
-    private void notifyEncoderVideo(IGatherData gatherData) {
+    private void notifyEncoderVideo(ICollectData gatherData) {
         if (!recording)
             return;
         Message msg = putEncoderHandler.obtainMessage(HANDLE_VIDEO_MSG);
@@ -534,20 +533,21 @@ public class MainActivity_EncoderController extends AppCompatActivity {
         }
     }
 
-    IVideoGather camera;
+    IVideoCollecter camera;
     private void initCamera() {
         if (useCameraOne) {
-            camera = new CameraGather(this);
+            camera = new CameraCollecter(this);
             camera.init();
-            VideoGatherParam param = new VideoGatherParam();
+            VideoCollecterParam param = new VideoCollecterParam();
             param.setWidth(cameraWidth);
             param.setHeight(cameraHeight);
             param.setFormat(YuvFormat.Yuv420p_I420);
+            param.setConstantFps(true);
             param.setFps(24);
             camera.config(param);
-            camera.setCallback(new IMediaGather.Callback() {
+            camera.setCallback(new IMediaCollecter.Callback() {
                 @Override
-                public void onGatherData(IGatherData data) {
+                public void onCollectData(ICollectData data) {
                     if (recording) {
                         notifyEncoderVideo(data);
                     }

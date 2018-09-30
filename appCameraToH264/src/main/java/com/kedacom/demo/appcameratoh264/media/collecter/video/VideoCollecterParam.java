@@ -1,14 +1,14 @@
-package com.kedacom.demo.appcameratoh264.media.gather.video;
+package com.kedacom.demo.appcameratoh264.media.collecter.video;
 
 import com.kedacom.demo.appcameratoh264.media.base.YuvFormat;
-import com.kedacom.demo.appcameratoh264.media.gather.api.IGatherParam;
+import com.kedacom.demo.appcameratoh264.media.collecter.api.ICollecterParam;
 
 /**
  * Created by yuhanxun
  * 2018/9/29
  * description:
  */
-public class VideoGatherParam implements IGatherParam{
+public class VideoCollecterParam implements ICollecterParam {
 
     private int width;
     private int height;

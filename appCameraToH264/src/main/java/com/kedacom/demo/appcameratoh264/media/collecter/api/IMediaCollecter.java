@@ -1,13 +1,13 @@
-package com.kedacom.demo.appcameratoh264.media.gather.api;
+package com.kedacom.demo.appcameratoh264.media.collecter.api;
 
 /**
  * Created by yuhanxun
  * 2018/9/29
  * description:
  */
-public interface IMediaGather {
+public interface IMediaCollecter {
     void init();
-    void config(IGatherParam param);
+    void config(ICollecterParam param);
     void start();
     void stop();
     void release();
@@ -15,6 +15,6 @@ public interface IMediaGather {
     void setCallback(Callback callback);
 
     interface Callback {
-        void onGatherData(IGatherData data);
+        void onCollectData(ICollectData data);
     }
 }

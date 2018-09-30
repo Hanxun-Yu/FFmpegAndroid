@@ -1,4 +1,4 @@
-package com.kedacom.demo.appcameratoh264.media.gather.video;
+package com.kedacom.demo.appcameratoh264.media.collecter.video;
 
 import android.content.Context;
 import android.graphics.ImageFormat;
@@ -6,24 +6,20 @@ import android.util.Log;
 
 import com.kedacom.demo.appcameratoh264.media.base.YuvData;
 import com.kedacom.demo.appcameratoh264.media.base.YuvFormat;
-import com.kedacom.demo.appcameratoh264.media.encoder.video.VideoPacketData;
-import com.kedacom.demo.appcameratoh264.media.gather.api.IGatherData;
-import com.kedacom.demo.appcameratoh264.media.gather.api.IGatherParam;
-import com.kedacom.demo.appcameratoh264.media.gather.api.IVideoGather;
-import com.kedacom.demo.appcameratoh264.media.gather.video.PacketDataInserter;
-import com.kedacom.demo.appcameratoh264.media.gather.video.VideoGatherData;
-import com.kedacom.demo.appcameratoh264.media.gather.video.VideoGatherParam;
+import com.kedacom.demo.appcameratoh264.media.collecter.api.ICollecterParam;
+import com.kedacom.demo.appcameratoh264.media.collecter.api.IVideoCollecter;
 import com.kedacom.demo.appcameratoh264.media.util.IYuvUtil;
 import com.kedacom.demo.appcameratoh264.media.util.YuvUtil_libyuv;
+import com.orhanobut.logger.Logger;
 
 /**
  * Created by yuhanxun
  * 2018/9/29
  * description:
  */
-public abstract class AbstractVideoGather implements IVideoGather {
+public abstract class AbstractVideoCollecter implements IVideoCollecter {
     protected Context context;
-    protected String TAG = getClass().getSimpleName()+"_xunxun";
+    protected String TAG = getClass().getSimpleName() + "_xunxun";
     protected int displayDegree;
     private Callback callback;
 
@@ -33,37 +29,37 @@ public abstract class AbstractVideoGather implements IVideoGather {
 
     private IYuvUtil yuvUtil = new YuvUtil_libyuv();
 
-    public AbstractVideoGather(Context context) {
+    public AbstractVideoCollecter(Context context) {
         this.context = context;
         //初始化yuvUtil
         //...
     }
 
     @Override
-    public void config(IGatherParam param) {
-        Log.d(TAG,"config param:"+param);
-        if (param instanceof VideoGatherParam) {
-            VideoGatherParam vParam = (VideoGatherParam) param;
+    public void config(ICollecterParam param) {
+        Log.d(TAG, "config param:" + param);
+        if (param instanceof VideoCollecterParam) {
+            VideoCollecterParam vParam = (VideoCollecterParam) param;
             if (vParam.isConstantFps()) {
                 packetDataInserter = new PacketDataInserter(vParam.getFps());
                 packetDataInserter.setInserterListener(new PacketDataInserter.InserterListener() {
                     @Override
-                    public void onInsertData(VideoGatherData data) {
+                    public void onInsertData(VideoCollectData data) {
                         //..额外插帧
-                        if (callback != null)
-                            callback.onGatherData(data);
+                        doCallback(data);
+                        Logger.d("onInsertData:"+data.getTimestamp());
                     }
 
                     @Override
-                    public void onNormalData(VideoGatherData data) {
+                    public void onNormalData(VideoCollectData data) {
                         // 正常帧
-                        if (callback != null)
-                            callback.onGatherData(data);
+                        doCallback(data);
                     }
 
                     @Override
-                    public void onLoseData(VideoGatherData data) {
+                    public void onLoseData(VideoCollectData data) {
                         //..丢帧
+                        Logger.e("onLoseData:"+data.getTimestamp());
                     }
                 });
             }
@@ -73,30 +69,30 @@ public abstract class AbstractVideoGather implements IVideoGather {
         }
     }
 
-    protected abstract void _config(VideoGatherParam param);
+    protected abstract void _config(VideoCollecterParam param);
 
     protected void notifyRTFrame(byte[] data, int length, int w, int h, YuvFormat format) {
         //wrap to YuvData
-        YuvData yuvData = new YuvData(data, length, w,
-                h, format);
-
-
-        if (expectFormat != realFormat || displayDegree != 0) {
-            //转格式或旋转
-            yuvData = yuvUtil.convertFormat(yuvData, expectFormat, displayDegree);
-        }
-        VideoGatherData ret = new VideoGatherData(yuvData,System.currentTimeMillis());
-
-
+        YuvData yuvData = new YuvData(data, length, w, h, format);
+        //wrap to VideoCollectData
+        VideoCollectData ret = new VideoCollectData(yuvData, System.currentTimeMillis());
         if (packetDataInserter != null) {
             packetDataInserter.handleData(ret);
         } else {
-            if (callback != null)
-                callback.onGatherData(ret);
+            doCallback(ret);
         }
     }
 
-    protected int getFormat(VideoGatherParam param) {
+    private void doCallback(VideoCollectData ret) {
+        if (expectFormat != realFormat || displayDegree != 0) {
+            //转格式或旋转
+            ret.setYuvData(yuvUtil.convertFormat(ret.getYuvData(), expectFormat, displayDegree));
+        }
+        if (callback != null)
+            callback.onCollectData(ret);
+    }
+
+    protected int getFormat(VideoCollecterParam param) {
         expectFormat = param.getFormat();
         int ret;
         switch (expectFormat) {
@@ -117,7 +113,7 @@ public abstract class AbstractVideoGather implements IVideoGather {
         return ret;
     }
 
-    protected byte[] getCallbackBuffer(VideoGatherParam param) {
+    protected byte[] getCallbackBuffer(VideoCollecterParam param) {
         byte[] ret;
         switch (expectFormat) {
             case Yuv420p_YV12:

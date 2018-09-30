@@ -1,4 +1,4 @@
-package com.kedacom.demo.appcameratoh264.media.gather.video;
+package com.kedacom.demo.appcameratoh264.media.collecter.video.camera1;
 
 import android.app.Activity;
 import android.content.Context;
@@ -8,6 +8,9 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
+import com.kedacom.demo.appcameratoh264.media.collecter.video.AbstractVideoCollecter;
+import com.kedacom.demo.appcameratoh264.media.collecter.video.VideoCollecterParam;
+
 import java.io.IOException;
 
 
@@ -16,12 +19,12 @@ import java.io.IOException;
  * 2018/9/29
  * description:
  */
-public class CameraGather extends AbstractVideoGather {
+public class CameraCollecter extends AbstractVideoCollecter {
     private Camera mCamera;
     private Camera.Parameters mParams;
 
 
-    public CameraGather(Context context) {
+    public CameraCollecter(Context context) {
         super(context);
     }
 
@@ -43,7 +46,7 @@ public class CameraGather extends AbstractVideoGather {
     }
 
     @Override
-    protected void _config(VideoGatherParam param) {
+    protected void _config(VideoCollecterParam param) {
         mParams = mCamera.getParameters();
         setCameraDisplayOrientation((Activity) context, Camera.CameraInfo.CAMERA_FACING_BACK, mCamera);
         mParams.setPreviewSize(param.getWidth(), param.getHeight());

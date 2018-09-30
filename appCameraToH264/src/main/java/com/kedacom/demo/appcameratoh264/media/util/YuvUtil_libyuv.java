@@ -74,7 +74,7 @@ public class YuvUtil_libyuv implements IYuvUtil {
 
     @Override
     public YuvData convertFormat(YuvData data, YuvFormat targetFormat, int degree) {
-        Logger.d("data format:" + data.getFormat() + " to " + targetFormat + " degree:" + degree);
+//        Logger.d("data format:" + data.getFormat() + " to " + targetFormat + " degree:" + degree);
         YuvData ret;
         if (data.getFormat() == targetFormat)
             ret = data;

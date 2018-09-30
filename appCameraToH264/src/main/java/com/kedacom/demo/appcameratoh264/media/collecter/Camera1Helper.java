@@ -1,4 +1,4 @@
-package com.kedacom.demo.appcameratoh264.media.gather;
+package com.kedacom.demo.appcameratoh264.media.collecter;
 
 import android.app.Activity;
 import android.content.Context;
