@@ -2,16 +2,19 @@ package com.kedacom.demo.appcameratoh264.media.collecter.video.camera1;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
+import com.kedacom.demo.appcameratoh264.media.base.YuvFormat;
 import com.kedacom.demo.appcameratoh264.media.collecter.video.AbstractVideoCollecter;
 import com.kedacom.demo.appcameratoh264.media.collecter.video.VideoCollecterParam;
 
 import java.io.IOException;
+import java.util.List;
 
 
 /**
@@ -21,7 +24,7 @@ import java.io.IOException;
  */
 public class CameraCollecter extends AbstractVideoCollecter {
     private Camera mCamera;
-    private Camera.Parameters mParams;
+   
 
 
     public CameraCollecter(Context context) {
@@ -47,10 +50,11 @@ public class CameraCollecter extends AbstractVideoCollecter {
 
     @Override
     protected void _config(VideoCollecterParam param) {
-        mParams = mCamera.getParameters();
+        Camera.Parameters mParams = mCamera.getParameters();
         setCameraDisplayOrientation((Activity) context, Camera.CameraInfo.CAMERA_FACING_BACK, mCamera);
         mParams.setPreviewSize(param.getWidth(), param.getHeight());
-        mParams.setPreviewFormat(getFormat(param));
+
+        mParams.setPreviewFormat(getCameraFormat(this.realFormat));
         mParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
         mParams.setPreviewFpsRange(param.getFps() * 1000, param.getFps() * 1000);
 
@@ -79,7 +83,6 @@ public class CameraCollecter extends AbstractVideoCollecter {
             }
         });
     }
-
 
     @Override
     public void start() {
@@ -152,4 +155,41 @@ public class CameraCollecter extends AbstractVideoCollecter {
         this.displayDegree = displayDegree;
         camera.setDisplayOrientation(displayDegree);
     }
+
+
+
+
+    protected boolean isFormatSupported(YuvFormat yuvFormat) {
+        boolean ret = false;
+        Camera.Parameters mParams = mCamera.getParameters();
+        List<Integer> formats = mParams.getSupportedPreviewFormats();
+        for (int cameraFormat : formats) {
+            if (cameraFormat == getCameraFormat(yuvFormat)) {
+                ret = true;
+                break;
+            }
+        }
+        return ret;
+    }
+
+    private int getCameraFormat(YuvFormat yuvFormat) {
+        int ret = 0;
+        switch (yuvFormat) {
+            case Yuv420p_YV12:
+                ret = ImageFormat.YV12;
+                break;
+            case Yuv420p_I420:
+                ret = ImageFormat.YUV_420_888;
+                break;
+            case Yuv420sp_NV12:
+
+                break;
+            case Yuv420sp_NV21:
+                ret = ImageFormat.NV21;
+                break;
+        }
+        return ret;
+    }
+
+
 }

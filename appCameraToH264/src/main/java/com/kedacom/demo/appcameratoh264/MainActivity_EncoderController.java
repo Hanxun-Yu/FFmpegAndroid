@@ -3,6 +3,7 @@ package com.kedacom.demo.appcameratoh264;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.pm.ActivityInfo;
+import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.os.Handler;
@@ -21,6 +22,7 @@ import android.widget.TextView;
 import com.example.widget.AudioWaveView;
 import com.kedacom.demo.appcameratoh264.media.base.YuvFormat;
 import com.kedacom.demo.appcameratoh264.media.collecter.video.VideoCollecterParam;
+import com.kedacom.demo.appcameratoh264.media.collecter.video.camera2.Camera2Collecter;
 import com.kedacom.demo.appcameratoh264.media.encoder.EncoderConfig;
 import com.kedacom.demo.appcameratoh264.media.encoder.EncoderManager;
 import com.kedacom.demo.appcameratoh264.media.encoder.EncoderType;
@@ -44,6 +46,9 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.TimeZone;
+
+import static com.kedacom.demo.appcameratoh264.media.base.YuvFormat.Yuv420p_I420;
+
 
 public class MainActivity_EncoderController extends AppCompatActivity {
     private AutoFitTextureView textureView;
@@ -541,7 +546,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
             VideoCollecterParam param = new VideoCollecterParam();
             param.setWidth(cameraWidth);
             param.setHeight(cameraHeight);
-            param.setFormat(YuvFormat.Yuv420p_I420);
+            param.setFormat(Yuv420p_I420);
             param.setConstantFps(true);
             param.setFps(24);
             camera.config(param);
@@ -555,6 +560,24 @@ public class MainActivity_EncoderController extends AppCompatActivity {
             });
 
         } else {
+
+            camera = new Camera2Collecter(this);
+            camera.init();
+            VideoCollecterParam param = new VideoCollecterParam();
+            param.setWidth(cameraWidth);
+            param.setHeight(cameraHeight);
+            param.setFormat(Yuv420p_I420);
+            param.setConstantFps(true);
+            param.setFps(24);
+            camera.config(param);
+            camera.setCallback(new IMediaCollecter.Callback() {
+                @Override
+                public void onCollectData(ICollectData data) {
+                    if (recording) {
+                        notifyEncoderVideo(data);
+                    }
+                }
+            });
 //            camera2Helper.setOnRealFrameListener(new Camera2Helper.OnRealFrameListener() {
 //                @Override
 //                public void onRealFrame(Image image) {
@@ -608,4 +631,7 @@ public class MainActivity_EncoderController extends AppCompatActivity {
 //        Log.d(TAG, "getByte time:" + (System.currentTimeMillis() - start));
         return ret;
     }
+
+
+
 }

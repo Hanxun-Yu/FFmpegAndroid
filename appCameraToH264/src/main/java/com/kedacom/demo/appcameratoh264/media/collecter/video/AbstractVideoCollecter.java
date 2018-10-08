@@ -22,6 +22,7 @@ public abstract class AbstractVideoCollecter implements IVideoCollecter {
     protected String TAG = getClass().getSimpleName() + "_xunxun";
     protected int displayDegree;
     private Callback callback;
+    protected VideoCollecterParam collecterParam;
 
     protected YuvFormat expectFormat;
     protected YuvFormat realFormat;
@@ -39,6 +40,7 @@ public abstract class AbstractVideoCollecter implements IVideoCollecter {
     public void config(ICollecterParam param) {
         Log.d(TAG, "config param:" + param);
         if (param instanceof VideoCollecterParam) {
+            this.collecterParam = (VideoCollecterParam) param;
             VideoCollecterParam vParam = (VideoCollecterParam) param;
             if (vParam.isConstantFps()) {
                 packetDataInserter = new PacketDataInserter(vParam.getFps());
@@ -63,14 +65,37 @@ public abstract class AbstractVideoCollecter implements IVideoCollecter {
                     }
                 });
             }
+            expectFormat = ((VideoCollecterParam) param).getFormat();
+            realFormat = getSupportFormat(expectFormat);
+            if(realFormat == null)
+                throw new IllegalArgumentException("Format "+ expectFormat+ " is not supported!");
+
             _config(vParam);
+
+
         } else {
             throw new IllegalArgumentException(param + " is not supported");
         }
     }
 
     protected abstract void _config(VideoCollecterParam param);
+    protected abstract boolean isFormatSupported(YuvFormat yuvFormat);
 
+    protected YuvFormat getSupportFormat(YuvFormat expectFormat) {
+        YuvFormat ret = null;
+        if (isFormatSupported(expectFormat)) {
+            ret = expectFormat;
+        } else if (isFormatSupported(YuvFormat.Yuv420p_I420)) {
+            ret = YuvFormat.Yuv420p_I420;
+        } else if (isFormatSupported(YuvFormat.Yuv420sp_NV21)) {
+            ret = YuvFormat.Yuv420sp_NV21;
+        } else if (isFormatSupported(YuvFormat.Yuv420sp_NV12)) {
+            ret = YuvFormat.Yuv420sp_NV12;
+        } else if (isFormatSupported(YuvFormat.Yuv420p_YV12)) {
+            ret = YuvFormat.Yuv420p_YV12;
+        }
+        return ret;
+    }
     protected void notifyRTFrame(byte[] data, int length, int w, int h, YuvFormat format) {
         //wrap to YuvData
         YuvData yuvData = new YuvData(data, length, w, h, format);
@@ -90,27 +115,6 @@ public abstract class AbstractVideoCollecter implements IVideoCollecter {
         }
         if (callback != null)
             callback.onCollectData(ret);
-    }
-
-    protected int getFormat(VideoCollecterParam param) {
-        expectFormat = param.getFormat();
-        int ret;
-        switch (expectFormat) {
-            case Yuv420p_YV12:
-                realFormat = YuvFormat.Yuv420p_YV12;
-                ret = ImageFormat.YV12;
-                break;
-            case Yuv420p_I420:
-            case Yuv420sp_NV12:
-            case Yuv420sp_NV21:
-                realFormat = YuvFormat.Yuv420sp_NV21;
-                ret = ImageFormat.NV21;
-                break;
-
-            default:
-                throw new IllegalArgumentException("Format " + expectFormat + " not support!");
-        }
-        return ret;
     }
 
     protected byte[] getCallbackBuffer(VideoCollecterParam param) {
