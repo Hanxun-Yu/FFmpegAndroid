@@ -18,15 +18,22 @@
         android:theme="@style/AppTheme">
         <activity android:name=".MainActivity_EncoderController" android:screenOrientation="portrait">
         </activity>
-
-        <activity android:name=".InitActivity" android:screenOrientation="portrait"
-            >
+        <activity android:name=".FirstActivity" android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".PermissionActivity" android:screenOrientation="portrait" />
+
+
+        <activity android:name=".InitActivity" android:screenOrientation="portrait"
+            >
+
+        </activity>
+
+        <service android:name=".WorkService" />
     </application>
 
 </manifest>

@@ -4,9 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.ImageFormat;
-import android.graphics.Matrix;
-import android.graphics.Point;
-import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -29,13 +26,13 @@ import com.kedacom.demo.appcameratoh264.media.base.YuvFormat;
 import com.kedacom.demo.appcameratoh264.media.collecter.video.AbstractVideoCollecter;
 import com.kedacom.demo.appcameratoh264.media.collecter.video.VideoCollecterParam;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by yuhanxun
@@ -61,9 +58,9 @@ public class Camera2Collecter extends AbstractVideoCollecter {
     String cameraID;
 
     Handler mainHandler = new Handler();
-
+    Context context;
     public Camera2Collecter(Context context) {
-        super(context);
+        this.context = context;
         manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
         try {
             /*
@@ -132,6 +129,16 @@ public class Camera2Collecter extends AbstractVideoCollecter {
 
     }
 
+    @Override
+    public int getRTBitrate() {
+        return 0;
+    }
+
+    @Override
+    public int getOutputLength() {
+        return 0;
+    }
+
     private int getCameraFormat(YuvFormat yuvFormat) {
         int ret = 0;
         switch (yuvFormat) {
@@ -176,6 +183,11 @@ public class Camera2Collecter extends AbstractVideoCollecter {
                     if (image == null) {
                         return;
                     }
+
+                    byte[] ret = getByte(image.getPlanes()[0].getBuffer(),
+                            image.getPlanes()[1].getBuffer(),
+                            image.getPlanes()[2].getBuffer());
+                    notifyRTFrame(ret, ret.length, collecterParam.getWidth(), collecterParam.getHeight(), realFormat);
 
 //                            if (onRealFrameListener != null)
 //                                onRealFrameListener.onRealFrame(image);
@@ -377,6 +389,37 @@ public class Camera2Collecter extends AbstractVideoCollecter {
         } else {
             return choices[0];
         }
+    }
+
+    private byte[] getByte(ByteBuffer yb, ByteBuffer ub, ByteBuffer vb) {
+//        long start = System.currentTimeMillis();
+        byte[] ret = new byte[yb.remaining() + ub.remaining() + vb.remaining()];
+        int position = 0;
+        while (yb.hasRemaining()) {
+//            Log.d(TAG, "bb.remaining():" + bb.remaining());
+            byte[] t = new byte[yb.remaining()];
+            yb.get(t);
+            System.arraycopy(t, 0, ret, position, t.length);
+            position += t.length;
+        }
+
+        while (ub.hasRemaining()) {
+//            Log.d(TAG, "bb.remaining():" + bb.remaining());
+            byte[] t = new byte[ub.remaining()];
+            ub.get(t);
+            System.arraycopy(t, 0, ret, position, t.length);
+            position += t.length;
+        }
+
+        while (vb.hasRemaining()) {
+//            Log.d(TAG, "bb.remaining():" + bb.remaining());
+            byte[] t = new byte[vb.remaining()];
+            vb.get(t);
+            System.arraycopy(t, 0, ret, position, t.length);
+            position += t.length;
+        }
+//        Log.d(TAG, "getByte time:" + (System.currentTimeMillis() - start));
+        return ret;
     }
 
 

@@ -12,6 +12,9 @@ public interface IMediaCollecter {
     void stop();
     void release();
 
+    int getRTBitrate();
+    int getOutputLength();
+
     void setCallback(Callback callback);
 
     interface Callback {

@@ -1,12 +1,13 @@
 package com.kedacom.demo.appcameratoh264;
 
-import android.Manifest;
+import android.app.Service;
+import android.content.ComponentName;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -15,8 +16,18 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.kedacom.demo.appcameratoh264.api.IWorker;
 import com.kedacom.demo.appcameratoh264.data.SizeParamUtil;
 import com.kedacom.demo.appcameratoh264.fragment.X264ParamFragment;
+import com.kedacom.demo.appcameratoh264.media.base.AudioChannel;
+import com.kedacom.demo.appcameratoh264.media.base.AudioSampleRate;
+import com.kedacom.demo.appcameratoh264.media.base.PCMFormat;
+import com.kedacom.demo.appcameratoh264.media.collecter.CollecterConfig;
+import com.kedacom.demo.appcameratoh264.media.collecter.CollecterType;
+import com.kedacom.demo.appcameratoh264.media.collecter.audio.AudioCollecterParam;
+import com.kedacom.demo.appcameratoh264.media.collecter.video.VideoCollecterParam;
+import com.kedacom.demo.appcameratoh264.media.encoder.EncoderConfig;
+import com.kedacom.demo.appcameratoh264.media.encoder.EncoderType;
 import com.kedacom.demo.appcameratoh264.media.encoder.video.VideoEncoderParam;
 import com.kedacom.demo.appcameratoh264.media.encoder.video.mediacodec.AndroidCodecParam;
 import com.ycuwq.datepicker.CommonPicker.MultiplePickerFragment;
@@ -25,6 +36,8 @@ import com.ycuwq.datepicker.CommonPicker.PickerData;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static com.kedacom.demo.appcameratoh264.media.base.YuvFormat.Yuv420p_I420;
 
 /**
  * Created by yuhanxun
@@ -39,8 +52,8 @@ public class InitActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (checkPermission())
-            init();
+
+        init();
     }
 
 
@@ -143,7 +156,7 @@ public class InitActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Log.d("_xunxun", "camera:" + camera + " render:" + render);
-                startMain();
+                bindWorkService();
             }
         });
 
@@ -212,18 +225,66 @@ public class InitActivity extends AppCompatActivity {
 
     SizeParamUtil sizeParamUtil;
     private void startMain() {
+        //重构
+        //这里会吐出3种参数
+        //1.界面参数:横竖屏,渲染层
+        //2.采集器参数:采集器类型,以及不同采集器类型各自的参数
+        //3.编码器参数:编码器类型,以及不同编码器类型各自的参数
+
+
 //        Intent intent = new Intent(this, MainActivity.class);
         Intent intent = new Intent(this, MainActivity_EncoderController.class);
-        intent.putExtra("camera", camera);
+        setUIParam(intent);
+        startActivity(intent);
+
+        setCollectionParam();
+        setEncoderParam();
+
+//        intent.putExtra("muxer",muxer);
+//        Log.d(TAG,"codec:"+codec);
+
+//        intent.putExtra("param", param);
+
+    }
+
+    private void setUIParam( Intent intent) {
         intent.putExtra("render", render);
         intent.putExtra("orientation", orientation);
-        intent.putExtra("codec", codec);
-        intent.putExtra("muxer",muxer);
-        Log.d(TAG,"codec:"+codec);
+    }
+
+    private void setCollectionParam() {
+        VideoCollecterParam videoParam = new VideoCollecterParam();
+
+        if(sizeParamUtil.getWH_IN().equals("1280x720")) {
+            videoParam.setWidth(1280);
+            videoParam.setHeight(720);
+        } else if(sizeParamUtil.getWH_IN().equals("1920x1080")) {
+            videoParam.setWidth(1920);
+            videoParam.setHeight(1080);
+        }
+        videoParam.setFormat(Yuv420p_I420);
+        videoParam.setConstantFps(true);
+        videoParam.setFps(24);
+
+        AudioCollecterParam audioParam = new AudioCollecterParam();
+        audioParam.setChannel(AudioChannel.C2);
+        audioParam.setFormat(PCMFormat.PCM_16BIT);
+        audioParam.setSampleRate(AudioSampleRate.SR_44100);
+
+        CollecterConfig collecterConfig = new CollecterConfig.Build().setVideo(camera == 0?CollecterType.Video.Camera
+        :CollecterType.Video.Camera2)
+                .setAudio(CollecterType.Audio.Mic)
+                .setVideoParam(videoParam)
+                .setAudioParam(audioParam)
+                .build();
+        iWorker.setCollecterParam(collecterConfig);
+
+    }
+
+    private void setEncoderParam() {
         VideoEncoderParam param;
         if(codec == 0) {
             param = x264ParamFragment.getParams();
-            Log.d(TAG,"++++++++++++++param:"+param.getByterate());
         } else {
             param = new AndroidCodecParam();
             param.setByterate(4 * 1024 * 1024);
@@ -246,57 +307,67 @@ public class InitActivity extends AppCompatActivity {
             param.setWidthOUT(1920);
             param.setHeightOUT(1080);
         }
-        intent.putExtra("param", param);
 
-        startActivity(intent);
-    }
+        if(orientation == 0) {
+            int temp = param.getWidthIN();
+            param.setWidthIN(param.getHeightIN());
+            param.setHeightIN(temp);
 
-    final int REQUEST_CODE = 99;
-    String[] permissions = {Manifest.permission.CAMERA,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.RECORD_AUDIO,
-//            Manifest.permission.CAPTURE_AUDIO_OUTPUT
-    };
-
-    private boolean checkPermission() {
-        //如果返回true表示已经授权了
-        if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-                && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-//                && checkSelfPermission(Manifest.permission.CAPTURE_AUDIO_OUTPUT) == PackageManager.PERMISSION_GRANTED
-                ) {
-            return true;
-        } else {
-            // 类似 startActivityForResult()中的REQUEST_CODE
-            // 权限列表,将要申请的权限以数组的形式提交。
-            // 系统会依次进行弹窗提示。
-            // 注意：如果AndroidManifest.xml中没有进行权限声明，这里配置了也是无效的，不会有弹窗提示。
-
-            ActivityCompat.requestPermissions(this,
-                    permissions,
-                    REQUEST_CODE);
-            return false;
+            temp = param.getWidthOUT();
+            param.setWidthOUT(param.getHeightOUT());
+            param.setHeightOUT(temp);
         }
 
-    }
 
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_CODE: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (checkPermission())
-                        init();
-                    // 权限同意了，做相应处理
-                } else {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                            Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                        // 用户拒绝过这个权限了，应该提示用户，为什么需要这个权限。
-                    }
+        EncoderConfig encoderConfig =new EncoderConfig.Build()
+                .setVideo(codec == 0 ? EncoderType.Video.X264 : EncoderType.Video.MediaCodec)
+                .setVideoParam(param)
+                .setVideoSavePath("/sdcard/264/123.h264")
+                .setAudio(EncoderType.Audio.AAC)
+                .setAudioSavePath("/sdcard/264/123.aac")
+                .build();
+
+        iWorker.setEncoderParam(encoderConfig);
+
+    }
+    IWorker iWorker;
+    ServiceConnection connection;
+    boolean isbinding;
+    void bindWorkService() {
+        if(iWorker == null && !isbinding) {
+            isbinding = true;
+            Intent intent = new Intent(this, WorkService.class);
+            bindService(intent, connection = new ServiceConnection() {
+                @Override
+                public void onServiceConnected(ComponentName name, IBinder service) {
+                    isbinding = false;
+                    iWorker = ((WorkService.MyBinder) service).getService();
+                    startMain();
                 }
-            }
-            return;
+
+                @Override
+                public void onBindingDied(ComponentName name) {
+                    //need to unbind
+                }
+
+                @Override
+                public void onServiceDisconnected(ComponentName name) {
+                    iWorker = null;
+                }
+            }, Service.BIND_AUTO_CREATE);
         }
+    }
+
+    void unBindWorkService() {
+        if(connection != null) {
+            unbindService(connection);
+            connection = null;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unBindWorkService();
     }
 }

@@ -1,13 +1,13 @@
 package com.kedacom.demo.appcameratoh264.media.encoder.audio.aac;
 
 import com.kedacom.demo.appcameratoh264.jni.AudioEncoderJni;
+import com.kedacom.demo.appcameratoh264.media.base.PCMData;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.AbstractEncoder;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IEncoderParam;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IFrameData;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IPacketData;
 import com.kedacom.demo.appcameratoh264.media.encoder.audio.AudioFrameData;
 import com.kedacom.demo.appcameratoh264.media.encoder.audio.Contacts;
-import com.kedacom.demo.appcameratoh264.media.encoder.audio.PCMData;
 
 /**
  * Created by yuhanxun

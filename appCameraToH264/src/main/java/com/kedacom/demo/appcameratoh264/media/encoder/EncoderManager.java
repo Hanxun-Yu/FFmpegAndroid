@@ -3,6 +3,7 @@ package com.kedacom.demo.appcameratoh264.media.encoder;
 import android.util.Log;
 
 import com.kedacom.demo.appcameratoh264.media.FileManager;
+import com.kedacom.demo.appcameratoh264.media.encoder.EncoderConfig;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IFrameData;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IMediaEncoder;
 import com.kedacom.demo.appcameratoh264.media.encoder.api.IPacketData;

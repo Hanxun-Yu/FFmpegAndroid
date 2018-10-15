@@ -1,11 +1,9 @@
 package com.kedacom.demo.appcameratoh264.media.util;
 
-import android.util.Log;
 
 import com.kedacom.demo.appcameratoh264.jni.YuvJni;
 import com.kedacom.demo.appcameratoh264.media.base.YuvData;
 import com.kedacom.demo.appcameratoh264.media.base.YuvFormat;
-import com.orhanobut.logger.Logger;
 
 /**
  * Created by yuhanxun

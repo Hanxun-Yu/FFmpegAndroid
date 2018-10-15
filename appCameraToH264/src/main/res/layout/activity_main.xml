@@ -3,8 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg"
-    tools:context=".MainActivity">
+    android:background="@color/bg">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -67,14 +66,19 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/param_parent"
+        android:id="@+id/collecter_info_parent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/btn_parent"
         android:orientation="vertical">
-
         <TextView
-            android:id="@+id/paramText"
+            android:id="@+id/collecter_param_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/holo_green_light"
+            android:textSize="10sp" />
+        <TextView
+            android:id="@+id/collecter_state_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@android:color/holo_green_light"
@@ -83,16 +87,21 @@
 
     </LinearLayout>
     <LinearLayout
-        android:layout_toRightOf="@id/param_parent"
-        android:id="@+id/info_parent"
+        android:layout_toRightOf="@id/collecter_info_parent"
+        android:id="@+id/encoder_info_parent"
         android:layout_marginLeft="10dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/btn_parent"
         android:orientation="vertical">
-
         <TextView
-            android:id="@+id/infoText"
+            android:id="@+id/encoder_param_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/holo_green_light"
+            android:textSize="10sp" />
+        <TextView
+            android:id="@+id/encoder_state_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@android:color/holo_green_light"

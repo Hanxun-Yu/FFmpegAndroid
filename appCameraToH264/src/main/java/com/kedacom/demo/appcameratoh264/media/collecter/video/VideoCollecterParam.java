@@ -14,8 +14,11 @@ public class VideoCollecterParam implements ICollecterParam {
     private int height;
     private int fps;
     private YuvFormat format;
-    //恒定帧率
-    boolean constantFps = false;
+    //恒定帧率(手动插丢帧实现)
+    private boolean constantFps = false;
+
+
+    private boolean portraitDisplay = false;
 
 
 
@@ -60,15 +63,23 @@ public class VideoCollecterParam implements ICollecterParam {
     public void setConstantFps(boolean constantFps) {
         this.constantFps = constantFps;
     }
+    public boolean isPortraitDisplay() {
+        return portraitDisplay;
+    }
+
+    public void setPortraitDisplay(boolean portraitDisplay) {
+        this.portraitDisplay = portraitDisplay;
+    }
 
     @Override
     public String toString() {
-        return "VideoGatherParam{" +
+        return "VideoCollecterParam{" +
                 "width=" + width +
                 ", height=" + height +
                 ", fps=" + fps +
                 ", format=" + format +
                 ", constantFps=" + constantFps +
+                ", portraitDisplay=" + portraitDisplay +
                 '}';
     }
 }

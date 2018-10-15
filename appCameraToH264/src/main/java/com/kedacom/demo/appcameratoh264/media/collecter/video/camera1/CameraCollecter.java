@@ -27,8 +27,7 @@ public class CameraCollecter extends AbstractVideoCollecter {
    
 
 
-    public CameraCollecter(Context context) {
-        super(context);
+    public CameraCollecter() {
     }
 
     @Override
@@ -51,7 +50,10 @@ public class CameraCollecter extends AbstractVideoCollecter {
     @Override
     protected void _config(VideoCollecterParam param) {
         Camera.Parameters mParams = mCamera.getParameters();
-        setCameraDisplayOrientation((Activity) context, Camera.CameraInfo.CAMERA_FACING_BACK, mCamera);
+//        setCameraDisplayOrientation((Activity) context, Camera.CameraInfo.CAMERA_FACING_BACK, mCamera);
+        if(param.isPortraitDisplay())
+            mCamera.setDisplayOrientation(90);
+
         mParams.setPreviewSize(param.getWidth(), param.getHeight());
 
         mParams.setPreviewFormat(getCameraFormat(this.realFormat));
@@ -115,6 +117,16 @@ public class CameraCollecter extends AbstractVideoCollecter {
             }
             mCamera = null;
         }
+    }
+
+    @Override
+    public int getRTBitrate() {
+        return 0;
+    }
+
+    @Override
+    public int getOutputLength() {
+        return 0;
     }
 
 

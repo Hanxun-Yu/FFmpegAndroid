@@ -62,6 +62,7 @@ dependencies {
 
     androidTestImplementation rootProject.ext.dependencies['android-test']
 
+    implementation project (':common')
     implementation project (':libffmpeg')
     implementation project (':widgetdatepicker')
     implementation project (':widget')

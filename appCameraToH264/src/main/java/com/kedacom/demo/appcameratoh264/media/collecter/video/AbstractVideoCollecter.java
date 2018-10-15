@@ -1,7 +1,5 @@
 package com.kedacom.demo.appcameratoh264.media.collecter.video;
 
-import android.content.Context;
-import android.graphics.ImageFormat;
 import android.util.Log;
 
 import com.kedacom.demo.appcameratoh264.media.base.YuvData;
@@ -18,7 +16,6 @@ import com.orhanobut.logger.Logger;
  * description:
  */
 public abstract class AbstractVideoCollecter implements IVideoCollecter {
-    protected Context context;
     protected String TAG = getClass().getSimpleName() + "_xunxun";
     protected int displayDegree;
     private Callback callback;
@@ -30,8 +27,7 @@ public abstract class AbstractVideoCollecter implements IVideoCollecter {
 
     private IYuvUtil yuvUtil = new YuvUtil_libyuv();
 
-    public AbstractVideoCollecter(Context context) {
-        this.context = context;
+    public AbstractVideoCollecter() {
         //初始化yuvUtil
         //...
     }
