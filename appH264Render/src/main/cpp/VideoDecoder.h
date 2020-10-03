@@ -31,8 +31,11 @@ public:
     void setOnDecoderListener(OnDecoderListener *onDecoderListener);
 
 private:
+    //向外抛出rgb用来渲染
     OnDecoderListener *onDecoderListener;
+    //解码线程
     ThreadHandler* decodeThread;
+    //yuv转rgb
     void onRGBTransform(JNIEnv *jniEnv, jobject jobject,YuvData *data);
 public :
 

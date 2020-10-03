@@ -28,7 +28,9 @@ public:
     ThreadHandler(JavaVM* javaVM,jobject jobject1);
     void start();
     void stop();
+    //外部传入h264帧
     void putData(u_int8_t* p_data,uint32_t size);
+    //让子类做解码操作
     virtual YuvData* handleData(ByteData* data) = 0;
     void setCallback(ICallback* callback);
 public:

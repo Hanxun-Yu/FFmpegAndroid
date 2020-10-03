@@ -8,7 +8,9 @@ extern "C" {
 }
 
 
+//解码器
 VideoDecoder *videoDecoder;
+//渲染器
 RGBRender *render;
 
 class MyOnDecoderListener : public VideoDecoder::OnDecoderListener {

@@ -17,7 +17,7 @@ extern "C" {
 
 };
 
-
+//解码线程
 class H264DecodeThread : public ThreadHandler {
 public:
     H264DecodeThread(JavaVM *javaVM, jobject jobj) : ThreadHandler(javaVM, jobj) {
