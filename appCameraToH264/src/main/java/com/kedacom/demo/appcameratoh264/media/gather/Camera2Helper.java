@@ -555,7 +555,7 @@ public class Camera2Helper {
 //                mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(), ImageFormat.JPEG, /*maxImages*/2);//初始化ImageReader
 //                mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);//设置ImageReader监听
 
-                mRealTimeFrameReader = ImageReader.newInstance(realTimeFrameWidth, realTimeFrameHeight, ImageFormat.YUV_420_888, 1);
+                mRealTimeFrameReader = ImageReader.newInstance(realTimeFrameWidth, realTimeFrameHeight, ImageFormat.YUV_420_888, 2);
                 mRealTimeFrameReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
 
                     @Override
